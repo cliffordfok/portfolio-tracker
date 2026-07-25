@@ -193,6 +193,7 @@ def _validate_snapshot_shape(snapshot: dict[str, Any]) -> None:
             _snapshot_date(point.get("date"), label=f"{name}.daily.date")
             if point.get("data_status") not in {
                 "OK",
+                "INSUFFICIENT_DATA",
                 "INSUFFICIENT_MARKET_DATA",
             }:
                 raise PortfolioError(f"{name}.daily data_status is invalid")

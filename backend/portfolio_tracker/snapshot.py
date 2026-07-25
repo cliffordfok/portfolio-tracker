@@ -174,7 +174,6 @@ def _market_data(
             quotes[event["symbol"]][session] = record
         elif event["action"] == "BENCHMARK_CLOSE":
             benchmark[session] = record
-            quotes[event["symbol"]][session] = record
     recorded_sessions = sorted(
         set(benchmark) | {day for values in quotes.values() for day in values}
     )
@@ -186,6 +185,40 @@ def _market_data(
     else:
         sessions = []
     return dict(quotes), benchmark, sessions
+
+
+def _assert_pending_batch_complete(
+    root: Path,
+    events: list[dict[str, Any]],
+) -> None:
+    """Never rebuild a snapshot from a partially durable ledger batch."""
+
+    marker_path = root / "state" / "rebuild.pending"
+    if not marker_path.exists():
+        return
+    try:
+        marker = json.loads(marker_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise BusinessInvariantError("rebuild.pending is invalid") from exc
+    if (
+        not isinstance(marker, dict)
+        or marker.get("requested_by") != "ledger-append-batch"
+    ):
+        return
+    expected = marker.get("event_ids")
+    if (
+        not isinstance(expected, list)
+        or not expected
+        or not all(isinstance(event_id, str) for event_id in expected)
+    ):
+        raise BusinessInvariantError("ledger batch marker is invalid")
+    durable_ids = {event["event_id"] for event in events}
+    missing = [event_id for event_id in expected if event_id not in durable_ids]
+    if missing:
+        raise BusinessInvariantError(
+            "incomplete ledger batch; retry the original stable event IDs: "
+            + ", ".join(missing)
+        )
 
 
 def _quote_for_day(
@@ -283,7 +316,10 @@ def _metrics(
     valid_returns = [
         item["daily_return"]
         for item in daily
-        if item["daily_return"] is not None
+        if (
+            item["daily_return"] is not None
+            and is_nyse_session(date.fromisoformat(item["date"]))
+        )
     ]
     total_return = daily[-1]["cumulative_return"] if daily else None
     max_drawdown: Decimal | None = None
@@ -561,6 +597,10 @@ def _build_snapshot_locked(
         repair_tail=True,
         repair_records=repairs,
     )
+    _assert_pending_batch_complete(
+        root_path,
+        paper_events + live_events + market_events,
+    )
     quotes, benchmark, market_sessions = _market_data(market_events)
     replay_results = {
         name: replay_portfolio(events, portfolio=name)
@@ -770,6 +810,10 @@ def build_snapshot_if_needed(
             "live": _source_head(store.path_for("live"), live_events),
             "market": _source_head(store.path_for("market"), market_events),
         }
+        _assert_pending_batch_complete(
+            root_path,
+            paper_events + live_events + market_events,
+        )
         current: dict[str, Any] | None = None
         if target.exists():
             try:

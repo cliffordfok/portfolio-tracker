@@ -319,6 +319,54 @@ class HermesBridgeTests(unittest.TestCase):
                 (root / "snapshots" / "portfolio-snapshot.json").exists()
             )
 
+    def test_read_rebuilds_a_stale_snapshot_and_requests_publication(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            store = LedgerStore(root)
+            store.append(
+                candidate(
+                    "PORTFOLIO_OPEN",
+                    portfolio="paper",
+                    event_id="paper-open",
+                    occurred_at="2024-01-02T14:00:00Z",
+                    initial_cash="1000",
+                )
+            )
+            build_snapshot(root)
+            store.append(
+                candidate(
+                    "CASH_FLOW",
+                    portfolio="paper",
+                    event_id="paper-deposit",
+                    occurred_at="2024-01-02T15:00:00Z",
+                    amount="25",
+                )
+            )
+
+            output = StringIO()
+            with redirect_stdout(output):
+                exit_code = main(
+                    [
+                        "--root",
+                        temp,
+                        "read",
+                        "--portfolio",
+                        "paper",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            portfolio = json.loads(output.getvalue())
+            self.assertEqual(portfolio["cash"], "1025")
+            marker = json.loads(
+                (root / "state" / "publish.pending").read_text()
+            )
+            self.assertEqual(
+                marker["requested_by"],
+                "hermes-read-recovery",
+            )
+            self.assertFalse((root / "state" / "rebuild.pending").exists())
+
     def test_paper_and_live_writes_remain_independent(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

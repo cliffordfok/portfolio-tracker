@@ -188,6 +188,30 @@ class PublisherTests(unittest.TestCase):
             self.publisher().publish()
         self.assertEqual(len(self.client.put_calls), 0)
 
+    def test_unknown_remote_blob_with_same_content_still_fails_closed(
+        self,
+    ) -> None:
+        content = self.snapshot_path.read_bytes()
+        atomic_write_json(
+            self.root / "state" / "published-state.json",
+            {
+                "local_snapshot_hash": hashlib.sha256(content).hexdigest(),
+                "remote_blob_sha": "known-sha",
+                "remote_commit_sha": "known-commit",
+                "published_revision": 1,
+            },
+        )
+        self.client.remote = RemoteContent(
+            "unknown-sha",
+            content,
+            "unknown-commit",
+        )
+
+        with self.assertRaisesRegex(PublicationError, "manual edit"):
+            self.publisher().publish()
+
+        self.assertEqual(self.client.put_calls, [])
+
     def test_remote_file_without_state_requires_explicit_bootstrap(self) -> None:
         self.client.remote = RemoteContent("existing", b"old public snapshot")
         with self.assertRaisesRegex(PublicationError, "publication state"):

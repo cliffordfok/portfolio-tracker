@@ -382,18 +382,6 @@ class SnapshotPublisher:
                         )
 
                     if published and remote_sha != published.get("remote_blob_sha"):
-                        if remote is not None and remote_hash == local_hash:
-                            self._adopt(
-                                local_hash=local_hash,
-                                remote=remote,
-                                revision=local_payload["revision"],
-                            )
-                            durable_unlink(self.pending_path)
-                            return {
-                                "status": "adopted",
-                                "attempts": attempt_number,
-                                "blob_sha": remote.blob_sha,
-                            }
                         raise PublicationError("unknown manual edit on data branch")
 
                     if remote is not None and remote_hash == local_hash:

@@ -271,7 +271,9 @@ JSON
 `quote-batch` 會先驗證整批資料必須屬於同一個 session、每個
 `(action, symbol)` 唯一，而且剛好有一個 SPY benchmark。全部通過後才會
 在同一把 global ledger lock 下寫入，最後只 rebuild／request publish 一次。
-同一批資料 retry 會按 stable event ID 成為 no-op。
+同一批資料 retry 會按 stable event ID 成為 no-op。如果程序在 batch 中途
+終止，`rebuild.pending` 會保留完整 event ID 清單；systemd 會拒絕由部分
+batch 生成快照，直至原 batch 用相同 stable IDs retry 完成。
 
 單筆 `quote` 只應用於人工補數：
 
@@ -299,7 +301,9 @@ python3 integrations/hermes_bridge.py \
   --portfolio live
 ```
 
-輸出只有 derived holdings、trades、NAV 與 metrics，不需要 agent 自行重算 FIFO。
+`read` 會先比較 ledger source heads；如 snapshot 落後，會在 global lock 下
+重建並建立 publish request，唔會靜默回傳舊資料。輸出只有 derived holdings、
+trades、NAV 與 metrics，不需要 agent 自行重算 FIFO。
 
 ## GitHub Pages
 

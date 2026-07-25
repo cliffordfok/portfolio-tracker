@@ -83,6 +83,43 @@ class DoctorTests(unittest.TestCase):
                 require_current=True,
             )
 
+    def test_valid_zero_denominator_gap_passes_runtime_audit(self) -> None:
+        for portfolio, initial_cash in (("paper", "0"), ("live", "50000")):
+            self.store.append(
+                candidate(
+                    "PORTFOLIO_OPEN",
+                    portfolio=portfolio,
+                    event_id=f"{portfolio}-open",
+                    occurred_at="2024-01-02T14:00:00Z",
+                    initial_cash=initial_cash,
+                )
+            )
+        for day, close in (
+            ("2024-01-02", "470"),
+            ("2024-01-03", "471"),
+        ):
+            self.store.append(
+                candidate(
+                    "BENCHMARK_CLOSE",
+                    portfolio="market",
+                    event_id=f"market-spy-{day}",
+                    occurred_at=f"{day}T21:00:00Z",
+                    symbol="SPY",
+                    close=close,
+                    session_date=day,
+                )
+            )
+        build_snapshot(self.root)
+
+        report = audit_runtime(
+            self.root,
+            require_initialized=True,
+            require_current=True,
+        )
+
+        self.assertEqual(report["status"], "healthy")
+        self.assertTrue(report["snapshot"]["current"])
+
     def test_full_acceptance_verifies_publication_and_backup(self) -> None:
         self.initialize()
         snapshot = build_snapshot(self.root)

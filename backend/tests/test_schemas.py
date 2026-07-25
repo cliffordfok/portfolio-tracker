@@ -78,6 +78,21 @@ class SchemaTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "derived fields"):
             validate_event(value)
 
+    def test_unknown_master_fields_are_rejected(self) -> None:
+        value = candidate(
+            "BUY",
+            portfolio="paper",
+            event_id="paper-buy-secret-field",
+            occurred_at="2024-01-02T15:00:00Z",
+            symbol="AAPL",
+            shares="1",
+            price="100",
+            fee="0",
+            account_number="must-not-enter-ledger",
+        )
+        with self.assertRaisesRegex(ValidationError, "unknown fields for BUY"):
+            validate_event(value)
+
     def test_trade_fee_is_required(self) -> None:
         value = candidate(
             "BUY",

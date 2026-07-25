@@ -210,8 +210,10 @@ def read_jsonl(
         is_last = index == len(lines) - 1
         content = line.rstrip(b"\r\n")
         if not content:
-            offset += len(line)
-            continue
+            location = "tail" if is_last else f"line {index + 1}"
+            raise LedgerCorruptionError(
+                f"{path.name}: empty JSONL record at {location}"
+            )
         incomplete_tail = is_last and not raw.endswith((b"\n", b"\r"))
         if incomplete_tail:
             if repair_tail:
@@ -348,7 +350,7 @@ class LedgerStore:
     def append(self, candidate: dict[str, Any]) -> dict[str, Any]:
         """Validate, replay, and durably append exactly one event."""
 
-        batch_result = self.append_many([candidate])
+        batch_result = self.append_many([candidate], batch_marker=False)
         result = batch_result["results"][0]
         if batch_result.get("ledger_repairs"):
             result["ledger_repairs"] = batch_result["ledger_repairs"]
@@ -357,6 +359,8 @@ class LedgerStore:
     def append_many(
         self,
         candidates: list[dict[str, Any]],
+        *,
+        batch_marker: bool = True,
     ) -> dict[str, Any]:
         """Validate a batch fully, then append it under one global lock."""
 
@@ -438,7 +442,11 @@ class LedgerStore:
                     .isoformat()
                     .replace("+00:00", "Z")
                 )
-                if len(pending_appends) == 1:
+                if not batch_marker:
+                    if len(pending_appends) != 1:
+                        raise ValueError(
+                            "single-event marker requires one pending append"
+                        )
                     stored = pending_appends[0]
                     marker = {
                         "event_id": stored["event_id"],

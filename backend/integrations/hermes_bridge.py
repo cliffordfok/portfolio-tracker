@@ -341,10 +341,15 @@ def main(argv: list[str] | None = None) -> int:
     root = Path(args.root).resolve()
     try:
         if args.command == "read":
-            path = root / "snapshots" / "portfolio-snapshot.json"
-            if not path.exists():
-                build_snapshot(root)
-            snapshot = json.loads(path.read_text(encoding="utf-8"))
+            snapshot, rebuilt = build_snapshot_if_needed(root)
+            if rebuilt:
+                atomic_write_json(
+                    root / "state" / "publish.pending",
+                    {
+                        "revision": snapshot["revision"],
+                        "requested_by": "hermes-read-recovery",
+                    },
+                )
             result = (
                 snapshot["portfolios"][args.portfolio]
                 if args.portfolio

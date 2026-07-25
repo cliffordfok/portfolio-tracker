@@ -27,6 +27,25 @@ SOURCES = {
 }
 SYMBOL_RE = re.compile(r"^[A-Z]{1,5}(?:\.[A-Z])?$")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+BASE_FIELDS = {
+    "event_id",
+    "portfolio",
+    "occurred_at",
+    "created_at",
+    "source",
+    "action",
+    "ledger_seq",
+}
+ACTION_FIELDS = {
+    "PORTFOLIO_OPEN": {"initial_cash", "currency"},
+    "BUY": {"symbol", "shares", "price", "fee", "note", "strategy", "reason"},
+    "SELL": {"symbol", "shares", "price", "fee", "note", "strategy", "reason"},
+    "CASH_FLOW": {"symbol", "amount", "note"},
+    "AMEND": {"amend_target", "changes", "amend_reason"},
+    "VOID": {"void_target", "void_reason"},
+    "QUOTE": {"symbol", "close", "session_date"},
+    "BENCHMARK_CLOSE": {"symbol", "close", "session_date"},
+}
 
 
 def parse_timestamp(value: Any, *, field: str) -> datetime:
@@ -77,16 +96,21 @@ def validate_event(
         raise ValidationError("portfolio must be paper, live, or market")
     if action not in ACTIONS:
         raise ValidationError(f"unsupported action: {action}")
-    if not isinstance(event_id, str) or not event_id.startswith(f"{portfolio}-"):
-        raise ValidationError(f"event_id must start with '{portfolio}-'")
-    if len(event_id) > 128:
-        raise ValidationError("event_id must be at most 128 characters")
     forbidden_derived = sorted({"pnl", "pnl_pct"} & set(event))
     if forbidden_derived:
         raise ValidationError(
             f"derived fields are forbidden in master events: "
             f"{', '.join(forbidden_derived)}"
         )
+    unknown_fields = sorted(set(event) - BASE_FIELDS - ACTION_FIELDS[action])
+    if unknown_fields:
+        raise ValidationError(
+            f"unknown fields for {action}: {', '.join(unknown_fields)}"
+        )
+    if not isinstance(event_id, str) or not event_id.startswith(f"{portfolio}-"):
+        raise ValidationError(f"event_id must start with '{portfolio}-'")
+    if len(event_id) > 128:
+        raise ValidationError("event_id must be at most 128 characters")
 
     occurred_at = parse_timestamp(event["occurred_at"], field="occurred_at")
     parse_timestamp(event["created_at"], field="created_at")

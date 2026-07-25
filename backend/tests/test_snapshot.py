@@ -1,12 +1,20 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
-from datetime import date
+from contextlib import redirect_stdout
+from datetime import date, timedelta
+from decimal import Decimal
+from io import StringIO
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
+from portfolio_tracker.cli import main as cli_main
 from portfolio_tracker.ledger import LedgerStore
 from portfolio_tracker.snapshot import (
+    _metrics,
     _session_for_event,
     build_snapshot,
     build_snapshot_if_needed,
@@ -410,6 +418,53 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(updated["revision"], first["revision"] + 1)
         self.assertFalse((self.root / "state" / "rebuild.pending").exists())
 
+    def test_cli_append_reuses_a_systemd_preempted_snapshot(self) -> None:
+        self.append(
+            "PORTFOLIO_OPEN",
+            "paper-open",
+            "2024-01-02T14:00:00Z",
+            initial_cash="1000",
+        )
+        build_snapshot(self.root)
+        cash_flow = candidate(
+            "CASH_FLOW",
+            portfolio="paper",
+            event_id="paper-deposit",
+            occurred_at="2024-01-02T15:00:00Z",
+            amount="25",
+        )
+
+        def systemd_wins(root: Path, *, output: str | None = None):
+            return build_snapshot(root, output=output), False
+
+        output = StringIO()
+        with (
+            patch(
+                "portfolio_tracker.cli.build_snapshot_if_needed",
+                side_effect=systemd_wins,
+            ) as rebuild,
+            redirect_stdout(output),
+        ):
+            exit_code = cli_main(
+                [
+                    "--root",
+                    str(self.root),
+                    "append",
+                    "--json",
+                    json.dumps(cash_flow),
+                    "--rebuild",
+                ]
+            )
+
+        self.assertEqual(exit_code, 0)
+        result = json.loads(output.getvalue())
+        self.assertEqual(result["status"], "appended")
+        self.assertFalse(result["snapshot_rebuilt"])
+        self.assertEqual(result["snapshot_status"], "current")
+        self.assertEqual(rebuild.call_count, 1)
+        self.assertEqual(result["event"]["event_id"], "paper-deposit")
+        self.assertTrue((self.root / "state" / "publish.pending").exists())
+
     def test_nav_decomposes_exactly_into_cash_and_market_value(self) -> None:
         self.append(
             "PORTFOLIO_OPEN",
@@ -448,6 +503,53 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(point["cash"], "800")
         self.assertEqual(holding["market_value"], "220")
         self.assertEqual(point["nav"], "1020")
+
+    def test_spy_benchmark_close_is_not_a_holding_quote(self) -> None:
+        self.append(
+            "PORTFOLIO_OPEN",
+            "paper-open",
+            "2024-01-02T14:00:00Z",
+            initial_cash="1000",
+        )
+        self.append(
+            "BUY",
+            "paper-buy-spy",
+            "2024-01-02T15:00:00Z",
+            symbol="SPY",
+            shares="1",
+            price="470",
+            fee="0",
+        )
+        self.append(
+            "BENCHMARK_CLOSE",
+            "market-spy-benchmark-2024-01-02",
+            "2024-01-02T21:00:00Z",
+            symbol="SPY",
+            close="471",
+            session_date="2024-01-02",
+        )
+
+        without_quote = build_snapshot(self.root, write=False)
+        paper = without_quote["portfolios"]["paper"]
+        self.assertEqual(
+            paper["daily"][0]["data_status"],
+            "INSUFFICIENT_MARKET_DATA",
+        )
+        self.assertEqual(paper["daily"][0]["missing_symbols"], ["SPY"])
+        self.assertIsNone(paper["holdings"][0]["current_price"])
+
+        self.append(
+            "QUOTE",
+            "market-spy-quote-2024-01-02",
+            "2024-01-02T21:00:01Z",
+            symbol="SPY",
+            close="471",
+            session_date="2024-01-02",
+        )
+        with_quote = build_snapshot(self.root, write=False)
+        paper = with_quote["portfolios"]["paper"]
+        self.assertEqual(paper["daily"][0]["data_status"], "OK")
+        self.assertEqual(paper["holdings"][0]["current_price"], "471")
 
     def test_start_of_day_cash_flow_is_removed_from_daily_return(self) -> None:
         self.append(
@@ -559,6 +661,61 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(
             snapshot["portfolios"]["paper"]["metrics"]["max_drawdown"],
             "-0.02941176",
+        )
+
+    def test_sharpe_uses_trading_session_returns_not_weekend_zeros(self) -> None:
+        trading_daily: list[dict[str, object]] = []
+        calendar_daily: list[dict[str, object]] = []
+        cursor = date(2024, 2, 1)
+        cumulative = Decimal("0")
+        sessions = 0
+
+        while sessions < 20:
+            if is_nyse_session(cursor):
+                daily_return = (
+                    Decimal("0")
+                    if sessions == 0
+                    else Decimal("0.01")
+                    if sessions % 2
+                    else Decimal("-0.005")
+                )
+                cumulative = (
+                    Decimal("0")
+                    if sessions == 0
+                    else (1 + cumulative) * (1 + daily_return) - 1
+                )
+                point = {
+                    "date": cursor.isoformat(),
+                    "daily_return": daily_return,
+                    "cumulative_return": cumulative,
+                    "data_status": "OK",
+                }
+                trading_daily.append(point)
+                calendar_daily.append(point)
+                sessions += 1
+            else:
+                calendar_daily.append(
+                    {
+                        "date": cursor.isoformat(),
+                        "daily_return": Decimal("0"),
+                        "cumulative_return": cumulative,
+                        "data_status": "OK",
+                    }
+                )
+            cursor += timedelta(days=1)
+
+        replay = SimpleNamespace(
+            realized_pnl_total=Decimal("0"),
+            win_rate=None,
+            closed_episodes=[],
+        )
+        trading_metrics = _metrics(trading_daily, replay)
+        calendar_metrics = _metrics(calendar_daily, replay)
+
+        self.assertIsNotNone(trading_metrics["sharpe_ratio"])
+        self.assertEqual(
+            calendar_metrics["sharpe_ratio"],
+            trading_metrics["sharpe_ratio"],
         )
 
 

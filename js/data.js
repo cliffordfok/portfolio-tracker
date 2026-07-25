@@ -1,4 +1,4 @@
-import { dateOnly, numeric } from "./utils.js";
+import { dateOnly, filterByRange, numeric } from "./utils.js";
 
 function storage() {
   try {
@@ -583,7 +583,12 @@ function portfolioReturnValue(point) {
   return numeric(point.cumulative_return) ?? numeric(point.segment_return);
 }
 
-export function buildCommonComparison(paper, live, benchmark) {
+export function buildCommonComparison(
+  paper,
+  live,
+  benchmark,
+  { range = "ALL" } = {},
+) {
   const paperMap = new Map(
     paper
       .filter((point) => point.data_status === "OK" && portfolioReturnValue(point) !== null)
@@ -616,6 +621,10 @@ export function buildCommonComparison(paper, live, benchmark) {
   }
   if (current.length) latest = current;
   if (!latest.length) return { paper: [], live: [], benchmark: [] };
+  latest = filterByRange(
+    latest.map((date) => ({ date })),
+    range,
+  ).map((point) => point.date);
 
   function rebase(map) {
     const baseline = map.get(latest[0]);

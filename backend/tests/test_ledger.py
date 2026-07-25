@@ -6,7 +6,9 @@ import threading
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from unittest.mock import patch
 
+import portfolio_tracker.ledger as ledger_module
 from portfolio_tracker.errors import (
     BusinessInvariantError,
     ConflictError,
@@ -14,6 +16,7 @@ from portfolio_tracker.errors import (
     ValidationError,
 )
 from portfolio_tracker.ledger import LedgerStore, read_jsonl
+from portfolio_tracker.snapshot import build_snapshot
 
 from .helpers import candidate
 
@@ -135,6 +138,94 @@ class LedgerTests(unittest.TestCase):
         self.assertEqual(retry["status"], "duplicate")
         self.assertEqual(retry["appended"], 0)
         self.assertEqual(retry["duplicates"], 3)
+        self.assertFalse((self.root / "state" / "rebuild.pending").exists())
+
+    def test_partial_batch_never_rebuilds_until_stable_retry_completes_it(
+        self,
+    ) -> None:
+        events = [
+            candidate(
+                "QUOTE",
+                portfolio="market",
+                event_id="market-aapl-2024-01-02",
+                occurred_at="2024-01-02T21:00:00Z",
+                symbol="AAPL",
+                close="100",
+                session_date="2024-01-02",
+            ),
+            candidate(
+                "QUOTE",
+                portfolio="market",
+                event_id="market-msft-2024-01-02",
+                occurred_at="2024-01-02T21:00:01Z",
+                symbol="MSFT",
+                close="200",
+                session_date="2024-01-02",
+            ),
+            candidate(
+                "BENCHMARK_CLOSE",
+                portfolio="market",
+                event_id="market-spy-benchmark-2024-01-02",
+                occurred_at="2024-01-02T21:00:02Z",
+                symbol="SPY",
+                close="470",
+                session_date="2024-01-02",
+            ),
+        ]
+        real_append = ledger_module._append_json_line
+        call_count = 0
+
+        def fail_third_write(path: Path, event: dict[str, object]) -> None:
+            nonlocal call_count
+            call_count += 1
+            if call_count == 3:
+                raise OSError("simulated batch append interruption")
+            real_append(path, event)
+
+        with patch(
+            "portfolio_tracker.ledger._append_json_line",
+            side_effect=fail_third_write,
+        ):
+            with self.assertRaisesRegex(OSError, "append interruption"):
+                self.store.append_many(events)
+
+        self.assertEqual(len(self.store.read("market")), 2)
+        with self.assertRaisesRegex(
+            BusinessInvariantError,
+            "incomplete ledger batch",
+        ):
+            build_snapshot(self.root)
+        self.assertFalse(
+            (self.root / "snapshots" / "portfolio-snapshot.json").exists()
+        )
+
+        with patch(
+            "portfolio_tracker.ledger._append_json_line",
+            side_effect=OSError("simulated lone retry interruption"),
+        ):
+            with self.assertRaisesRegex(OSError, "lone retry interruption"):
+                self.store.append_many(events)
+        marker = json.loads(
+            (self.root / "state" / "rebuild.pending").read_text()
+        )
+        self.assertEqual(marker["requested_by"], "ledger-append-batch")
+        self.assertEqual(
+            marker["event_ids"],
+            ["market-spy-benchmark-2024-01-02"],
+        )
+        with self.assertRaisesRegex(
+            BusinessInvariantError,
+            "incomplete ledger batch",
+        ):
+            build_snapshot(self.root)
+
+        retry = self.store.append_many(events)
+        self.assertEqual(retry["status"], "mixed")
+        self.assertEqual(retry["appended"], 1)
+        self.assertEqual(retry["duplicates"], 2)
+        snapshot = build_snapshot(self.root)
+        self.assertEqual(snapshot["revision"], 3)
+        self.assertEqual(len(self.store.read("market")), 3)
         self.assertFalse((self.root / "state" / "rebuild.pending").exists())
 
     def test_numeric_inputs_are_stored_as_decimal_strings(self) -> None:
@@ -264,6 +355,26 @@ class LedgerTests(unittest.TestCase):
         )
         with self.assertRaises(LedgerCorruptionError):
             self.store.append(cash)
+        self.assertEqual(path.read_bytes(), before)
+        self.assertFalse((self.root / "quarantine").exists())
+
+    def test_blank_jsonl_record_is_corruption_not_an_ignored_event(self) -> None:
+        self.store.append(self.open)
+        path = self.store.path_for("paper")
+        before = path.read_bytes() + b"\n"
+        path.write_bytes(before)
+
+        with self.assertRaisesRegex(
+            LedgerCorruptionError,
+            "empty JSONL record",
+        ):
+            read_jsonl(
+                path,
+                repair_tail=True,
+                backup_dir=self.root / "backups",
+                quarantine_dir=self.root / "quarantine",
+            )
+
         self.assertEqual(path.read_bytes(), before)
         self.assertFalse((self.root / "quarantine").exists())
 

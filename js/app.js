@@ -161,10 +161,12 @@ function comparisonReturn(series) {
 }
 
 function renderCompare() {
-  const paper = filteredDaily("paper");
-  const live = filteredDaily("live");
-  const benchmark = filterByRange(state.data.benchmark.daily || [], state.range);
-  const comparison = buildCommonComparison(paper, live, benchmark);
+  const paper = state.data.portfolios.paper.daily || [];
+  const live = state.data.portfolios.live.daily || [];
+  const benchmark = state.data.benchmark.daily || [];
+  const comparison = buildCommonComparison(paper, live, benchmark, {
+    range: state.range,
+  });
   const paperMetrics = state.data.portfolios.paper.metrics;
   const liveMetrics = state.data.portfolios.live.metrics;
   const paperReturn = comparisonReturn(comparison.paper);
@@ -234,6 +236,8 @@ function renderMeta() {
     state.data.prices_as_of || state.data.data_as_of,
     true,
   );
+  document.querySelector("#snapshot-generated-at").textContent =
+    `快照生成 ${formatDate(state.data.generated_at, true)}`;
   document.querySelector("#snapshot-revision").textContent =
     `Revision ${state.data.revision}`;
   const status = document.querySelector("#data-status-label");

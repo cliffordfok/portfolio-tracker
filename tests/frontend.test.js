@@ -186,6 +186,45 @@ test("compare uses and rebases the latest common contiguous segment", () => {
   assert.equal(result.live[0].value, 0);
 });
 
+test("compare range is anchored to the latest common date", () => {
+  const paper = [
+    { date: "2026-05-01", cumulative_return: 0, data_status: "OK" },
+    { date: "2026-06-01", cumulative_return: 0.02, data_status: "OK" },
+    { date: "2026-06-30", cumulative_return: 0.04, data_status: "OK" },
+  ];
+  const live = [
+    { date: "2026-05-01", cumulative_return: 0, data_status: "OK" },
+    { date: "2026-06-01", cumulative_return: 0.01, data_status: "OK" },
+    { date: "2026-06-30", cumulative_return: 0.03, data_status: "OK" },
+    { date: "2026-07-31", cumulative_return: 0.05, data_status: "OK" },
+  ];
+  const benchmark = [
+    { date: "2026-05-01", cumulative_return: 0, data_status: "OK" },
+    { date: "2026-06-01", cumulative_return: 0.01, data_status: "OK" },
+    { date: "2026-06-30", cumulative_return: 0.02, data_status: "OK" },
+    { date: "2026-07-31", cumulative_return: 0.04, data_status: "OK" },
+  ];
+
+  const result = buildCommonComparison(paper, live, benchmark, {
+    range: "1M",
+  });
+  assert.deepEqual(
+    result.paper.map((point) => point.date),
+    ["2026-06-01", "2026-06-30"],
+  );
+  assert.deepEqual(
+    result.live.map((point) => point.date),
+    ["2026-06-01", "2026-06-30"],
+  );
+  assert.deepEqual(
+    result.benchmark.map((point) => point.date),
+    ["2026-06-01", "2026-06-30"],
+  );
+  assert.equal(result.paper[0].value, 0);
+  assert.equal(result.live[0].value, 0);
+  assert.equal(result.benchmark[0].value, 0);
+});
+
 test("global range uses latest dataset date rather than today's date", () => {
   const rows = [
     { date: "2024-01-01" },
@@ -222,6 +261,7 @@ test("static page contains all required tabs, tables, and D3 v7", async () => {
     'id="paper-holdings"',
     'id="live-trades"',
     'id="compare-chart"',
+    'id="snapshot-generated-at"',
     "d3@7",
   ]) {
     assert.ok(html.includes(required), `missing ${required}`);

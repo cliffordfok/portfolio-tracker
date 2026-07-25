@@ -114,7 +114,7 @@ def main(argv: list[str] | None = None) -> int:
                 result["status"] == "appended" or rebuild_marker.exists()
             ):
                 try:
-                    snapshot = build_snapshot(root)
+                    snapshot, rebuilt = build_snapshot_if_needed(root)
                 except (PortfolioError, ValueError, OSError) as exc:
                     if result["status"] == "appended":
                         result["status"] = "recorded_but_rebuild_pending"
@@ -122,8 +122,10 @@ def main(argv: list[str] | None = None) -> int:
                     result["snapshot_error"] = str(exc)
                 else:
                     _signal_publish(root, snapshot["revision"])
-                    result["snapshot_rebuilt"] = True
-                    result["snapshot_status"] = "rebuilt"
+                    result["snapshot_rebuilt"] = rebuilt
+                    result["snapshot_status"] = (
+                        "rebuilt" if rebuilt else "current"
+                    )
         elif args.command == "repair-tail":
             events = LedgerStore(root).repair_tail(args.portfolio)
             result = {"status": "repaired", "records": len(events)}
