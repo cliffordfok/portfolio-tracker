@@ -114,21 +114,25 @@ node --check js/utils.js
 
 ### 建立 portfolio
 
-`PORTFOLIO_OPEN` 係不可變 master fact。以下 effective date／initial cash
-placeholder 必須先換成已確認值；未確認前唔好喺 production runtime 執行。
+`PORTFOLIO_OPEN` 係不可變 master fact。Paper 已確認由
+`2026-07-16T00:00:00Z` 起計，initial cash 為 USD 100,000。以下 command
+使用 stable ID；第一次會建立 opening event，完全相同 command 重試會成為
+idempotent no-op：
 
 ```bash
 cd /opt/portfolio-tracker/backend
-python3 integrations/hermes_bridge.py \
+sudo -u portfolio /usr/bin/python3 integrations/hermes_bridge.py \
   --root /var/lib/portfolio-tracker \
   open \
   --portfolio paper \
-  --event-id paper-open-PAPER_EFFECTIVE_DATE \
-  --occurred-at PAPER_EFFECTIVE_UTC \
+  --event-id paper-open-20260716 \
+  --occurred-at 2026-07-16T00:00:00Z \
   --initial-cash 100000
 ```
 
-真實倉使用另一個 stable ID：
+真實倉 initial cash 及 effective UTC 尚未確認，**不要**以 `0` 或任何
+placeholder 建立 opening event。Live tab 會保持 `NO_DATA`；等兩個真實值
+一齊確認後，先用另一個 stable ID 建立：
 
 ```bash
 python3 integrations/hermes_bridge.py \
@@ -233,8 +237,14 @@ python3 integrations/hermes_bridge.py \
 
 ### 報價
 
-Quote provider 由部署者選擇。正式 daily cron 必須把同一個 session 的所有
-持倉 close 及一個 SPY benchmark 組成單一 JSON batch，再交給 bridge：
+VPS 現有 bot 可以繼續用 yfinance 作內部研究／模擬用途，但 yfinance 文件
+把 Yahoo Finance API 定位為 personal use，而 Yahoo Finance 明確禁止再分發
+其資料。因此，未取得另外授權前，不要把 yfinance 衍生的 close／SPY benchmark
+經 `quote-batch` 寫入會公開發布的 snapshot。
+
+取得允許公開／再分發資料的 quote provider 後，正式 daily cron 必須把同一個
+session 的所有持倉 close 及一個 SPY benchmark 組成單一 JSON batch，再交給
+bridge：
 
 ```bash
 cat <<'JSON' | python3 integrations/hermes_bridge.py \
@@ -312,7 +322,10 @@ trades、NAV 與 metrics，不需要 agent 自行重算 FIFO。
 3. Repository Settings → Pages → Deploy from branch → `main` / `(root)`。
 4. 手動建立 `portfolio-data` branch；publisher 不會自動建立或 force push branch。
 5. 建立 fine-grained PAT，只允許該 repository 的 **Contents: Read and write**。
-6. PAT 只放 VPS `PORTFOLIO_GITHUB_TOKEN` environment，永遠不要放入 repository、JSON、systemd unit 或 log。
+6. PAT 只放 VPS root-owned、mode `0600` 的
+   `/etc/portfolio-tracker/portfolio.env`，變數名必須為
+   `PORTFOLIO_GITHUB_TOKEN`。不要改用 `/data/.hermes/.env` 的
+   `GITHUB_TOKEN`，亦永遠不要放入 repository、JSON、systemd unit 或 log。
 7. `js/config.js` 已先讀取公開 data branch 的 GitHub raw media endpoint；
    未建立 data branch 時才會回退至 `main` 的虛構示範快照：
 
@@ -432,14 +445,20 @@ cd backend
 python seed_demo.py --runtime ../../work/new-demo-runtime --output ../data
 ```
 
+## 已確認部署設定
+
+- 模擬倉：effective UTC `2026-07-16T00:00:00Z`，initial cash USD 100,000
+- VPS：由 Hermes 執行；沿用現有 cron infrastructure，不需要 SSH
+- Hermes：paper cron 及 Telegram `/trade` 的唯一 writer
+- yfinance：只限 VPS 內部用途，未獲准用於 public snapshot
+
 ## 上線前仍需決定
 
 - 獲准公開／再分發資料的 quote provider
-- 真實倉 `initial_cash` 及 effective UTC
-- 模擬倉 effective UTC（`initial_cash` 已固定為 USD 100,000）
-- VPS 部署／存取方式
-- fine-grained PAT 是否已安全存放於 VPS
-- Hermes cron／Telegram handler 使用的 stable Import ID 規則
+- 真實倉 `initial_cash` 及 effective UTC；確認前 Live 保持 `NO_DATA`
+- fine-grained PAT 是否已按指定位置安全存放於 VPS
+- 現有 paper state 的 immutable source trade ID；如果沒有，部署時需要訂立
+  canonical hash Import ID 規則
 
 GitHub repository、`main` Pages 及 `portfolio-data` branch 已建立。以上剩餘項目
 全部是部署設定，不需要改動 ledger、FIFO 或 snapshot 架構。
