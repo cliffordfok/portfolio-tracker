@@ -8,7 +8,7 @@ import base64
 from pathlib import Path
 
 from portfolio_tracker.errors import PublicationError
-from portfolio_tracker.ledger import atomic_write_json
+from portfolio_tracker.ledger import FileLock, atomic_write_json
 from portfolio_tracker.publisher import (
     GitHubContentsClient,
     NetworkFailure,
@@ -26,6 +26,7 @@ class FakeClient:
         self.put_calls: list[bytes] = []
         self.exists = True
         self.branch_failures = 0
+        self.conflict_remote: RemoteContent | None = None
 
     def branch_exists(self) -> bool:
         if self.branch_failures:
@@ -48,6 +49,8 @@ class FakeClient:
             sha = hashlib.sha1(content).hexdigest()
             self.remote = RemoteContent(sha, content, f"commit-{sha}")
             return PutResult(status, sha, f"commit-{sha}", headers)
+        if status == 409 and self.conflict_remote is not None:
+            self.remote = self.conflict_remote
         return PutResult(status, headers=headers)
 
 
@@ -71,10 +74,11 @@ class PublisherTests(unittest.TestCase):
         self.snapshot_path.write_bytes(content)
         return content
 
-    def publisher(self) -> SnapshotPublisher:
+    def publisher(self, *, allow_bootstrap: bool = False) -> SnapshotPublisher:
         return SnapshotPublisher(
             root=self.root,
             client=self.client,
+            allow_bootstrap=allow_bootstrap,
             sleep=lambda _: None,
         )
 
@@ -160,6 +164,84 @@ class PublisherTests(unittest.TestCase):
         with self.assertRaisesRegex(PublicationError, "manual edit"):
             self.publisher().publish()
         self.assertEqual(len(self.client.put_calls), 0)
+
+    def test_remote_file_without_state_requires_explicit_bootstrap(self) -> None:
+        self.client.remote = RemoteContent("existing", b"old public snapshot")
+        with self.assertRaisesRegex(PublicationError, "publication state"):
+            self.publisher().publish()
+        result = self.publisher(allow_bootstrap=True).publish()
+        self.assertEqual(result["status"], "published")
+        self.assertEqual(len(self.client.put_calls), 1)
+
+    def test_busy_publisher_exits_without_waiting_or_writing(self) -> None:
+        publisher = self.publisher()
+        with FileLock(publisher.lock_path):
+            self.assertEqual(
+                publisher.publish(),
+                {"status": "busy", "attempts": 0},
+            )
+        self.assertEqual(self.client.put_calls, [])
+
+    def test_branch_must_be_created_manually(self) -> None:
+        self.client.exists = False
+        with self.assertRaisesRegex(PublicationError, "branch does not exist"):
+            self.publisher().publish()
+        self.assertEqual(self.client.put_calls, [])
+
+    def test_authentication_and_permission_failures_are_not_retried(self) -> None:
+        for status, message in (
+            (401, "authentication failed"),
+            (403, "denied the write"),
+        ):
+            with self.subTest(status=status):
+                self.client = FakeClient()
+                self.client.put_statuses = [status, 200]
+                with self.assertRaisesRegex(PublicationError, message):
+                    self.publisher().publish()
+                self.assertEqual(len(self.client.put_calls), 1)
+
+    def test_conflict_then_manual_edit_fails_closed_on_fresh_get(self) -> None:
+        local = self.snapshot_path.read_bytes()
+        old_remote = RemoteContent("known-sha", b"known remote", "known-commit")
+        self.client.remote = old_remote
+        self.client.put_statuses = [409, 200]
+        self.client.conflict_remote = RemoteContent(
+            "manual-sha",
+            b"manual edit",
+            "manual-commit",
+        )
+        atomic_write_json(
+            self.root / "state" / "published-state.json",
+            {
+                "local_snapshot_hash": hashlib.sha256(b"old local").hexdigest(),
+                "remote_blob_sha": old_remote.blob_sha,
+                "remote_commit_sha": old_remote.commit_sha,
+                "published_revision": 0,
+            },
+        )
+        with self.assertRaisesRegex(PublicationError, "remote edit"):
+            self.publisher().publish()
+        self.assertEqual(self.client.put_calls, [local])
+
+    def test_remote_mismatch_never_clears_pending_marker(self) -> None:
+        content = self.snapshot_path.read_bytes()
+        atomic_write_json(
+            self.root / "state" / "published-state.json",
+            {
+                "local_snapshot_hash": hashlib.sha256(content).hexdigest(),
+                "remote_blob_sha": "known-sha",
+                "remote_commit_sha": "known-commit",
+                "published_revision": 1,
+            },
+        )
+        atomic_write_json(
+            self.root / "state" / "publish.pending",
+            {"revision": 1},
+        )
+        self.client.remote = RemoteContent("manual-sha", b"manual edit")
+        with self.assertRaisesRegex(PublicationError, "manual edit"):
+            self.publisher().publish()
+        self.assertTrue((self.root / "state" / "publish.pending").exists())
 
     def test_github_content_accepts_wrapped_base64(self) -> None:
         client = GitHubContentsClient(

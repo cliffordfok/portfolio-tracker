@@ -8,10 +8,10 @@ from pathlib import Path
 from typing import Any
 
 from portfolio_tracker.ledger import LedgerStore, atomic_write_json
-from portfolio_tracker.snapshot import build_snapshot
+from portfolio_tracker.snapshot import build_snapshot, nyse_sessions
 
 
-SESSIONS = [
+PRICE_ANCHORS = [
     ("2026-06-01", {"AAPL": "195", "NVDA": "141", "MSFT": "488", "SPY": "596"}),
     ("2026-06-05", {"AAPL": "198", "NVDA": "142", "MSFT": "491", "SPY": "599"}),
     ("2026-06-10", {"AAPL": "201", "NVDA": "145", "MSFT": "493", "SPY": "597"}),
@@ -23,6 +23,25 @@ SESSIONS = [
     ("2026-07-10", {"AAPL": "211", "NVDA": "150", "MSFT": "497", "SPY": "612"}),
     ("2026-07-17", {"AAPL": "214", "NVDA": "153", "MSFT": "501", "SPY": "616"}),
 ]
+
+
+def demo_sessions() -> list[tuple[str, dict[str, str]]]:
+    """Produce complete deterministic NYSE-session quotes from sparse anchors."""
+
+    anchors = dict(PRICE_ANCHORS)
+    anchor_days = sorted(anchors)
+    sessions = nyse_sessions(
+        datetime.fromisoformat(anchor_days[0]).date(),
+        datetime.fromisoformat(anchor_days[-1]).date(),
+    )
+    expanded: list[tuple[str, dict[str, str]]] = []
+    for session in sessions:
+        applicable = max(day for day in anchor_days if day <= session)
+        expanded.append((session, dict(anchors[applicable])))
+    return expanded
+
+
+SESSIONS = demo_sessions()
 
 
 def make_event(
@@ -52,6 +71,7 @@ def portfolio_events() -> list[dict[str, Any]]:
             action="PORTFOLIO_OPEN",
             occurred_at="2026-05-31T14:00:00Z",
             initial_cash="100000",
+            currency="USD",
         ),
         make_event(
             event_id="paper-buy-aapl-001",
@@ -124,6 +144,7 @@ def portfolio_events() -> list[dict[str, Any]]:
             action="PORTFOLIO_OPEN",
             occurred_at="2026-05-31T14:00:00Z",
             initial_cash="50000",
+            currency="USD",
         ),
         make_event(
             event_id="live-cash-001",

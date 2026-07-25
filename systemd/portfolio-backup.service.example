@@ -1,5 +1,5 @@
 [Unit]
-Description=Rebuild Portfolio Tracker public snapshot
+Description=Back up Portfolio Tracker private ledgers
 
 [Service]
 Type=oneshot
@@ -7,13 +7,10 @@ User=portfolio
 Group=portfolio
 EnvironmentFile=/etc/portfolio-tracker/portfolio.env
 WorkingDirectory=/opt/portfolio-tracker/backend
-ExecStart=/usr/bin/python3 -m portfolio_tracker.cli --root ${PORTFOLIO_RUNTIME_ROOT} rebuild --if-needed
+ExecStart=/usr/bin/python3 -m portfolio_tracker.cli --root ${PORTFOLIO_RUNTIME_ROOT} backup
 UMask=0077
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
 ReadWritePaths=/var/lib/portfolio-tracker
-
-[Install]
-WantedBy=multi-user.target

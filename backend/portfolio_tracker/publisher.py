@@ -223,11 +223,13 @@ class SnapshotPublisher:
         root: str | Path,
         client: ContentClient,
         max_attempts: int = 3,
+        allow_bootstrap: bool = False,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         self.root = Path(root)
         self.client = client
         self.max_attempts = max_attempts
+        self.allow_bootstrap = allow_bootstrap
         self.sleep = sleep
         self.snapshot_path = self.root / "snapshots" / "portfolio-snapshot.json"
         self.state_dir = self.root / "state"
@@ -293,8 +295,8 @@ class SnapshotPublisher:
                 return 1
         return min((2**attempt) + random.random(), 8)
 
-    def publish(self) -> dict[str, Any]:
-        with FileLock(self.lock_path):
+    def _publish_with_lock(self) -> dict[str, Any]:
+        with FileLock(self.lock_path, timeout=0):
             for attempt_number in range(1, self.max_attempts + 1):
                 try:
                     if not self.client.branch_exists():
@@ -336,7 +338,12 @@ class SnapshotPublisher:
                                 "unknown remote edit during publication recovery"
                             )
 
-                    if published is None and remote is not None and intent is None:
+                    if (
+                        published is None
+                        and remote is not None
+                        and intent is None
+                        and not self.allow_bootstrap
+                    ):
                         if remote_hash == local_hash:
                             raise PublicationError(
                                 "remote file exists without publication state; "
@@ -445,6 +452,12 @@ class SnapshotPublisher:
             raise PublicationError(
                 f"publication retries exhausted after {self.max_attempts} attempts"
             )
+
+    def publish(self) -> dict[str, Any]:
+        try:
+            return self._publish_with_lock()
+        except TimeoutError:
+            return {"status": "busy", "attempts": 0}
 
 
 def client_from_environment(

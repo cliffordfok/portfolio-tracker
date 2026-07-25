@@ -7,11 +7,12 @@ import json
 import sys
 from pathlib import Path
 
+from .backup import backup_ledgers
 from .errors import PortfolioError
 from .ledger import LedgerStore, atomic_write_json
 from .publisher import SnapshotPublisher, client_from_environment
 from .schemas import validate_event
-from .snapshot import build_snapshot
+from .snapshot import build_snapshot, build_snapshot_if_needed
 
 
 def _signal_publish(root: Path, revision: int) -> None:
@@ -61,11 +62,29 @@ def build_parser() -> argparse.ArgumentParser:
 
     rebuild = subcommands.add_parser("rebuild", help="rebuild public snapshot")
     rebuild.add_argument("--output")
+    rebuild.add_argument(
+        "--if-needed",
+        action="store_true",
+        help="skip the atomic rewrite when all ledger source heads already match",
+    )
 
     publish = subcommands.add_parser("publish", help="publish snapshot to GitHub")
     publish.add_argument("--repository", required=True, help="owner/repository")
     publish.add_argument("--branch", default="portfolio-data")
     publish.add_argument("--path", default="data/portfolio-snapshot.json")
+    publish.add_argument(
+        "--bootstrap",
+        action="store_true",
+        help=(
+            "explicitly confirm the one-time overwrite when the data branch "
+            "already has a snapshot but no local published-state exists"
+        ),
+    )
+
+    subcommands.add_parser(
+        "backup",
+        help="create one consistent private backup of all master ledgers",
+    )
 
     return parser
 
@@ -81,18 +100,37 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "append":
             event = _event_from_args(args)
             result = LedgerStore(root).append(event)
-            if args.rebuild and result["status"] == "appended":
-                snapshot = build_snapshot(root)
-                _signal_publish(root, snapshot["revision"])
-                result["snapshot_rebuilt"] = True
+            rebuild_marker = root / "state" / "rebuild.pending"
+            if args.rebuild and (
+                result["status"] == "appended" or rebuild_marker.exists()
+            ):
+                try:
+                    snapshot = build_snapshot(root)
+                except (PortfolioError, ValueError, OSError) as exc:
+                    if result["status"] == "appended":
+                        result["status"] = "recorded_but_rebuild_pending"
+                    result["snapshot_status"] = "rebuild_pending"
+                    result["snapshot_error"] = str(exc)
+                else:
+                    _signal_publish(root, snapshot["revision"])
+                    result["snapshot_rebuilt"] = True
+                    result["snapshot_status"] = "rebuilt"
         elif args.command == "repair-tail":
             events = LedgerStore(root).repair_tail(args.portfolio)
             result = {"status": "repaired", "records": len(events)}
         elif args.command == "rebuild":
-            snapshot = build_snapshot(root, output=args.output)
-            _signal_publish(root, snapshot["revision"])
+            if args.if_needed:
+                snapshot, rebuilt = build_snapshot_if_needed(
+                    root,
+                    output=args.output,
+                )
+            else:
+                snapshot = build_snapshot(root, output=args.output)
+                rebuilt = True
+            if rebuilt:
+                _signal_publish(root, snapshot["revision"])
             result = {
-                "status": "rebuilt",
+                "status": "rebuilt" if rebuilt else "current",
                 "revision": snapshot["revision"],
                 "warnings": snapshot["warnings"],
             }
@@ -102,7 +140,16 @@ def main(argv: list[str] | None = None) -> int:
                 branch=args.branch,
                 path=args.path,
             )
-            result = SnapshotPublisher(root=root, client=client).publish()
+            result = SnapshotPublisher(
+                root=root,
+                client=client,
+                allow_bootstrap=args.bootstrap,
+            ).publish()
+        elif args.command == "backup":
+            result = {
+                "status": "backed_up",
+                **backup_ledgers(root),
+            }
         else:
             raise ValueError(f"unknown command: {args.command}")
         print(json.dumps(result, ensure_ascii=False, indent=2, default=str))

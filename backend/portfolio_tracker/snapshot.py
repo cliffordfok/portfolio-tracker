@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from pathlib import Path
-from statistics import stdev
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -23,6 +23,84 @@ try:
 except ZoneInfoNotFoundError:
     NEW_YORK = None
 MARKET_CLOSE = time(16, 0)
+
+
+def _observed(day: date) -> date:
+    if day.weekday() == 5:
+        return day - timedelta(days=1)
+    if day.weekday() == 6:
+        return day + timedelta(days=1)
+    return day
+
+
+def _last_weekday(year: int, month: int, weekday: int) -> date:
+    if month == 12:
+        cursor = date(year + 1, 1, 1) - timedelta(days=1)
+    else:
+        cursor = date(year, month + 1, 1) - timedelta(days=1)
+    return cursor - timedelta(days=(cursor.weekday() - weekday) % 7)
+
+
+def _easter_sunday(year: int) -> date:
+    """Gregorian Easter, used to derive the NYSE Good Friday closure."""
+
+    a = year % 19
+    b = year // 100
+    c = year % 100
+    d = b // 4
+    e = b % 4
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i = c // 4
+    k = c % 4
+    ell = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * ell) // 451
+    month = (h + ell - 7 * m + 114) // 31
+    day = ((h + ell - 7 * m + 114) % 31) + 1
+    return date(year, month, day)
+
+
+def _nyse_holidays(year: int) -> set[date]:
+    holidays = {
+        _observed(date(year, 1, 1)),
+        _nth_weekday(year, 1, 0, 3),  # Martin Luther King Jr. Day
+        _nth_weekday(year, 2, 0, 3),  # Washington's Birthday
+        _easter_sunday(year) - timedelta(days=2),  # Good Friday
+        _last_weekday(year, 5, 0),  # Memorial Day
+        _observed(date(year, 7, 4)),
+        _nth_weekday(year, 9, 0, 1),  # Labor Day
+        _nth_weekday(year, 11, 3, 4),  # Thanksgiving
+        _observed(date(year, 12, 25)),
+    }
+    if year >= 2022:
+        holidays.add(_observed(date(year, 6, 19)))
+    return holidays
+
+
+def is_nyse_session(day: date) -> bool:
+    return day.weekday() < 5 and day not in _nyse_holidays(day.year)
+
+
+def nyse_sessions(start: date, end: date) -> list[str]:
+    if end < start:
+        return []
+    sessions: list[str] = []
+    cursor = start
+    while cursor <= end:
+        if is_nyse_session(cursor):
+            sessions.append(cursor.isoformat())
+        cursor += timedelta(days=1)
+    return sessions
+
+
+def _calendar_days(start: date, end: date) -> list[str]:
+    days: list[str] = []
+    cursor = start
+    while cursor <= end:
+        days.append(cursor.isoformat())
+        cursor += timedelta(days=1)
+    return days
 
 
 def _nth_weekday(year: int, month: int, weekday: int, occurrence: int) -> date:
@@ -61,19 +139,46 @@ def _source_head(path: Path, events: list[dict[str, Any]]) -> dict[str, Any]:
 
 def _market_data(
     market_events: list[dict[str, Any]],
-) -> tuple[dict[str, dict[str, Decimal]], dict[str, Decimal], list[str]]:
-    quotes: dict[str, dict[str, Decimal]] = defaultdict(dict)
-    benchmark: dict[str, Decimal] = {}
+) -> tuple[
+    dict[str, dict[str, dict[str, Any]]],
+    dict[str, dict[str, Any]],
+    list[str],
+]:
+    quotes: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
+    benchmark: dict[str, dict[str, Any]] = {}
     for event in market_events:
         session = event["session_date"]
-        close = price(event["close"], field="close")
+        record = {
+            "close": price(event["close"], field="close"),
+            "market_price_as_of": event["occurred_at"],
+        }
         if event["action"] == "QUOTE":
-            quotes[event["symbol"]][session] = close
+            quotes[event["symbol"]][session] = record
         elif event["action"] == "BENCHMARK_CLOSE":
-            benchmark[session] = close
-            quotes[event["symbol"]][session] = close
-    sessions = sorted(benchmark or {day for values in quotes.values() for day in values})
+            benchmark[session] = record
+            quotes[event["symbol"]][session] = record
+    recorded_sessions = sorted(
+        set(benchmark) | {day for values in quotes.values() for day in values}
+    )
+    if recorded_sessions:
+        sessions = nyse_sessions(
+            date.fromisoformat(recorded_sessions[0]),
+            date.fromisoformat(recorded_sessions[-1]),
+        )
+    else:
+        sessions = []
     return dict(quotes), benchmark, sessions
+
+
+def _quote_for_day(
+    records: dict[str, dict[str, Any]],
+    day: str,
+    trading_sessions: set[str],
+) -> dict[str, Any] | None:
+    if day in trading_sessions:
+        return records.get(day)
+    eligible = [session for session in records if session < day]
+    return records[max(eligible)] if eligible else None
 
 
 def _session_for_event(event: dict[str, Any], sessions: list[str]) -> str | None:
@@ -94,13 +199,19 @@ def _session_for_event(event: dict[str, Any], sessions: list[str]) -> str | None
 
 def _enrich_holdings(
     result: ReplayResult,
-    quotes: dict[str, dict[str, Decimal]],
-    last_session: str | None,
+    quotes: dict[str, dict[str, dict[str, Any]]],
+    last_day: str | None,
+    trading_sessions: set[str],
 ) -> list[dict[str, Any]]:
     enriched: list[dict[str, Any]] = []
     for holding in result.holdings:
         symbol = holding["symbol"]
-        current_price = quotes.get(symbol, {}).get(last_session or "")
+        current_quote = (
+            _quote_for_day(quotes.get(symbol, {}), last_day, trading_sessions)
+            if last_day
+            else None
+        )
+        current_price = current_quote["close"] if current_quote else None
         market_value = (
             amount_for(holding["shares"], current_price)
             if current_price is not None
@@ -115,6 +226,9 @@ def _enrich_holdings(
             {
                 **holding,
                 "current_price": current_price,
+                "market_price_as_of": (
+                    current_quote["market_price_as_of"] if current_quote else None
+                ),
                 "market_value": market_value,
                 "unrealized_pnl": unrealized,
                 "unrealized_pnl_pct": (
@@ -150,14 +264,16 @@ def _metrics(
             peak = max(peak, cumulative)
             drawdowns.append(percent((1 + cumulative) / (1 + peak) - 1))
         max_drawdown = min(drawdowns) if drawdowns else ZERO
-        if len(valid_returns) >= 2:
-            as_float = [float(value) for value in valid_returns]
-            deviation = stdev(as_float)
+        if len(valid_returns) >= 20:
+            count = Decimal(len(valid_returns))
+            mean = sum(valid_returns, ZERO) / count
+            variance = (
+                sum(((value - mean) ** 2 for value in valid_returns), ZERO)
+                / Decimal(len(valid_returns) - 1)
+            )
+            deviation = variance.sqrt()
             if deviation:
-                annualized = (
-                    Decimal(str(sum(as_float) / len(as_float) / deviation))
-                    * Decimal(252).sqrt()
-                )
+                annualized = mean / deviation * Decimal(252).sqrt()
                 sharpe = percent(annualized)
 
     return {
@@ -173,12 +289,14 @@ def _metrics(
 
 def _daily_series(
     result: ReplayResult,
-    quotes: dict[str, dict[str, Decimal]],
+    quotes: dict[str, dict[str, dict[str, Any]]],
+    days: list[str],
     sessions: list[str],
 ) -> list[dict[str, Any]]:
-    if not sessions:
+    if not sessions or not days:
         return []
 
+    session_set = set(sessions)
     events_by_session: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for event in result.effective_events:
         session = _session_for_event(event, sessions)
@@ -194,7 +312,16 @@ def _daily_series(
     gap_seen = False
     daily: list[dict[str, Any]] = []
 
-    for session in sessions:
+    open_event = next(
+        event
+        for event in result.effective_events
+        if event["action"] == "PORTFOLIO_OPEN"
+    )
+    open_session = _session_for_event(open_event, sessions)
+    if open_session is None:
+        return []
+
+    for session in (day for day in days if day >= open_session):
         external_flow = ZERO
         for event in events_by_session.get(session, []):
             action = event["action"]
@@ -225,7 +352,8 @@ def _daily_series(
         missing_symbols = sorted(
             symbol
             for symbol, quantity in positions.items()
-            if quantity > 0 and session not in quotes.get(symbol, {})
+            if quantity > 0
+            and _quote_for_day(quotes.get(symbol, {}), session, session_set) is None
         )
         if missing_symbols:
             daily.append(
@@ -251,7 +379,12 @@ def _daily_series(
         market_value = money(
             sum(
                 (
-                    amount_for(quantity, quotes[symbol][session])
+                    amount_for(
+                        quantity,
+                        _quote_for_day(
+                            quotes[symbol], session, session_set
+                        )["close"],
+                    )
                     for symbol, quantity in positions.items()
                     if quantity > 0
                 ),
@@ -266,7 +399,7 @@ def _daily_series(
             segment_return = ZERO
         else:
             denominator = money(previous_nav + external_flow)
-            if denominator == 0:
+            if denominator <= 0:
                 segment_id += 1
                 daily_return = None
                 segment_return = ZERO
@@ -300,33 +433,54 @@ def _daily_series(
 
 
 def _benchmark_series(
-    benchmark: dict[str, Decimal], sessions: list[str]
+    benchmark: dict[str, dict[str, Any]],
+    days: list[str],
+    sessions: list[str],
 ) -> list[dict[str, Any]]:
     series: list[dict[str, Any]] = []
-    baseline: Decimal | None = None
+    session_set = set(sessions)
     previous: Decimal | None = None
-    for session in sessions:
-        close = benchmark.get(session)
-        if close is None:
+    segment_return: Decimal | None = None
+    segment_id = 0
+    gap_seen = False
+    for session in days:
+        record = _quote_for_day(benchmark, session, session_set)
+        if record is None:
             series.append(
                 {
                     "date": session,
                     "close": None,
                     "daily_return": None,
                     "cumulative_return": None,
+                    "segment_id": None,
+                    "segment_return": None,
                     "data_status": "INSUFFICIENT_MARKET_DATA",
                 }
             )
             previous = None
+            segment_return = None
+            gap_seen = True
             continue
-        if baseline is None:
-            baseline = close
+        close = record["close"]
+        if previous is None:
+            segment_id += 1
+            daily_return = None
+            segment_return = ZERO
+        else:
+            daily_return = percent(close / previous - 1)
+            segment_return = percent(
+                (1 + (segment_return if segment_return is not None else ZERO))
+                * (1 + daily_return)
+                - 1
+            )
         series.append(
             {
                 "date": session,
                 "close": close,
-                "daily_return": percent(close / previous - 1) if previous else None,
-                "cumulative_return": percent(close / baseline - 1),
+                "daily_return": daily_return,
+                "cumulative_return": None if gap_seen else segment_return,
+                "segment_id": segment_id,
+                "segment_return": segment_return,
                 "data_status": "OK",
             }
         )
@@ -345,6 +499,15 @@ def _build_snapshot_locked(
     live_events = store.read("live")
     market_events = store.read("market")
     quotes, benchmark, sessions = _market_data(market_events)
+    days = (
+        _calendar_days(
+            date.fromisoformat(sessions[0]),
+            date.fromisoformat(sessions[-1]),
+        )
+        if sessions
+        else []
+    )
+    session_set = set(sessions)
     warnings: list[str] = []
     portfolios: dict[str, Any] = {}
 
@@ -369,9 +532,9 @@ def _build_snapshot_locked(
             continue
 
         result = replay_portfolio(events, portfolio=name)
-        daily = _daily_series(result, quotes, sessions)
-        last_session = sessions[-1] if sessions else None
-        holdings = _enrich_holdings(result, quotes, last_session)
+        daily = _daily_series(result, quotes, days, sessions)
+        last_day = days[-1] if days else None
+        holdings = _enrich_holdings(result, quotes, last_day, session_set)
         metrics = _metrics(daily, result)
         if metrics["data_status"] != "OK":
             warnings.append(f"{name} performance contains incomplete market data")
@@ -393,7 +556,7 @@ def _build_snapshot_locked(
     }
     latest_event_time = max(
         (
-            event["created_at"]
+            event["occurred_at"]
             for event in paper_events + live_events + market_events
         ),
         default=None,
@@ -402,6 +565,14 @@ def _build_snapshot_locked(
         (event["occurred_at"] for event in market_events),
         default=None,
     )
+    if sessions:
+        today = datetime.now(UTC).date()
+        expected_sessions = nyse_sessions(
+            date.fromisoformat(sessions[-1]) + timedelta(days=1),
+            today,
+        )
+        if expected_sessions:
+            warnings.append("prices > 1 trading day stale")
     revision = sum(head["count"] for head in source_head.values())
     snapshot = json_safe(
         {
@@ -415,7 +586,7 @@ def _build_snapshot_locked(
             "portfolios": portfolios,
             "benchmark": {
                 "symbol": "SPY",
-                "daily": _benchmark_series(benchmark, sessions),
+                "daily": _benchmark_series(benchmark, days, sessions),
             },
             "warnings": warnings,
         }
@@ -451,3 +622,44 @@ def build_snapshot(
         if write:
             durable_unlink(root_path / "state" / "rebuild.pending")
         return snapshot
+
+
+def build_snapshot_if_needed(
+    root: str | Path,
+    *,
+    output: str | Path | None = None,
+) -> tuple[dict[str, Any], bool]:
+    """Rebuild only when a ledger source head differs from the last snapshot."""
+
+    root_path = Path(root)
+    store = LedgerStore(root_path)
+    target = Path(output) if output else root_path / "snapshots" / "portfolio-snapshot.json"
+    with FileLock(store.lock_path):
+        paper_events = store.read("paper")
+        live_events = store.read("live")
+        market_events = store.read("market")
+        current_heads = {
+            "paper": _source_head(store.path_for("paper"), paper_events),
+            "live": _source_head(store.path_for("live"), live_events),
+            "market": _source_head(store.path_for("market"), market_events),
+        }
+        current: dict[str, Any] | None = None
+        if target.exists():
+            try:
+                parsed = json.loads(target.read_text(encoding="utf-8"))
+                if isinstance(parsed, dict):
+                    current = parsed
+            except (OSError, json.JSONDecodeError):
+                current = None
+        if current is not None and current.get("source_head") == current_heads:
+            durable_unlink(root_path / "state" / "rebuild.pending")
+            return current, False
+
+        snapshot = _build_snapshot_locked(
+            root_path,
+            store,
+            output=target,
+            write=True,
+        )
+        durable_unlink(root_path / "state" / "rebuild.pending")
+        return snapshot, True

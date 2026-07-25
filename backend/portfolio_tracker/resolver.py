@@ -20,9 +20,11 @@ def _sort_key(event: dict[str, Any]) -> tuple[Any, int, Any]:
 def resolve_effective_events(events: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     """Resolve AMEND/VOID metadata, then return sorted economic events.
 
-    Corrections may target BUY, SELL, or CASH_FLOW only. They always target a
-    prior event in the same append-only ledger. AMEND is per-field
-    last-write-wins; VOID of the original event overrides all amendments.
+    AMEND targets BUY, SELL, or CASH_FLOW. VOID targets an economic event or
+    an AMEND; when it targets an AMEND, the underlying economic event is
+    voided. Corrections always target a prior event in the same append-only
+    ledger. AMEND is per-field last-write-wins and VOID overrides all
+    amendments.
     """
 
     raw = [deepcopy(event) for event in events]
@@ -71,11 +73,19 @@ def resolve_effective_events(events: Iterable[dict[str, Any]]) -> list[dict[str,
                 raise BusinessInvariantError(f"VOID target not found: {target_id}")
             if target["portfolio"] != event["portfolio"]:
                 raise BusinessInvariantError("cross-portfolio VOID is forbidden")
-            if target["action"] not in CORRECTABLE_ACTIONS:
-                raise BusinessInvariantError("VOID may target BUY/SELL/CASH_FLOW only")
-            if target_id in voided:
-                raise BusinessInvariantError(f"duplicate VOID: {target_id}")
-            voided.add(target_id)
+            if target["action"] == "VOID":
+                raise BusinessInvariantError("VOID may not target another VOID")
+            if target["action"] == "AMEND":
+                economic_target_id = target["amend_target"]
+            elif target["action"] in CORRECTABLE_ACTIONS:
+                economic_target_id = target_id
+            else:
+                raise BusinessInvariantError(
+                    "VOID may target BUY/SELL/CASH_FLOW/AMEND only"
+                )
+            if economic_target_id in voided:
+                raise BusinessInvariantError(f"duplicate VOID: {economic_target_id}")
+            voided.add(economic_target_id)
 
         seen[event_id] = event
 

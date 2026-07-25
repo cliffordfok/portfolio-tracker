@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -15,7 +16,41 @@ from portfolio_tracker.errors import PortfolioError
 from portfolio_tracker.ledger import LedgerStore, atomic_write_json
 from portfolio_tracker.snapshot import build_snapshot
 
-def base_event(args: argparse.Namespace, action: str) -> dict[str, Any]:
+TRADE_COMMAND_RE = re.compile(
+    r"^/trade\s+(BUY|SELL)\s+([A-Z]{1,5}(?:\.[A-Z])?)\s+"
+    r"([0-9]+(?:\.[0-9]+)?)\s+@\s*([0-9]+(?:\.[0-9]+)?)"
+    r"(?:\s+fee:([0-9]+(?:\.[0-9]+)?))?"
+    r"(?:\s+note:(.*))?$",
+    re.IGNORECASE,
+)
+
+
+def parse_trade_command(text: str) -> dict[str, str]:
+    match = TRADE_COMMAND_RE.fullmatch(text.strip())
+    if match is None:
+        raise ValueError(
+            "trade command must use: /trade BUY|SELL SYMBOL SHARES @ PRICE "
+            "[fee:AMOUNT] [note:TEXT]"
+        )
+    action, symbol, quantity, unit_price, fee, note = match.groups()
+    parsed = {
+        "action": action.upper(),
+        "symbol": symbol.upper(),
+        "shares": quantity,
+        "price": unit_price,
+        "fee": fee or "0",
+    }
+    if note and note.strip():
+        parsed["note"] = note.strip()
+    return parsed
+
+
+def base_event(
+    args: argparse.Namespace,
+    action: str,
+    *,
+    source: str = "hermes",
+) -> dict[str, Any]:
     return {
         "event_id": args.event_id,
         "portfolio": args.portfolio,
@@ -24,15 +59,23 @@ def base_event(args: argparse.Namespace, action: str) -> dict[str, Any]:
         # the exact payload. Callers needing a distinct audit timestamp should
         # generate and persist the complete event before invoking LedgerStore.
         "created_at": args.occurred_at,
-        "source": "hermes",
+        "source": source,
         "action": action,
     }
 
 
 def append_and_rebuild(root: Path, event: dict[str, Any]) -> dict[str, Any]:
     result = LedgerStore(root).append(event)
-    if result["status"] == "appended":
-        snapshot = build_snapshot(root)
+    rebuild_marker = root / "state" / "rebuild.pending"
+    if result["status"] == "appended" or rebuild_marker.exists():
+        try:
+            snapshot = build_snapshot(root)
+        except (PortfolioError, ValueError, OSError) as exc:
+            if result["status"] == "appended":
+                result["status"] = "recorded_but_rebuild_pending"
+            result["snapshot_status"] = "rebuild_pending"
+            result["snapshot_error"] = str(exc)
+            return result
         atomic_write_json(
             root / "state" / "publish.pending",
             {
@@ -41,6 +84,7 @@ def append_and_rebuild(root: Path, event: dict[str, Any]) -> dict[str, Any]:
             },
         )
         result["snapshot_revision"] = snapshot["revision"]
+        result["snapshot_status"] = "rebuilt"
     return result
 
 
@@ -67,6 +111,16 @@ def parser() -> argparse.ArgumentParser:
     trade.add_argument("--note")
     trade.add_argument("--reason")
     trade.add_argument("--strategy")
+
+    telegram_trade = actions.add_parser("telegram-trade")
+    telegram_trade.add_argument(
+        "--portfolio",
+        choices=("paper", "live"),
+        default="live",
+    )
+    telegram_trade.add_argument("--event-id", required=True)
+    telegram_trade.add_argument("--occurred-at", required=True)
+    telegram_trade.add_argument("--text", required=True)
 
     cash = actions.add_parser("cash-flow")
     cash.add_argument("--portfolio", choices=("paper", "live"), required=True)
@@ -138,8 +192,9 @@ def main(argv: list[str] | None = None) -> int:
             }
         else:
             if args.command == "open":
-                event = base_event(args, "PORTFOLIO_OPEN")
+                event = base_event(args, "PORTFOLIO_OPEN", source="bootstrap")
                 event["initial_cash"] = args.initial_cash
+                event["currency"] = "USD"
             elif args.command == "trade":
                 event = base_event(args, args.action)
                 event.update(
@@ -154,6 +209,14 @@ def main(argv: list[str] | None = None) -> int:
                     value = getattr(args, field)
                     if value:
                         event[field] = value
+            elif args.command == "telegram-trade":
+                parsed_trade = parse_trade_command(args.text)
+                event = base_event(
+                    args,
+                    parsed_trade.pop("action"),
+                    source="telegram",
+                )
+                event.update(parsed_trade)
             elif args.command == "cash-flow":
                 event = base_event(args, "CASH_FLOW")
                 event["amount"] = args.amount
@@ -176,6 +239,7 @@ def main(argv: list[str] | None = None) -> int:
                 event = base_event(
                     args,
                     "BENCHMARK_CLOSE" if args.benchmark else "QUOTE",
+                    source="cron-benchmark" if args.benchmark else "cron-quote",
                 )
                 event.update(
                     {

@@ -13,7 +13,9 @@
 - 模擬倉／真實倉／SPY 百分比回報比較
 - 1M、3M、6M、1Y、ALL 全域時間篩選
 - 所有表格可匯出 CSV
-- Tab 切換重新讀取 JSON；快照失敗時使用三個 sample JSON 作後備
+- 2 分鐘 last-good snapshot cache；Tab 切換共用 cache，手動 refresh
+  有 30 秒 cooldown，跨瀏覽器分頁共用每小時 60 次 request budget
+- 快照失敗時先使用 last-good cache，再使用三個 sample JSON 作後備
 - Responsive、keyboard tabs、focus state、semantic tables
 - 缺少報價時 NAV 及跨 gap 指標為空，不會假設零回報
 - GitHub Contents API crash recovery、manual-edit fail-closed、最多三次 retry
@@ -58,6 +60,7 @@ Master JSONL、locks、publication state 和 PAT 全部只存在 VPS。GitHub re
 │   │   ├── resolver.py
 │   │   ├── replay.py
 │   │   ├── ledger.py
+│   │   ├── backup.py
 │   │   ├── snapshot.py
 │   │   ├── publisher.py
 │   │   └── cli.py
@@ -65,6 +68,9 @@ Master JSONL、locks、publication state 和 PAT 全部只存在 VPS。GitHub re
 │   ├── seed_demo.py
 │   └── tests/
 ├── config/
+├── scripts/
+│   ├── install-vps.sh
+│   └── verify-vps.sh
 └── systemd/
 ```
 
@@ -159,6 +165,19 @@ python3 integrations/hermes_bridge.py \
 - 同 ID、同 payload：idempotent no-op
 - 同 ID、不同 payload：拒絕並回報 conflict
 
+Telegram handler 可以把原始指令直接交給同一個 parser；`event-id` 必須由
+Telegram update ID 或另一個可重用 Import ID 產生：
+
+```bash
+python3 integrations/hermes_bridge.py \
+  --root /var/lib/portfolio-tracker \
+  telegram-trade \
+  --portfolio live \
+  --event-id live-telegram-UPDATE_ID \
+  --occurred-at 2026-07-24T15:30:00Z \
+  --text "/trade BUY AAPL 10 @ 180.50 fee:1.50 note:earnings play"
+```
+
 ### 入金／出金
 
 正數為入金、負數為出金：
@@ -176,7 +195,10 @@ python3 integrations/hermes_bridge.py \
 
 ### 修訂及取消
 
-AMEND 只可改 `note`、`fee`、`reason`、`strategy`。VOID／AMEND 只可指向原始 BUY、SELL 或 CASH_FLOW，不能指向另一個 correction event。
+AMEND 只可改 `note`、`fee`、`reason`、`strategy`，並只可指向原始
+BUY、SELL 或 CASH_FLOW。VOID 最好直接指向原始 economic event；亦可指向
+AMEND，效果係取消該 AMEND 所屬嘅原始 economic event。VOID 永遠不可指向
+另一個 VOID。
 
 ```bash
 python3 integrations/hermes_bridge.py \
@@ -249,14 +271,18 @@ python3 integrations/hermes_bridge.py \
 4. 手動建立 `portfolio-data` branch；publisher 不會自動建立或 force push branch。
 5. 建立 fine-grained PAT，只允許該 repository 的 **Contents: Read and write**。
 6. PAT 只放 VPS `PORTFOLIO_GITHUB_TOKEN` environment，永遠不要放入 repository、JSON、systemd unit 或 log。
-7. 把 `js/config.js` 的 `snapshotUrl` 改成公開 data branch：
+7. `js/config.js` 已先讀取公開 data branch 的 GitHub raw media endpoint；
+   未建立 data branch 時才會回退至 `main` 的虛構示範快照：
 
 ```js
-snapshotUrl:
-  "https://raw.githubusercontent.com/YOUR_USER/portfolio-tracker/portfolio-data/data/portfolio-snapshot.json",
+snapshotUrls: [
+  "https://api.github.com/repos/cliffordfok/portfolio-tracker/contents/data/portfolio-snapshot.json?ref=portfolio-data",
+  "./data/portfolio-snapshot.json",
+]
 ```
 
-Frontend 每次 refresh 會加入 cache-busting query。若使用 jsDelivr，更新可能有額外 CDN cache delay。
+Frontend request 使用 GitHub raw media `Accept` header、cache-busting query、
+2 分鐘 TTL 及每小時共享 budget；唔依賴 jsDelivr cache。
 
 本專案沒有 GitHub Actions；GitHub Pages 直接由 branch root 提供靜態檔案。
 
@@ -277,7 +303,50 @@ sudo install -m 0600 config/portfolio.env.example /etc/portfolio-tracker/portfol
 - Python 路徑
 - repository／branch／snapshot path
 
-Rebuild path unit 會即時處理 `rebuild.pending`，rebuild timer 每五分鐘再次從 JSONL source heads 重建，覆蓋 marker 建立失敗或 process crash 的極端情況。Publisher 寫入 `publication-attempt.json` 後才 PUT。若 PUT 成功但 response timeout／process crash，下次會以 intended content hash 採納成功 commit；未知 remote edit 會 fail closed。
+Repo clone 到標準路徑後，可用 installer 建立專用 service user、0700 runtime
+目錄、私有 environment file 及 systemd units。Installer **唔會**啟用或啟動
+service，亦唔會覆寫已存在嘅 environment file：
+
+```bash
+sudo git clone https://github.com/cliffordfok/portfolio-tracker.git \
+  /opt/portfolio-tracker
+sudo /opt/portfolio-tracker/scripts/install-vps.sh
+sudoedit /etc/portfolio-tracker/portfolio.env
+sudo /opt/portfolio-tracker/scripts/verify-vps.sh
+```
+
+Rebuild path unit 會即時處理 `rebuild.pending`；安全 timer 每五分鐘只比較
+JSONL source heads，資料無變更時不會重寫 snapshot 或製造 GitHub commit。
+Publisher 寫入 `publication-attempt.json` 後才 PUT。若 PUT 成功但 response
+timeout／process crash，下次會以 intended content hash 採納成功 commit；
+未知 remote edit 會 fail closed。
+
+如果新建 `portfolio-data` 時已經有一份 sample snapshot，而 VPS 尚未有
+`published-state.json`，第一次覆寫必須由人明確確認：
+
+```bash
+python3 -m portfolio_tracker.cli \
+  --root /var/lib/portfolio-tracker \
+  publish \
+  --repository cliffordfok/portfolio-tracker \
+  --branch portfolio-data \
+  --path data/portfolio-snapshot.json \
+  --bootstrap
+```
+
+之後 systemd service 永遠唔會使用 `--bootstrap`；任何未知 remote edit
+仍然會被拒絕。
+
+每日 ledger backup 使用同一把 global lock，輸出精確 bytes、SHA-256
+manifest，而且只會寫入 VPS 私有 `backups/`：
+
+```bash
+python3 -m portfolio_tracker.cli \
+  --root /var/lib/portfolio-tracker \
+  backup
+```
+
+部署時一併安裝及啟用 `portfolio-backup.timer.example`。
 
 ## 重新生成示範數據
 

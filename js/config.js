@@ -1,5 +1,8 @@
 window.PORTFOLIO_CONFIG = Object.freeze({
-  snapshotUrl: "./data/portfolio-snapshot.json",
+  snapshotUrls: Object.freeze([
+    "https://api.github.com/repos/cliffordfok/portfolio-tracker/contents/data/portfolio-snapshot.json?ref=portfolio-data",
+    "./data/portfolio-snapshot.json",
+  ]),
   fallbackUrls: Object.freeze({
     paper: "./data/paper.json",
     live: "./data/live.json",
@@ -9,5 +12,9 @@ window.PORTFOLIO_CONFIG = Object.freeze({
     paper: 100000,
     live: 50000,
   }),
+  cacheTtlMs: 2 * 60 * 1000,
+  refreshCooldownMs: 30 * 1000,
+  maxFetchesPerHour: 60,
+  storagePrefix: "portfolio-tracker-cplus",
   staleAfterMinutes: 15,
 });

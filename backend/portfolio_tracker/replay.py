@@ -6,6 +6,7 @@ from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass, field
 from decimal import Decimal
+from decimal import ROUND_HALF_UP
 from typing import Any
 
 from .decimal_utils import (
@@ -94,10 +95,14 @@ def _allocate_fee(
     original_quantity: Decimal,
     allocated_so_far: Decimal,
     is_last: bool,
+    round_to_cents: bool = False,
 ) -> Decimal:
     if is_last:
         return money(fee_total - allocated_so_far)
-    return money(fee_total * quantity / original_quantity)
+    allocated = fee_total * quantity / original_quantity
+    if round_to_cents:
+        return allocated.quantize(MONEY_QUANT, rounding=ROUND_HALF_UP)
+    return money(allocated)
 
 
 def replay_portfolio(
@@ -144,6 +149,10 @@ def replay_portfolio(
         if action == "CASH_FLOW":
             flow = money(event["amount"])
             cash = money(cash + flow)
+            if not allow_negative_cash and cash < 0:
+                raise BusinessInvariantError(
+                    f"CASH_FLOW {event['event_id']} would make cash negative"
+                )
             cash_flow_total = money(cash_flow_total + flow)
             history.append(
                 {
@@ -237,6 +246,7 @@ def replay_portfolio(
                 original_quantity=quantity,
                 allocated_so_far=sell_fee_allocated,
                 is_last=is_last_match,
+                round_to_cents=True,
             )
             matched_cost = money(amount_for(matched, lot.unit_price) + buy_fee)
             matched_proceeds = money(amount_for(matched, unit_price) - sell_fee)

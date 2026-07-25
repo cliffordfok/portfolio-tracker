@@ -17,6 +17,15 @@ from .resolver import resolve_effective_events
 from .schemas import validate_event
 
 
+_BINARY = getattr(os, "O_BINARY", 0)
+
+
+def _ensure_private_dir(path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True, mode=0o700)
+    if os.name != "nt":
+        os.chmod(path, 0o700)
+
+
 class FileLock(AbstractContextManager["FileLock"]):
     """Small cross-platform exclusive advisory lock."""
 
@@ -26,7 +35,7 @@ class FileLock(AbstractContextManager["FileLock"]):
         self._file: Any = None
 
     def __enter__(self) -> "FileLock":
-        self.path.parent.mkdir(parents=True, exist_ok=True)
+        _ensure_private_dir(self.path.parent)
         self._file = self.path.open("a+b")
         if self.path.stat().st_size == 0:
             self._file.write(b"0")
@@ -81,7 +90,7 @@ def _fsync_directory(path: Path) -> None:
 
 
 def atomic_write_json(path: Path, value: Any, *, mode: int = 0o600) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
+    _ensure_private_dir(path.parent)
     temp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     payload = json.dumps(
         value,
@@ -90,7 +99,11 @@ def atomic_write_json(path: Path, value: Any, *, mode: int = 0o600) -> None:
         sort_keys=True,
     ).encode("utf-8")
     try:
-        descriptor = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode)
+        descriptor = os.open(
+            temp,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | _BINARY,
+            mode,
+        )
         with os.fdopen(descriptor, "wb") as handle:
             handle.write(payload)
             handle.write(b"\n")
@@ -106,8 +119,12 @@ def atomic_write_json(path: Path, value: Any, *, mode: int = 0o600) -> None:
 
 
 def durable_write_bytes(path: Path, content: bytes, *, mode: int = 0o600) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode)
+    _ensure_private_dir(path.parent)
+    descriptor = os.open(
+        path,
+        os.O_WRONLY | os.O_CREAT | os.O_EXCL | _BINARY,
+        mode,
+    )
     try:
         written = 0
         while written < len(content):
@@ -130,7 +147,13 @@ def durable_unlink(path: Path) -> None:
     _fsync_directory(path.parent)
 
 
-def read_jsonl(path: Path, *, repair_tail: bool = False) -> list[dict[str, Any]]:
+def read_jsonl(
+    path: Path,
+    *,
+    repair_tail: bool = False,
+    backup_dir: Path | None = None,
+    quarantine_dir: Path | None = None,
+) -> list[dict[str, Any]]:
     if not path.exists():
         return []
     raw = path.read_bytes()
@@ -154,15 +177,21 @@ def read_jsonl(path: Path, *, repair_tail: bool = False) -> list[dict[str, Any]]
         except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
             incomplete_tail = is_last and not raw.endswith((b"\n", b"\r"))
             if repair_tail and incomplete_tail:
-                timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
-                quarantine = path.with_name(f"{path.name}.tail-{timestamp}.quarantine")
-                durable_write_bytes(quarantine, raw[offset:])
-                backup = path.with_name(f"{path.name}.pre-repair-{timestamp}.bak")
+                timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
+                backup_root = backup_dir or path.parent
+                quarantine_root = quarantine_dir or path.parent
+                backup = backup_root / f"{path.name}.pre-repair-{timestamp}.bak"
                 durable_write_bytes(backup, raw)
+                quarantine = (
+                    quarantine_root / f"{path.name}.tail-{timestamp}.quarantine"
+                )
+                durable_write_bytes(quarantine, raw[offset:])
                 with path.open("r+b") as handle:
                     handle.truncate(offset)
                     handle.flush()
                     os.fsync(handle.fileno())
+                if os.name != "nt":
+                    os.chmod(path, 0o600)
                 _fsync_directory(path.parent)
                 return parsed
             location = "tail" if is_last else f"line {index + 1}"
@@ -172,12 +201,16 @@ def read_jsonl(path: Path, *, repair_tail: bool = False) -> list[dict[str, Any]]
 
 
 def _append_json_line(path: Path, event: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
+    _ensure_private_dir(path.parent)
     payload = (
         json.dumps(event, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
         + "\n"
     ).encode("utf-8")
-    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+    descriptor = os.open(
+        path,
+        os.O_WRONLY | os.O_CREAT | os.O_APPEND | _BINARY,
+        0o600,
+    )
     try:
         written = 0
         while written < len(payload):
@@ -267,4 +300,9 @@ class LedgerStore:
 
     def repair_tail(self, portfolio: str) -> list[dict[str, Any]]:
         with FileLock(self.lock_path, timeout=self.lock_timeout):
-            return self.read(portfolio, repair_tail=True)
+            return read_jsonl(
+                self.path_for(portfolio),
+                repair_tail=True,
+                backup_dir=self.root / "backups",
+                quarantine_dir=self.root / "quarantine",
+            )

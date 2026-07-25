@@ -19,6 +19,7 @@ const state = {
   range: "ALL",
   data: null,
   loading: false,
+  lastManualRefresh: 0,
 };
 
 const config = window.PORTFOLIO_CONFIG;
@@ -265,10 +266,16 @@ function renderMeta() {
     `Revision ${state.data.revision}`;
   const status = document.querySelector("#data-status-label");
   status.textContent =
-    state.data.source === "snapshot" ? "公開快照已同步" : "後備資料模式";
+    state.data.source === "snapshot"
+      ? "公開快照已同步"
+      : state.data.source === "cache"
+        ? "快照快取有效"
+        : state.data.source === "stale-cache"
+          ? "正使用上次有效快照"
+          : "後備資料模式";
   status.closest(".market-status").classList.toggle(
     "is-warning",
-    state.data.source !== "snapshot",
+    !["snapshot", "cache"].includes(state.data.source),
   );
 }
 
@@ -290,13 +297,13 @@ function renderAll() {
   renderActiveTab();
 }
 
-async function refreshData({ quiet = false } = {}) {
+async function refreshData({ quiet = false, force = false } = {}) {
   if (state.loading) return;
   state.loading = true;
   const overlay = document.querySelector("#loading-overlay");
   if (!quiet) overlay.classList.add("is-visible");
   try {
-    state.data = await loadDashboardData(config);
+    state.data = await loadDashboardData(config, { force });
     renderAll();
   } catch (error) {
     document.querySelector("#notice-region").innerHTML = `<div class="notice is-error">
@@ -307,6 +314,21 @@ async function refreshData({ quiet = false } = {}) {
     state.loading = false;
     overlay.classList.remove("is-visible");
   }
+}
+
+function manualRefresh() {
+  const button = document.querySelector("#refresh-button");
+  const now = Date.now();
+  const cooldown = Number(config.refreshCooldownMs) || 30000;
+  if (now - state.lastManualRefresh < cooldown) return;
+  state.lastManualRefresh = now;
+  button.disabled = true;
+  button.setAttribute("aria-disabled", "true");
+  window.setTimeout(() => {
+    button.disabled = false;
+    button.removeAttribute("aria-disabled");
+  }, cooldown);
+  refreshData({ force: true });
 }
 
 function activateTab(tabName, { refresh = true } = {}) {
@@ -348,9 +370,7 @@ function bindEvents() {
     });
   });
 
-  document.querySelector("#refresh-button").addEventListener("click", () =>
-    refreshData(),
-  );
+  document.querySelector("#refresh-button").addEventListener("click", manualRefresh);
   document.querySelectorAll(".export-button").forEach((button) => {
     button.addEventListener("click", () => {
       const table = document.querySelector(`#${button.dataset.table}`);

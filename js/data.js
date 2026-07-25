@@ -1,11 +1,44 @@
 import { dateOnly, numeric } from "./utils.js";
 
-async function fetchJson(url) {
+function storage() {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function storageKey(config, suffix) {
+  return `${config.storagePrefix || "portfolio-tracker"}:${suffix}`;
+}
+
+function readStoredJson(key) {
+  try {
+    const raw = storage()?.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredJson(key, value) {
+  try {
+    storage()?.setItem(key, JSON.stringify(value));
+  } catch {
+    // Storage can be unavailable in private browsing; network fetch still works.
+  }
+}
+
+async function fetchJson(url, { githubRaw = false } = {}) {
   const requestUrl = new URL(url, window.location.href);
   requestUrl.searchParams.set("_", Date.now().toString());
   const response = await fetch(requestUrl, {
     cache: "no-store",
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: githubRaw
+        ? "application/vnd.github.raw+json"
+        : "application/json",
+    },
   });
   if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
   return response.json();
@@ -22,6 +55,86 @@ function validateSnapshot(snapshot) {
     throw new Error("快照格式不正確");
   }
   return snapshot;
+}
+
+function cachedSnapshot(config) {
+  const cached = readStoredJson(storageKey(config, "last-good-snapshot"));
+  if (!cached || typeof cached.cachedAt !== "number") return null;
+  try {
+    return {
+      cachedAt: cached.cachedAt,
+      snapshot: validateSnapshot(cached.snapshot),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveSnapshot(config, snapshot, now) {
+  writeStoredJson(storageKey(config, "last-good-snapshot"), {
+    cachedAt: now,
+    snapshot,
+  });
+}
+
+function consumeFetchBudget(config, now) {
+  const key = storageKey(config, "fetch-budget");
+  const hour = 60 * 60 * 1000;
+  const maximum = Number(config.maxFetchesPerHour) || 60;
+  let budget = readStoredJson(key);
+  if (
+    !budget ||
+    typeof budget.windowStartedAt !== "number" ||
+    now - budget.windowStartedAt >= hour ||
+    now < budget.windowStartedAt
+  ) {
+    budget = { windowStartedAt: now, count: 0 };
+  }
+  if (budget.count >= maximum) {
+    return {
+      allowed: false,
+      retryAfterMs: Math.max(0, budget.windowStartedAt + hour - now),
+    };
+  }
+  budget.count += 1;
+  writeStoredJson(key, budget);
+  return { allowed: true, retryAfterMs: 0 };
+}
+
+function staleSnapshot(snapshot, message, source) {
+  return {
+    ...snapshot,
+    source,
+    warnings: [...new Set([...(snapshot.warnings || []), message])],
+  };
+}
+
+function freshness(snapshot, config, now) {
+  const generated = Date.parse(snapshot.generated_at);
+  const threshold = (Number(config.staleAfterMinutes) || 15) * 60 * 1000;
+  if (!Number.isFinite(generated) || now - generated <= threshold) {
+    return snapshot;
+  }
+  return staleSnapshot(
+    snapshot,
+    `公開快照可能已過期（最後生成：${snapshot.generated_at || "未知"}）`,
+    snapshot.source,
+  );
+}
+
+async function fetchSnapshot(config) {
+  const urls = config.snapshotUrls || [config.snapshotUrl];
+  const errors = [];
+  for (const url of urls.filter(Boolean)) {
+    try {
+      return validateSnapshot(
+        await fetchJson(url, { githubRaw: url.includes("api.github.com/") }),
+      );
+    } catch (error) {
+      errors.push(`${url}: ${error.message}`);
+    }
+  }
+  throw new Error(errors.join("; ") || "沒有設定快照網址");
 }
 
 export function calculateFallbackPortfolio(trades, initialCash) {
@@ -191,9 +304,9 @@ export function buildCommonComparison(paper, live, benchmark) {
     benchmark
       .filter(
         (point) =>
-          point.data_status === "OK" && numeric(point.cumulative_return) !== null,
+          point.data_status === "OK" && portfolioReturnValue(point) !== null,
       )
-      .map((point) => [dateOnly(point.date), numeric(point.cumulative_return)]),
+      .map((point) => [dateOnly(point.date), portfolioReturnValue(point)]),
   );
 
   let current = [];
@@ -252,11 +365,50 @@ async function loadFallback(config) {
   };
 }
 
-export async function loadDashboardData(config) {
+export async function loadDashboardData(
+  config,
+  { force = false, now = Date.now() } = {},
+) {
+  const cached = cachedSnapshot(config);
+  const ttl = Number(config.cacheTtlMs) || 2 * 60 * 1000;
+  if (!force && cached && now - cached.cachedAt < ttl) {
+    return freshness(
+      { ...cached.snapshot, source: "cache" },
+      config,
+      now,
+    );
+  }
+
+  const budget = consumeFetchBudget(config, now);
+  if (!budget.allowed) {
+    const minutes = Math.max(1, Math.ceil(budget.retryAfterMs / 60000));
+    if (cached) {
+      return staleSnapshot(
+        cached.snapshot,
+        `已達共享更新上限；約 ${minutes} 分鐘後自動恢復`,
+        "stale-cache",
+      );
+    }
+    const fallback = await loadFallback(config);
+    return staleSnapshot(
+      fallback,
+      `已達共享更新上限；約 ${minutes} 分鐘後自動恢復`,
+      "fallback",
+    );
+  }
+
   try {
-    const snapshot = validateSnapshot(await fetchJson(config.snapshotUrl));
-    return { ...snapshot, source: "snapshot" };
+    const snapshot = await fetchSnapshot(config);
+    saveSnapshot(config, snapshot, now);
+    return freshness({ ...snapshot, source: "snapshot" }, config, now);
   } catch (snapshotError) {
+    if (cached) {
+      return staleSnapshot(
+        cached.snapshot,
+        `無法取得最新快照；現正使用 last-good cache（${snapshotError.message}）`,
+        "stale-cache",
+      );
+    }
     try {
       return await loadFallback(config);
     } catch (fallbackError) {

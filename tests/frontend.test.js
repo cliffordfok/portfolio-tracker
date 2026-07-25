@@ -5,10 +5,12 @@ import test from "node:test";
 import {
   buildCommonComparison,
   calculateFallbackPortfolio,
+  loadDashboardData,
   normalizeBenchmark,
 } from "../js/data.js";
 import {
   filterByRange,
+  escapeHtml,
   formatCurrency,
   formatPercent,
   numeric,
@@ -133,6 +135,13 @@ test("formatters handle null and signed values", () => {
   assert.match(formatPercent(-0.125), /-12\.50%/);
 });
 
+test("untrusted table text is HTML-escaped", () => {
+  assert.equal(
+    escapeHtml('<img src=x onerror="alert(1)">'),
+    "&lt;img src=x onerror=&quot;alert(1)&quot;&gt;",
+  );
+});
+
 test("static page contains all required tabs, tables, and D3 v7", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   for (const required of [
@@ -145,5 +154,183 @@ test("static page contains all required tabs, tables, and D3 v7", async () => {
     "d3@7",
   ]) {
     assert.ok(html.includes(required), `missing ${required}`);
+  }
+});
+
+class MemoryStorage {
+  constructor() {
+    this.values = new Map();
+  }
+
+  getItem(key) {
+    return this.values.has(key) ? this.values.get(key) : null;
+  }
+
+  setItem(key, value) {
+    this.values.set(key, String(value));
+  }
+}
+
+function validSnapshot(revision = 1) {
+  return {
+    schema_version: 3,
+    revision,
+    generated_at: "2026-07-25T00:00:00Z",
+    portfolios: {
+      paper: { holdings: [], recent_trades: [], daily: [], metrics: {} },
+      live: { holdings: [], recent_trades: [], daily: [], metrics: {} },
+    },
+    benchmark: { daily: [] },
+    warnings: [],
+  };
+}
+
+test("dashboard cache prevents a second fetch inside the two-minute TTL", async () => {
+  const previousWindow = globalThis.window;
+  const previousFetch = globalThis.fetch;
+  const localStorage = new MemoryStorage();
+  globalThis.window = {
+    location: { href: "https://cliffordfok.github.io/portfolio-tracker/" },
+    localStorage,
+  };
+  let fetches = 0;
+  globalThis.fetch = async () => {
+    fetches += 1;
+    return {
+      ok: true,
+      json: async () => validSnapshot(),
+    };
+  };
+  const config = {
+    snapshotUrls: ["https://example.test/snapshot.json"],
+    cacheTtlMs: 120000,
+    maxFetchesPerHour: 60,
+    storagePrefix: "cache-test",
+    staleAfterMinutes: 999999,
+  };
+  try {
+    const first = await loadDashboardData(config, { now: 1000 });
+    const second = await loadDashboardData(config, { now: 2000 });
+    assert.equal(first.source, "snapshot");
+    assert.equal(second.source, "cache");
+    assert.equal(fetches, 1);
+  } finally {
+    globalThis.window = previousWindow;
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test("failed forced refresh serves the last-good snapshot with a warning", async () => {
+  const previousWindow = globalThis.window;
+  const previousFetch = globalThis.fetch;
+  const localStorage = new MemoryStorage();
+  globalThis.window = {
+    location: { href: "https://cliffordfok.github.io/portfolio-tracker/" },
+    localStorage,
+  };
+  let fail = false;
+  globalThis.fetch = async () => {
+    if (fail) throw new Error("offline");
+    return {
+      ok: true,
+      json: async () => validSnapshot(7),
+    };
+  };
+  const config = {
+    snapshotUrls: ["https://example.test/snapshot.json"],
+    cacheTtlMs: 120000,
+    maxFetchesPerHour: 60,
+    storagePrefix: "stale-test",
+    staleAfterMinutes: 999999,
+  };
+  try {
+    await loadDashboardData(config, { now: 1000 });
+    fail = true;
+    const result = await loadDashboardData(config, {
+      force: true,
+      now: 2000,
+    });
+    assert.equal(result.revision, 7);
+    assert.equal(result.source, "stale-cache");
+    assert.ok(result.warnings.some((warning) => warning.includes("last-good")));
+  } finally {
+    globalThis.window = previousWindow;
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test("shared hourly budget falls back to cache instead of over-fetching", async () => {
+  const previousWindow = globalThis.window;
+  const previousFetch = globalThis.fetch;
+  const localStorage = new MemoryStorage();
+  globalThis.window = {
+    location: { href: "https://cliffordfok.github.io/portfolio-tracker/" },
+    localStorage,
+  };
+  let fetches = 0;
+  globalThis.fetch = async () => {
+    fetches += 1;
+    return {
+      ok: true,
+      json: async () => validSnapshot(9),
+    };
+  };
+  const config = {
+    snapshotUrls: ["https://example.test/snapshot.json"],
+    cacheTtlMs: 1,
+    maxFetchesPerHour: 1,
+    storagePrefix: "budget-test",
+    staleAfterMinutes: 999999,
+  };
+  try {
+    await loadDashboardData(config, { now: 1000 });
+    const result = await loadDashboardData(config, {
+      force: true,
+      now: 2000,
+    });
+    assert.equal(fetches, 1);
+    assert.equal(result.source, "stale-cache");
+    assert.ok(result.warnings.some((warning) => warning.includes("共享更新上限")));
+  } finally {
+    globalThis.window = previousWindow;
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test("invalid refreshed schema never replaces the last-good cache", async () => {
+  const previousWindow = globalThis.window;
+  const previousFetch = globalThis.fetch;
+  const localStorage = new MemoryStorage();
+  globalThis.window = {
+    location: { href: "https://cliffordfok.github.io/portfolio-tracker/" },
+    localStorage,
+  };
+  let payload = validSnapshot(11);
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => payload,
+  });
+  const config = {
+    snapshotUrls: ["https://example.test/snapshot.json"],
+    cacheTtlMs: 120000,
+    maxFetchesPerHour: 60,
+    storagePrefix: "invalid-schema-test",
+    staleAfterMinutes: 999999,
+  };
+  try {
+    await loadDashboardData(config, { now: 1000 });
+    payload = { schema_version: 1 };
+    const failedRefresh = await loadDashboardData(config, {
+      force: true,
+      now: 2000,
+    });
+    assert.equal(failedRefresh.source, "stale-cache");
+    assert.equal(failedRefresh.revision, 11);
+    const cached = await loadDashboardData(config, { now: 3000 });
+    assert.equal(cached.source, "cache");
+    assert.equal(cached.revision, 11);
+  } finally {
+    globalThis.window = previousWindow;
+    globalThis.fetch = previousFetch;
   }
 });

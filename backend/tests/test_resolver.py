@@ -53,14 +53,25 @@ class ResolverTests(unittest.TestCase):
         effective = resolve_effective_events(events)
         self.assertEqual([item["action"] for item in effective], ["PORTFOLIO_OPEN"])
 
-    def test_correction_event_cannot_be_target(self) -> None:
+    def test_void_of_amend_voids_underlying_economic_event(self) -> None:
         amend = event(3, "AMEND", amend_target="paper-2", changes={"fee": "2"})
-        with self.assertRaisesRegex(BusinessInvariantError, "VOID may target"):
+        effective = resolve_effective_events(
+            [
+                self.open,
+                self.buy,
+                amend,
+                event(4, "VOID", void_target="paper-3"),
+            ]
+        )
+        self.assertEqual([item["action"] for item in effective], ["PORTFOLIO_OPEN"])
+
+    def test_void_of_void_is_rejected(self) -> None:
+        with self.assertRaisesRegex(BusinessInvariantError, "another VOID"):
             resolve_effective_events(
                 [
                     self.open,
                     self.buy,
-                    amend,
+                    event(3, "VOID", void_target="paper-2"),
                     event(4, "VOID", void_target="paper-3"),
                 ]
             )
