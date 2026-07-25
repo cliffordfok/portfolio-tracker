@@ -4,6 +4,9 @@ set -euo pipefail
 project_root="/opt/portfolio-tracker"
 runtime_root="/var/lib/portfolio-tracker"
 config_file="/etc/portfolio-tracker/portfolio.env"
+rebuild_unit="/etc/systemd/system/portfolio-rebuild.service"
+publish_unit="/etc/systemd/system/portfolio-publish.service"
+backup_unit="/etc/systemd/system/portfolio-backup.service"
 failed=0
 check_active=false
 
@@ -65,6 +68,16 @@ github_token_is_set() {
   [[ -n "${value//[[:space:]]/}" ]]
 }
 
+github_token_is_isolated() {
+  grep -qxF \
+    "EnvironmentFile=/etc/portfolio-tracker/portfolio.env" \
+    "${publish_unit}" &&
+    ! grep -q "^EnvironmentFile=" "${rebuild_unit}" &&
+    ! grep -q "^EnvironmentFile=" "${backup_unit}" &&
+    ! grep -q "PORTFOLIO_GITHUB_TOKEN" "${rebuild_unit}" &&
+    ! grep -q "PORTFOLIO_GITHUB_TOKEN" "${backup_unit}"
+}
+
 runtime_files_are_private() {
   local path
   while IFS= read -r -d '' path; do
@@ -111,6 +124,7 @@ check "runtime directory" test -d "${runtime_root}/ledger"
 check "private environment file" test -f "${config_file}"
 check "environment file root-owned mode 600" environment_mode_is_private
 check "GitHub token configured" github_token_is_set
+check "GitHub token isolated to publisher" github_token_is_isolated
 check "runtime owned by portfolio" runtime_owner_is_portfolio
 check "runtime tree mode 700 and ownership" runtime_tree_is_private
 check "runtime files mode 600 and ownership" runtime_files_are_private

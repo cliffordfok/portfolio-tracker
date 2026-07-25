@@ -293,6 +293,31 @@ test("systemd path units trigger only while pending markers exist", async () => 
   }
 });
 
+test("only the publisher service receives the GitHub token environment", async () => {
+  const rebuild = await readFile(
+    new URL("../systemd/portfolio-rebuild.service.example", import.meta.url),
+    "utf8",
+  );
+  const backup = await readFile(
+    new URL("../systemd/portfolio-backup.service.example", import.meta.url),
+    "utf8",
+  );
+  const publisher = await readFile(
+    new URL("../systemd/portfolio-publish.service.example", import.meta.url),
+    "utf8",
+  );
+
+  for (const unit of [rebuild, backup]) {
+    assert.doesNotMatch(unit, /^EnvironmentFile=/m);
+    assert.doesNotMatch(unit, /PORTFOLIO_GITHUB_TOKEN/);
+    assert.match(unit, /--root \/var\/lib\/portfolio-tracker/);
+  }
+  assert.match(
+    publisher,
+    /^EnvironmentFile=\/etc\/portfolio-tracker\/portfolio\.env$/m,
+  );
+});
+
 class MemoryStorage {
   constructor() {
     this.values = new Map();

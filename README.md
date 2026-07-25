@@ -358,6 +358,10 @@ sudo install -m 0600 config/portfolio.env.example /etc/portfolio-tracker/portfol
 - Python 路徑
 - repository／branch／snapshot path
 
+只有 `portfolio-publish.service` 會載入 secret-bearing
+`/etc/portfolio-tracker/portfolio.env`。Rebuild 及 backup 使用固定 private
+runtime path，不會接收 GitHub PAT；`verify-vps.sh` 會驗證呢個最小權限邊界。
+
 Repo clone 到標準路徑後，可用 installer 建立專用 service user、0700 runtime
 目錄、私有 environment file 及 systemd units。Installer **唔會**啟用或啟動
 service，亦唔會覆寫已存在嘅 environment file：
