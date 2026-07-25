@@ -1,6 +1,0 @@
-{
-  "name": "portfolio-tracker",
-  "private": true,
-  "type": "module",
-  "description": "Static GitHub Pages portfolio dashboard; no install or build step."
-}

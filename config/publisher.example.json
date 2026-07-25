@@ -1,6 +1,0 @@
-{
-  "repository": "cliffordfok/portfolio-tracker",
-  "branch": "portfolio-data",
-  "path": "portfolio-snapshot.json",
-  "token_environment_variable": "PORTFOLIO_GITHUB_TOKEN"
-}
