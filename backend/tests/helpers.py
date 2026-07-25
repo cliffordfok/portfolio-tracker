@@ -18,10 +18,13 @@ def event(
         "portfolio": portfolio,
         "occurred_at": occurred_at or f"2024-01-{min(seq, 28):02d}T15:00:00Z",
         "created_at": f"2024-02-{min(seq, 28):02d}T10:00:00Z",
-        "source": "test",
+        "source": "manual-import",
         "ledger_seq": seq,
         "action": action,
         **({"currency": "USD"} if action == "PORTFOLIO_OPEN" else {}),
+        **({"symbol": "USD"} if action == "CASH_FLOW" else {}),
+        **({"amend_reason": "test correction"} if action == "AMEND" else {}),
+        **({"void_reason": "test cancellation"} if action == "VOID" else {}),
         **fields,
     }
 
@@ -39,8 +42,11 @@ def candidate(
         "portfolio": portfolio,
         "occurred_at": occurred_at,
         "created_at": "2024-02-01T10:00:00Z",
-        "source": "test",
+        "source": "manual-import",
         "action": action,
         **({"currency": "USD"} if action == "PORTFOLIO_OPEN" else {}),
+        **({"symbol": "USD"} if action == "CASH_FLOW" else {}),
+        **({"amend_reason": "test correction"} if action == "AMEND" else {}),
+        **({"void_reason": "test cancellation"} if action == "VOID" else {}),
         **fields,
     }

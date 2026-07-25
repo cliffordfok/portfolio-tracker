@@ -247,7 +247,7 @@ class PublisherTests(unittest.TestCase):
         client = GitHubContentsClient(
             repository="owner/repo",
             branch="portfolio-data",
-            path="data/portfolio-snapshot.json",
+            path="portfolio-snapshot.json",
             token="test-only",
         )
         raw = b'{"revision":1}'

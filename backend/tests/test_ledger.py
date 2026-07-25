@@ -10,6 +10,7 @@ from pathlib import Path
 from portfolio_tracker.errors import (
     BusinessInvariantError,
     ConflictError,
+    LedgerCorruptionError,
     ValidationError,
 )
 from portfolio_tracker.ledger import LedgerStore, read_jsonl
@@ -50,6 +51,34 @@ class LedgerTests(unittest.TestCase):
         with self.assertRaises(ConflictError):
             self.store.append(changed)
 
+    def test_numeric_inputs_are_stored_as_decimal_strings(self) -> None:
+        numeric_open = dict(self.open, initial_cash=1000.0)
+        self.store.append(numeric_open)
+        numeric_buy = candidate(
+            "BUY",
+            portfolio="paper",
+            event_id="paper-buy-numeric",
+            occurred_at="2024-01-02T15:00:00Z",
+            symbol="AAPL",
+            shares=1.25,
+            price=100.125,
+            fee=0.5,
+        )
+        self.store.append(numeric_buy)
+        stored = self.store.read("paper")
+        self.assertEqual(stored[0]["initial_cash"], "1000.0")
+        self.assertEqual(stored[1]["shares"], "1.25")
+        self.assertEqual(stored[1]["price"], "100.125")
+        self.assertEqual(stored[1]["fee"], "0.5")
+
+        retry = dict(
+            numeric_buy,
+            shares="1.25",
+            price="100.125",
+            fee="0.5",
+        )
+        self.assertEqual(self.store.append(retry)["status"], "duplicate")
+
     def test_invalid_business_event_is_not_appended(self) -> None:
         self.store.append(self.open)
         sell = candidate(
@@ -82,6 +111,54 @@ class LedgerTests(unittest.TestCase):
         self.assertEqual(len(backups), 1)
         self.assertEqual(quarantines[0].read_bytes(), b'{"event_id":')
         self.assertIn(b'{"event_id":', backups[0].read_bytes())
+
+    def test_complete_json_without_newline_is_quarantined_before_retry(self) -> None:
+        self.store.append(self.open)
+        buy = candidate(
+            "BUY",
+            portfolio="paper",
+            event_id="paper-buy-retry",
+            occurred_at="2024-01-02T15:00:00Z",
+            symbol="AAPL",
+            shares="1",
+            price="100",
+            fee="0",
+        )
+        incomplete_record = json.dumps(
+            {**buy, "ledger_seq": 2},
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        with self.store.path_for("paper").open("ab") as handle:
+            handle.write(incomplete_record)
+
+        result = self.store.append(buy)
+
+        self.assertEqual(result["status"], "appended")
+        self.assertEqual(result["ledger_repairs"][0]["bytes_quarantined"], len(incomplete_record))
+        self.assertEqual(
+            [item["event_id"] for item in self.store.read("paper")],
+            ["paper-open", "paper-buy-retry"],
+        )
+        quarantine = next((self.root / "quarantine").glob("*.quarantine"))
+        self.assertEqual(quarantine.read_bytes(), incomplete_record)
+
+    def test_complete_corrupt_record_is_never_auto_repaired(self) -> None:
+        self.store.append(self.open)
+        path = self.store.path_for("paper")
+        before = path.read_bytes() + b'{"broken":}\n'
+        path.write_bytes(before)
+        cash = candidate(
+            "CASH_FLOW",
+            portfolio="paper",
+            event_id="paper-cash-after-corruption",
+            occurred_at="2024-01-02T15:00:00Z",
+            amount="1",
+        )
+        with self.assertRaises(LedgerCorruptionError):
+            self.store.append(cash)
+        self.assertEqual(path.read_bytes(), before)
+        self.assertFalse((self.root / "quarantine").exists())
 
     def test_concurrent_writers_serialize_without_lost_events(self) -> None:
         self.store.append(

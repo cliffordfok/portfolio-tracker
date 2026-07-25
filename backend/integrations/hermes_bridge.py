@@ -49,8 +49,9 @@ def base_event(
     args: argparse.Namespace,
     action: str,
     *,
-    source: str = "hermes",
+    source: str | None = None,
 ) -> dict[str, Any]:
+    selected_source = source or getattr(args, "source", "manual-import")
     return {
         "event_id": args.event_id,
         "portfolio": args.portfolio,
@@ -58,8 +59,8 @@ def base_event(
         # Deterministic default: a retry with the same command must reproduce
         # the exact payload. Callers needing a distinct audit timestamp should
         # generate and persist the complete event before invoking LedgerStore.
-        "created_at": args.occurred_at,
-        "source": source,
+        "created_at": getattr(args, "created_at", None) or args.occurred_at,
+        "source": selected_source,
         "action": action,
     }
 
@@ -111,6 +112,11 @@ def parser() -> argparse.ArgumentParser:
     trade.add_argument("--note")
     trade.add_argument("--reason")
     trade.add_argument("--strategy")
+    trade.add_argument(
+        "--source",
+        choices=("manual-import", "swing-trader"),
+        default="manual-import",
+    )
 
     telegram_trade = actions.add_parser("telegram-trade")
     telegram_trade.add_argument(
@@ -128,6 +134,11 @@ def parser() -> argparse.ArgumentParser:
     cash.add_argument("--occurred-at", required=True)
     cash.add_argument("--amount", required=True)
     cash.add_argument("--note")
+    cash.add_argument(
+        "--source",
+        choices=("manual-import", "telegram"),
+        default="manual-import",
+    )
 
     amend = actions.add_parser("amend")
     amend.add_argument("--portfolio", choices=("paper", "live"), required=True)
@@ -138,12 +149,24 @@ def parser() -> argparse.ArgumentParser:
     amend.add_argument("--note")
     amend.add_argument("--reason")
     amend.add_argument("--strategy")
+    amend.add_argument("--amend-reason", required=True)
+    amend.add_argument(
+        "--source",
+        choices=("manual-import", "telegram"),
+        default="manual-import",
+    )
 
     void = actions.add_parser("void")
     void.add_argument("--portfolio", choices=("paper", "live"), required=True)
     void.add_argument("--event-id", required=True)
     void.add_argument("--occurred-at", required=True)
     void.add_argument("--target", required=True)
+    void.add_argument("--void-reason", required=True)
+    void.add_argument(
+        "--source",
+        choices=("manual-import", "telegram"),
+        default="manual-import",
+    )
 
     quote = actions.add_parser("quote")
     quote.add_argument("--portfolio", default="market", choices=("market",))
@@ -153,6 +176,23 @@ def parser() -> argparse.ArgumentParser:
     quote.add_argument("--symbol", required=True)
     quote.add_argument("--close", required=True)
     quote.add_argument("--benchmark", action="store_true")
+
+    for event_parser in (
+        open_portfolio,
+        trade,
+        telegram_trade,
+        cash,
+        amend,
+        void,
+        quote,
+    ):
+        event_parser.add_argument(
+            "--created-at",
+            help=(
+                "UTC recording time; persist and reuse this exact value on retry "
+                "(defaults to occurred-at)"
+            ),
+        )
 
     read = actions.add_parser("read")
     read.add_argument("--portfolio", choices=("paper", "live"))
@@ -220,6 +260,7 @@ def main(argv: list[str] | None = None) -> int:
             elif args.command == "cash-flow":
                 event = base_event(args, "CASH_FLOW")
                 event["amount"] = args.amount
+                event["symbol"] = "USD"
                 if args.note:
                     event["note"] = args.note
             elif args.command == "amend":
@@ -231,10 +272,17 @@ def main(argv: list[str] | None = None) -> int:
                 }
                 if not changes:
                     raise ValueError("amend requires at least one mutable field")
-                event.update({"amend_target": args.target, "changes": changes})
+                event.update(
+                    {
+                        "amend_target": args.target,
+                        "changes": changes,
+                        "amend_reason": args.amend_reason,
+                    }
+                )
             elif args.command == "void":
                 event = base_event(args, "VOID")
                 event["void_target"] = args.target
+                event["void_reason"] = args.void_reason
             elif args.command == "quote":
                 event = base_event(
                     args,

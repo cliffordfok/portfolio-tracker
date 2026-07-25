@@ -144,6 +144,7 @@ test("untrusted table text is HTML-escaped", () => {
 
 test("static page contains all required tabs, tables, and D3 v7", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const config = await readFile(new URL("../js/config.js", import.meta.url), "utf8");
   for (const required of [
     'data-tab="paper"',
     'data-tab="live"',
@@ -155,6 +156,8 @@ test("static page contains all required tabs, tables, and D3 v7", async () => {
   ]) {
     assert.ok(html.includes(required), `missing ${required}`);
   }
+  assert.match(config, /contents\/portfolio-snapshot\.json\?ref=portfolio-data/);
+  assert.doesNotMatch(config, /contents\/data\/portfolio-snapshot\.json/);
 });
 
 class MemoryStorage {
@@ -169,18 +172,50 @@ class MemoryStorage {
   setItem(key, value) {
     this.values.set(key, String(value));
   }
+
+  removeItem(key) {
+    this.values.delete(key);
+  }
 }
 
 function validSnapshot(revision = 1) {
+  const portfolio = () => ({
+    data_status: "NO_DATA",
+    holdings: [],
+    recent_trades: [],
+    daily: [],
+    metrics: {
+      data_status: "NO_DATA",
+      total_return: null,
+      realized_pnl: "0",
+      win_rate: null,
+      max_drawdown: null,
+      sharpe_ratio: null,
+      closed_episodes: 0,
+    },
+  });
+  const emptyHead = () => ({
+    count: 0,
+    last_event_id: null,
+    hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  });
   return {
     schema_version: 3,
     revision,
     generated_at: "2026-07-25T00:00:00Z",
-    portfolios: {
-      paper: { holdings: [], recent_trades: [], daily: [], metrics: {} },
-      live: { holdings: [], recent_trades: [], daily: [], metrics: {} },
+    data_as_of: null,
+    prices_as_of: null,
+    currency: "USD",
+    source_head: {
+      paper: emptyHead(),
+      live: emptyHead(),
+      market: emptyHead(),
     },
-    benchmark: { daily: [] },
+    portfolios: {
+      paper: portfolio(),
+      live: portfolio(),
+    },
+    benchmark: { symbol: "SPY", daily: [] },
     warnings: [],
   };
 }
@@ -319,16 +354,71 @@ test("invalid refreshed schema never replaces the last-good cache", async () => 
   };
   try {
     await loadDashboardData(config, { now: 1000 });
-    payload = { schema_version: 1 };
+    payload = validSnapshot(12);
+    payload.portfolios.paper.holdings = "not-an-array";
     const failedRefresh = await loadDashboardData(config, {
       force: true,
       now: 2000,
     });
     assert.equal(failedRefresh.source, "stale-cache");
     assert.equal(failedRefresh.revision, 11);
+    payload = validSnapshot(13);
+    payload.portfolios.paper.metrics.realized_pnl = true;
+    const failedDecimal = await loadDashboardData(config, {
+      force: true,
+      now: 2500,
+    });
+    assert.equal(failedDecimal.source, "stale-cache");
+    assert.equal(failedDecimal.revision, 11);
     const cached = await loadDashboardData(config, { now: 3000 });
     assert.equal(cached.source, "cache");
     assert.equal(cached.revision, 11);
+  } finally {
+    globalThis.window = previousWindow;
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test("an active cross-tab fetch lease prevents a duplicate network request", async () => {
+  const previousWindow = globalThis.window;
+  const previousFetch = globalThis.fetch;
+  const localStorage = new MemoryStorage();
+  globalThis.window = {
+    location: { href: "https://cliffordfok.github.io/portfolio-tracker/" },
+    localStorage,
+  };
+  let fetches = 0;
+  globalThis.fetch = async () => {
+    fetches += 1;
+    return {
+      ok: true,
+      json: async () => validSnapshot(21),
+    };
+  };
+  const config = {
+    snapshotUrls: ["https://example.test/snapshot.json"],
+    cacheTtlMs: 1,
+    fetchLeaseMs: 4000,
+    maxFetchesPerHour: 60,
+    storagePrefix: "lease-test",
+    staleAfterMinutes: 999999,
+  };
+  try {
+    await loadDashboardData(config, { now: 1000 });
+    localStorage.setItem(
+      "lease-test:fetch-lease",
+      JSON.stringify({
+        token: "other-tab",
+        expiresAt: Date.now() + 4000,
+      }),
+    );
+    const result = await loadDashboardData(config, {
+      force: true,
+      now: 2000,
+    });
+    assert.equal(fetches, 1);
+    assert.equal(result.source, "stale-cache");
+    assert.ok(result.warnings.some((warning) => warning.includes("另一個瀏覽器分頁")));
   } finally {
     globalThis.window = previousWindow;
     globalThis.fetch = previousFetch;

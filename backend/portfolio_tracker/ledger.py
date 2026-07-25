@@ -14,7 +14,7 @@ from typing import Any
 from .errors import ConflictError, LedgerCorruptionError
 from .replay import replay_portfolio
 from .resolver import resolve_effective_events
-from .schemas import validate_event
+from .schemas import normalize_event, validate_event
 
 
 _BINARY = getattr(os, "O_BINARY", 0)
@@ -147,12 +147,55 @@ def durable_unlink(path: Path) -> None:
     _fsync_directory(path.parent)
 
 
+def _repair_incomplete_tail(
+    path: Path,
+    raw: bytes,
+    offset: int,
+    *,
+    backup_dir: Path,
+    quarantine_dir: Path,
+    repair_records: list[dict[str, Any]] | None,
+) -> None:
+    """Durably preserve an incomplete JSONL tail before truncating it."""
+
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
+    backup = backup_dir / f"{path.name}.pre-repair-{timestamp}.bak"
+    quarantine = quarantine_dir / f"{path.name}.tail-{timestamp}.quarantine"
+    tail = raw[offset:]
+
+    # The backup and quarantined bytes, plus both parent directory entries,
+    # are fsynced by durable_write_bytes before the master ledger is touched.
+    durable_write_bytes(backup, raw)
+    durable_write_bytes(quarantine, tail)
+    with path.open("r+b") as handle:
+        handle.truncate(offset)
+        handle.flush()
+        os.fsync(handle.fileno())
+    if os.name != "nt":
+        os.chmod(path, 0o600)
+    _fsync_directory(path.parent)
+
+    if repair_records is not None:
+        repair_records.append(
+            {
+                "ledger": path.name,
+                "bytes_quarantined": len(tail),
+                "backup": backup.name,
+                "quarantine": quarantine.name,
+                "repaired_at": datetime.now(UTC)
+                .isoformat()
+                .replace("+00:00", "Z"),
+            }
+        )
+
+
 def read_jsonl(
     path: Path,
     *,
     repair_tail: bool = False,
     backup_dir: Path | None = None,
     quarantine_dir: Path | None = None,
+    repair_records: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     if not path.exists():
         return []
@@ -169,31 +212,27 @@ def read_jsonl(
         if not content:
             offset += len(line)
             continue
+        incomplete_tail = is_last and not raw.endswith((b"\n", b"\r"))
+        if incomplete_tail:
+            if repair_tail:
+                _repair_incomplete_tail(
+                    path,
+                    raw,
+                    offset,
+                    backup_dir=backup_dir or path.parent,
+                    quarantine_dir=quarantine_dir or path.parent,
+                    repair_records=repair_records,
+                )
+                return parsed
+            raise LedgerCorruptionError(
+                f"{path.name}: incomplete JSONL record at tail"
+            )
         try:
             item = json.loads(content.decode("utf-8"))
             if not isinstance(item, dict):
                 raise ValueError("JSONL records must be objects")
             parsed.append(item)
         except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
-            incomplete_tail = is_last and not raw.endswith((b"\n", b"\r"))
-            if repair_tail and incomplete_tail:
-                timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
-                backup_root = backup_dir or path.parent
-                quarantine_root = quarantine_dir or path.parent
-                backup = backup_root / f"{path.name}.pre-repair-{timestamp}.bak"
-                durable_write_bytes(backup, raw)
-                quarantine = (
-                    quarantine_root / f"{path.name}.tail-{timestamp}.quarantine"
-                )
-                durable_write_bytes(quarantine, raw[offset:])
-                with path.open("r+b") as handle:
-                    handle.truncate(offset)
-                    handle.flush()
-                    os.fsync(handle.fileno())
-                if os.name != "nt":
-                    os.chmod(path, 0o600)
-                _fsync_directory(path.parent)
-                return parsed
             location = "tail" if is_last else f"line {index + 1}"
             raise LedgerCorruptionError(f"{path.name}: invalid JSONL at {location}") from exc
         offset += len(line)
@@ -231,7 +270,10 @@ def _same_retry_payload(candidate: dict[str, Any], stored: dict[str, Any]) -> bo
     stored_copy = deepcopy(stored)
     candidate_copy.pop("ledger_seq", None)
     stored_copy.pop("ledger_seq", None)
-    return candidate_copy == stored_copy
+    return (
+        normalize_event(candidate_copy)
+        == normalize_event(stored_copy)
+    )
 
 
 class LedgerStore:
@@ -246,34 +288,67 @@ class LedgerStore:
     def path_for(self, portfolio: str) -> Path:
         return self.ledger_dir / f"{portfolio}.jsonl"
 
-    def read(self, portfolio: str, *, repair_tail: bool = False) -> list[dict[str, Any]]:
-        return read_jsonl(self.path_for(portfolio), repair_tail=repair_tail)
+    def read(
+        self,
+        portfolio: str,
+        *,
+        repair_tail: bool = False,
+        repair_records: list[dict[str, Any]] | None = None,
+    ) -> list[dict[str, Any]]:
+        return read_jsonl(
+            self.path_for(portfolio),
+            repair_tail=repair_tail,
+            backup_dir=self.root / "backups",
+            quarantine_dir=self.root / "quarantine",
+            repair_records=repair_records,
+        )
 
-    def all_events(self) -> list[dict[str, Any]]:
+    def all_events(
+        self,
+        *,
+        repair_tail: bool = False,
+        repair_records: list[dict[str, Any]] | None = None,
+    ) -> list[dict[str, Any]]:
         combined: list[dict[str, Any]] = []
         for portfolio in ("paper", "live", "market"):
-            combined.extend(self.read(portfolio))
+            combined.extend(
+                self.read(
+                    portfolio,
+                    repair_tail=repair_tail,
+                    repair_records=repair_records,
+                )
+            )
         return combined
 
     def append(self, candidate: dict[str, Any]) -> dict[str, Any]:
         """Validate, replay, and durably append exactly one event."""
 
         validate_event(candidate)
-        portfolio = candidate["portfolio"]
+        normalized_candidate = normalize_event(candidate)
+        portfolio = normalized_candidate["portfolio"]
         with FileLock(self.lock_path, timeout=self.lock_timeout):
-            all_events = self.all_events()
+            repairs: list[dict[str, Any]] = []
+            all_events = self.all_events(
+                repair_tail=True,
+                repair_records=repairs,
+            )
             for existing in all_events:
-                if existing["event_id"] != candidate["event_id"]:
+                if existing["event_id"] != normalized_candidate["event_id"]:
                     continue
-                if _same_retry_payload(candidate, existing):
-                    return {"status": "duplicate", "event": existing}
+                if _same_retry_payload(normalized_candidate, existing):
+                    result = {"status": "duplicate", "event": existing}
+                    if repairs:
+                        result["ledger_repairs"] = repairs
+                    return result
                 raise ConflictError(
                     f"event_id already exists with different payload: "
-                    f"{candidate['event_id']}"
+                    f"{normalized_candidate['event_id']}"
                 )
 
-            ledger_events = self.read(portfolio)
-            stored = deepcopy(candidate)
+            ledger_events = [
+                event for event in all_events if event["portfolio"] == portfolio
+            ]
+            stored = deepcopy(normalized_candidate)
             stored["ledger_seq"] = (
                 max((int(item["ledger_seq"]) for item in ledger_events), default=0) + 1
             )
@@ -296,7 +371,10 @@ class LedgerStore:
                     .replace("+00:00", "Z"),
                 },
             )
-            return {"status": "appended", "event": stored}
+            result = {"status": "appended", "event": stored}
+            if repairs:
+                result["ledger_repairs"] = repairs
+            return result
 
     def repair_tail(self, portfolio: str) -> list[dict[str, Any]]:
         with FileLock(self.lock_path, timeout=self.lock_timeout):

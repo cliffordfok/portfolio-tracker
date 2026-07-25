@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from bisect import bisect_left, bisect_right
+from bisect import bisect_left
 from collections import defaultdict
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
@@ -186,15 +186,32 @@ def _session_for_event(event: dict[str, Any], sessions: list[str]) -> str | None
         return None
     occurred = parse_timestamp(event["occurred_at"], field="occurred_at")
     local = _new_york_local(occurred)
-    local_day = local.date().isoformat()
-
-    if local.timetz().replace(tzinfo=None) > MARKET_CLOSE:
-        index = bisect_right(sessions, local_day)
-    else:
-        index = bisect_left(sessions, local_day)
-    if index >= len(sessions):
+    session_day = local.date()
+    if (
+        local.timetz().replace(tzinfo=None) > MARKET_CLOSE
+        or not is_nyse_session(session_day)
+    ):
+        session_day += timedelta(days=1)
+        while not is_nyse_session(session_day):
+            session_day += timedelta(days=1)
+    session_text = session_day.isoformat()
+    index = bisect_left(sessions, session_text)
+    if index >= len(sessions) or sessions[index] != session_text:
         return None
     return sessions[index]
+
+
+def _latest_completed_session(now: datetime) -> date:
+    local = _new_york_local(now.astimezone(UTC))
+    candidate = local.date()
+    if (
+        not is_nyse_session(candidate)
+        or local.timetz().replace(tzinfo=None) < MARKET_CLOSE
+    ):
+        candidate -= timedelta(days=1)
+    while not is_nyse_session(candidate):
+        candidate -= timedelta(days=1)
+    return candidate
 
 
 def _enrich_holdings(
@@ -494,11 +511,53 @@ def _build_snapshot_locked(
     *,
     output: str | Path | None = None,
     write: bool = True,
+    repair_records: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    paper_events = store.read("paper")
-    live_events = store.read("live")
-    market_events = store.read("market")
-    quotes, benchmark, sessions = _market_data(market_events)
+    repairs = repair_records if repair_records is not None else []
+    paper_events = store.read(
+        "paper",
+        repair_tail=True,
+        repair_records=repairs,
+    )
+    live_events = store.read(
+        "live",
+        repair_tail=True,
+        repair_records=repairs,
+    )
+    market_events = store.read(
+        "market",
+        repair_tail=True,
+        repair_records=repairs,
+    )
+    quotes, benchmark, market_sessions = _market_data(market_events)
+    session_candidates = set(market_sessions)
+    for event in paper_events + live_events:
+        if event["action"] not in {
+            "PORTFOLIO_OPEN",
+            "BUY",
+            "SELL",
+            "CASH_FLOW",
+        }:
+            continue
+        occurred = parse_timestamp(event["occurred_at"], field="occurred_at")
+        local = _new_york_local(occurred)
+        candidate = local.date()
+        if (
+            local.timetz().replace(tzinfo=None) > MARKET_CLOSE
+            or not is_nyse_session(candidate)
+        ):
+            candidate += timedelta(days=1)
+            while not is_nyse_session(candidate):
+                candidate += timedelta(days=1)
+        session_candidates.add(candidate.isoformat())
+    sessions = (
+        nyse_sessions(
+            date.fromisoformat(min(session_candidates)),
+            date.fromisoformat(max(session_candidates)),
+        )
+        if session_candidates
+        else []
+    )
     days = (
         _calendar_days(
             date.fromisoformat(sessions[0]),
@@ -508,7 +567,13 @@ def _build_snapshot_locked(
         else []
     )
     session_set = set(sessions)
-    warnings: list[str] = []
+    warnings = [
+        (
+            f"{Path(repair['ledger']).stem} ledger tail repaired; "
+            f"{repair['bytes_quarantined']} bytes quarantined"
+        )
+        for repair in repairs
+    ]
     portfolios: dict[str, Any] = {}
 
     for name, events in (("paper", paper_events), ("live", live_events)):
@@ -554,24 +619,42 @@ def _build_snapshot_locked(
         "live": _source_head(store.path_for("live"), live_events),
         "market": _source_head(store.path_for("market"), market_events),
     }
-    latest_event_time = max(
-        (
-            event["occurred_at"]
-            for event in paper_events + live_events + market_events
+    all_events = paper_events + live_events + market_events
+    latest_event = max(
+        all_events,
+        key=lambda event: parse_timestamp(
+            event["occurred_at"],
+            field="occurred_at",
         ),
         default=None,
     )
-    prices_as_of = max(
-        (event["occurred_at"] for event in market_events),
+    latest_market_event = max(
+        market_events,
+        key=lambda event: parse_timestamp(
+            event["occurred_at"],
+            field="occurred_at",
+        ),
         default=None,
     )
-    if sessions:
-        today = datetime.now(UTC).date()
+    latest_event_time = latest_event["occurred_at"] if latest_event else None
+    prices_as_of = (
+        latest_market_event["occurred_at"] if latest_market_event else None
+    )
+    recorded_market_sessions = sorted(
+        {
+            event["session_date"]
+            for event in market_events
+            if event["action"] in {"QUOTE", "BENCHMARK_CLOSE"}
+        }
+    )
+    if recorded_market_sessions:
+        latest_completed = _latest_completed_session(datetime.now(UTC))
         expected_sessions = nyse_sessions(
-            date.fromisoformat(sessions[-1]) + timedelta(days=1),
-            today,
+            date.fromisoformat(recorded_market_sessions[-1])
+            + timedelta(days=1),
+            latest_completed,
         )
-        if expected_sessions:
+        if len(expected_sessions) > 1:
             warnings.append("prices > 1 trading day stale")
     revision = sum(head["count"] for head in source_head.values())
     snapshot = json_safe(
@@ -635,9 +718,22 @@ def build_snapshot_if_needed(
     store = LedgerStore(root_path)
     target = Path(output) if output else root_path / "snapshots" / "portfolio-snapshot.json"
     with FileLock(store.lock_path):
-        paper_events = store.read("paper")
-        live_events = store.read("live")
-        market_events = store.read("market")
+        repairs: list[dict[str, Any]] = []
+        paper_events = store.read(
+            "paper",
+            repair_tail=True,
+            repair_records=repairs,
+        )
+        live_events = store.read(
+            "live",
+            repair_tail=True,
+            repair_records=repairs,
+        )
+        market_events = store.read(
+            "market",
+            repair_tail=True,
+            repair_records=repairs,
+        )
         current_heads = {
             "paper": _source_head(store.path_for("paper"), paper_events),
             "live": _source_head(store.path_for("live"), live_events),
@@ -651,7 +747,14 @@ def build_snapshot_if_needed(
                     current = parsed
             except (OSError, json.JSONDecodeError):
                 current = None
-        if current is not None and current.get("source_head") == current_heads:
+        structurally_current = (
+            current is not None
+            and current.get("schema_version") == 3
+            and isinstance(current.get("portfolios"), dict)
+            and isinstance(current.get("benchmark"), dict)
+            and current.get("source_head") == current_heads
+        )
+        if structurally_current and not repairs:
             durable_unlink(root_path / "state" / "rebuild.pending")
             return current, False
 
@@ -660,6 +763,7 @@ def build_snapshot_if_needed(
             store,
             output=target,
             write=True,
+            repair_records=repairs,
         )
         durable_unlink(root_path / "state" / "rebuild.pending")
         return snapshot, True

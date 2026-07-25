@@ -114,14 +114,17 @@ node --check js/utils.js
 
 ### 建立 portfolio
 
+`PORTFOLIO_OPEN` 係不可變 master fact。以下 effective date／initial cash
+placeholder 必須先換成已確認值；未確認前唔好喺 production runtime 執行。
+
 ```bash
 cd /opt/portfolio-tracker/backend
 python3 integrations/hermes_bridge.py \
   --root /var/lib/portfolio-tracker \
   open \
   --portfolio paper \
-  --event-id paper-open-2026 \
-  --occurred-at 2026-01-02T14:00:00Z \
+  --event-id paper-open-PAPER_EFFECTIVE_DATE \
+  --occurred-at PAPER_EFFECTIVE_UTC \
   --initial-cash 100000
 ```
 
@@ -132,9 +135,9 @@ python3 integrations/hermes_bridge.py \
   --root /var/lib/portfolio-tracker \
   open \
   --portfolio live \
-  --event-id live-open-2026 \
-  --occurred-at 2026-01-02T14:00:00Z \
-  --initial-cash 50000
+  --event-id live-open-LIVE_EFFECTIVE_DATE \
+  --occurred-at LIVE_EFFECTIVE_UTC \
+  --initial-cash LIVE_INITIAL_CASH
 ```
 
 ### 寫入交易
@@ -151,19 +154,24 @@ python3 integrations/hermes_bridge.py \
   --shares 10 \
   --price 215.25 \
   --fee 0 \
+  --source manual-import \
   --note "manual /trade"
 ```
 
 模擬倉把 `--portfolio` 改成 `paper`，並可加入：
 
 ```text
---reason "entry signal" --strategy "momentum"
+--source swing-trader --reason "entry signal" --strategy "momentum"
 ```
 
 同一次重試必須重用完全相同的 `event_id` 和 payload：
 
 - 同 ID、同 payload：idempotent no-op
 - 同 ID、不同 payload：拒絕並回報 conflict
+
+來源如果有獨立記錄時間，可加 `--created-at <UTC-Z>`；source 必須將呢個
+值同 event ID 一齊保存，retry 時原樣重用。省略時會使用
+`occurred_at`，確保同一 command 重試仍然 deterministic。
 
 Telegram handler 可以把原始指令直接交給同一個 parser；`event-id` 必須由
 Telegram update ID 或另一個可重用 Import ID 產生：
@@ -208,6 +216,7 @@ python3 integrations/hermes_bridge.py \
   --event-id live-amend-IMPORT_ID \
   --occurred-at 2026-07-24T16:00:00Z \
   --target live-telegram-IMPORT_ID \
+  --amend-reason "correct broker fee" \
   --fee 1.25
 ```
 
@@ -218,7 +227,8 @@ python3 integrations/hermes_bridge.py \
   --portfolio live \
   --event-id live-void-IMPORT_ID \
   --occurred-at 2026-07-24T16:05:00Z \
-  --target live-telegram-IMPORT_ID
+  --target live-telegram-IMPORT_ID \
+  --void-reason "duplicate broker fill"
 ```
 
 ### 報價
@@ -276,7 +286,7 @@ python3 integrations/hermes_bridge.py \
 
 ```js
 snapshotUrls: [
-  "https://api.github.com/repos/cliffordfok/portfolio-tracker/contents/data/portfolio-snapshot.json?ref=portfolio-data",
+  "https://api.github.com/repos/cliffordfok/portfolio-tracker/contents/portfolio-snapshot.json?ref=portfolio-data",
   "./data/portfolio-snapshot.json",
 ]
 ```
@@ -330,12 +340,25 @@ python3 -m portfolio_tracker.cli \
   publish \
   --repository cliffordfok/portfolio-tracker \
   --branch portfolio-data \
-  --path data/portfolio-snapshot.json \
+  --path portfolio-snapshot.json \
   --bootstrap
 ```
 
 之後 systemd service 永遠唔會使用 `--bootstrap`；任何未知 remote edit
 仍然會被拒絕。
+
+完成兩個 `PORTFOLIO_OPEN`、首個 snapshot rebuild 同一次人工確認嘅
+bootstrap publish 後，先啟用觸發器：
+
+```bash
+sudo systemctl enable --now \
+  portfolio-rebuild.path \
+  portfolio-rebuild.timer \
+  portfolio-publish.path \
+  portfolio-publish.timer \
+  portfolio-backup.timer
+sudo /opt/portfolio-tracker/scripts/verify-vps.sh --active
+```
 
 每日 ledger backup 使用同一把 global lock，輸出精確 bytes、SHA-256
 manifest，而且只會寫入 VPS 私有 `backups/`：

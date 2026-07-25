@@ -52,12 +52,20 @@ def make_event(
     occurred_at: str,
     **fields: Any,
 ) -> dict[str, Any]:
+    if action == "PORTFOLIO_OPEN":
+        source = "bootstrap"
+    elif portfolio == "paper":
+        source = "swing-trader"
+    elif portfolio == "market":
+        source = "cron-benchmark" if action == "BENCHMARK_CLOSE" else "cron-quote"
+    else:
+        source = "manual-import"
     return {
         "event_id": event_id,
         "portfolio": portfolio,
         "occurred_at": occurred_at,
         "created_at": occurred_at,
-        "source": "demo-seed",
+        "source": source,
         "action": action,
         **fields,
     }
@@ -151,6 +159,7 @@ def portfolio_events() -> list[dict[str, Any]]:
             portfolio="live",
             action="CASH_FLOW",
             occurred_at="2026-06-01T13:00:00Z",
+            symbol="USD",
             amount="10000",
             note="示範入金",
         ),

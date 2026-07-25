@@ -429,7 +429,7 @@
   },
   "currency": "USD",
   "data_as_of": "2026-07-17T20:30:00Z",
-  "generated_at": "2026-07-25T05:12:11.213022Z",
+  "generated_at": "2026-07-25T05:56:00.670098Z",
   "portfolios": {
     "live": {
       "cash": "39326",
@@ -1132,7 +1132,7 @@
           "portfolio": "live",
           "price": "493",
           "shares": "10",
-          "source": "demo-seed",
+          "source": "manual-import",
           "symbol": "MSFT"
         },
         {
@@ -1149,7 +1149,7 @@
           "portfolio": "live",
           "price": "208",
           "shares": "10",
-          "source": "demo-seed",
+          "source": "manual-import",
           "symbol": "AAPL"
         },
         {
@@ -1165,7 +1165,7 @@
           "portfolio": "live",
           "price": "597",
           "shares": "20",
-          "source": "demo-seed",
+          "source": "manual-import",
           "symbol": "SPY"
         },
         {
@@ -1181,7 +1181,7 @@
           "portfolio": "live",
           "price": "196",
           "shares": "30",
-          "source": "demo-seed",
+          "source": "manual-import",
           "symbol": "AAPL"
         },
         {
@@ -1195,7 +1195,8 @@
           "pnl": null,
           "pnl_pct": null,
           "portfolio": "live",
-          "source": "demo-seed"
+          "source": "manual-import",
+          "symbol": "USD"
         }
       ]
     },
@@ -1926,7 +1927,7 @@
           "price": "150",
           "reason": "倉位再平衡",
           "shares": "20",
-          "source": "demo-seed",
+          "source": "swing-trader",
           "strategy": "momentum",
           "symbol": "NVDA"
         },
@@ -1944,7 +1945,7 @@
           "price": "490",
           "reason": "回踩支持後轉強",
           "shares": "30",
-          "source": "demo-seed",
+          "source": "swing-trader",
           "strategy": "swing",
           "symbol": "MSFT"
         },
@@ -1963,7 +1964,7 @@
           "price": "205",
           "reason": "到達第一目標價",
           "shares": "40",
-          "source": "demo-seed",
+          "source": "swing-trader",
           "strategy": "momentum",
           "symbol": "AAPL"
         },
@@ -1981,7 +1982,7 @@
           "price": "142",
           "reason": "相對強度改善",
           "shares": "60",
-          "source": "demo-seed",
+          "source": "swing-trader",
           "strategy": "momentum",
           "symbol": "NVDA"
         },
@@ -1999,7 +2000,7 @@
           "price": "195",
           "reason": "價格站上區間高位",
           "shares": "100",
-          "source": "demo-seed",
+          "source": "swing-trader",
           "strategy": "momentum",
           "symbol": "AAPL"
         }
@@ -2012,17 +2013,17 @@
   "source_head": {
     "live": {
       "count": 6,
-      "hash": "4b3f1550d62688c80b52d2b93fcc606f799c480d6e94946243f0f2f60c876af3",
+      "hash": "4f0899035dee792d38c7e0e08d2974553bd92e7cc38e68459c4acb98e27e194d",
       "last_event_id": "live-buy-msft-001"
     },
     "market": {
       "count": 165,
-      "hash": "cd474eb016d0fbf0f868ceee0e902b214f56949855c6c6b5b1241652171a5068",
+      "hash": "63ee3eb0d81ae05754ab006001957ce701118d6d790c59374369356fbb178c52",
       "last_event_id": "market-spy-2026-07-17"
     },
     "paper": {
       "count": 6,
-      "hash": "ad390836e2a1968b29b810bc41060ab950701661fd7cca80e057797df7c5508a",
+      "hash": "c6a5087420949b55e2ca3d12f047b849f54be51dacd84135cbe2707cde3629e4",
       "last_event_id": "paper-sell-nvda-001"
     }
   },

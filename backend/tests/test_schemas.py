@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import unittest
+from datetime import UTC, datetime
 
+from seed_demo import market_events, portfolio_events
 from portfolio_tracker.errors import ValidationError
 from portfolio_tracker.schemas import validate_event
 
@@ -47,6 +49,20 @@ class SchemaTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "ISO8601 UTC"):
             validate_event(value)
 
+    def test_future_event_beyond_clock_skew_is_rejected(self) -> None:
+        value = candidate(
+            "CASH_FLOW",
+            portfolio="paper",
+            event_id="paper-cash-future",
+            occurred_at="2024-01-02T15:10:01Z",
+            amount="1",
+        )
+        with self.assertRaisesRegex(ValidationError, "cannot be in the future"):
+            validate_event(
+                value,
+                now=datetime(2024, 1, 2, 15, 0, tzinfo=UTC),
+            )
+
     def test_master_event_cannot_store_derived_pnl(self) -> None:
         value = candidate(
             "SELL",
@@ -60,6 +76,19 @@ class SchemaTests(unittest.TestCase):
             pnl="12.34",
         )
         with self.assertRaisesRegex(ValidationError, "derived fields"):
+            validate_event(value)
+
+    def test_trade_fee_is_required(self) -> None:
+        value = candidate(
+            "BUY",
+            portfolio="paper",
+            event_id="paper-buy-no-fee",
+            occurred_at="2024-01-02T15:00:00Z",
+            symbol="AAPL",
+            shares="1",
+            price="100",
+        )
+        with self.assertRaisesRegex(ValidationError, "fee"):
             validate_event(value)
 
     def test_portfolio_open_requires_usd_currency(self) -> None:
@@ -87,6 +116,72 @@ class SchemaTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, "at most 8 decimal places"):
             validate_event(value)
+
+    def test_cash_flow_requires_usd_symbol(self) -> None:
+        value = candidate(
+            "CASH_FLOW",
+            portfolio="paper",
+            event_id="paper-cash-hkd",
+            occurred_at="2024-01-02T15:00:00Z",
+            symbol="HKD",
+            amount="100",
+        )
+        with self.assertRaisesRegex(ValidationError, "symbol must be USD"):
+            validate_event(value)
+
+    def test_source_must_use_the_frozen_audit_vocabulary(self) -> None:
+        value = candidate(
+            "PORTFOLIO_OPEN",
+            portfolio="paper",
+            event_id="paper-open-bad-source",
+            occurred_at="2024-01-02T15:00:00Z",
+            initial_cash="1000",
+        )
+        value["source"] = "unknown-agent"
+        with self.assertRaisesRegex(ValidationError, "source must be one of"):
+            validate_event(value)
+
+    def test_corrections_require_a_non_empty_audit_reason(self) -> None:
+        amend = candidate(
+            "AMEND",
+            portfolio="paper",
+            event_id="paper-amend-no-reason",
+            occurred_at="2024-01-02T15:00:00Z",
+            amend_target="paper-buy-1",
+            changes={"fee": "1"},
+            amend_reason=" ",
+        )
+        with self.assertRaisesRegex(ValidationError, "amend_reason"):
+            validate_event(amend)
+
+        void = candidate(
+            "VOID",
+            portfolio="paper",
+            event_id="paper-void-no-reason",
+            occurred_at="2024-01-02T15:00:00Z",
+            void_target="paper-buy-1",
+            void_reason="",
+        )
+        with self.assertRaisesRegex(ValidationError, "void_reason"):
+            validate_event(void)
+
+    def test_benchmark_close_requires_spy_symbol(self) -> None:
+        value = candidate(
+            "BENCHMARK_CLOSE",
+            portfolio="market",
+            event_id="market-benchmark-aapl",
+            occurred_at="2024-01-02T21:00:00Z",
+            symbol="AAPL",
+            close="100",
+            session_date="2024-01-02",
+        )
+        with self.assertRaisesRegex(ValidationError, "symbol must be SPY"):
+            validate_event(value)
+
+    def test_demo_seed_events_follow_master_schema(self) -> None:
+        for value in portfolio_events() + market_events():
+            with self.subTest(event_id=value["event_id"]):
+                validate_event(value)
 
 
 if __name__ == "__main__":

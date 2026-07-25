@@ -29,6 +29,14 @@ function writeStoredJson(key, value) {
   }
 }
 
+function removeStored(key) {
+  try {
+    storage()?.removeItem(key);
+  } catch {
+    // Best-effort lease cleanup; an expired lease is ignored automatically.
+  }
+}
+
 async function fetchJson(url, { githubRaw = false } = {}) {
   const requestUrl = new URL(url, window.location.href);
   requestUrl.searchParams.set("_", Date.now().toString());
@@ -45,14 +53,237 @@ async function fetchJson(url, { githubRaw = false } = {}) {
 }
 
 function validateSnapshot(snapshot) {
-  if (
-    !snapshot ||
-    Number(snapshot.schema_version) < 3 ||
-    !snapshot.portfolios?.paper ||
-    !snapshot.portfolios?.live ||
-    !Array.isArray(snapshot.benchmark?.daily)
-  ) {
+  const fail = () => {
     throw new Error("快照格式不正確");
+  };
+  const object = (value) =>
+    value !== null && typeof value === "object" && !Array.isArray(value);
+  const hasOwn = (value, key) =>
+    Object.prototype.hasOwnProperty.call(value, key);
+  const decimalString = (value) =>
+    typeof value === "string" &&
+    value !== "" &&
+    /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(value) &&
+    Number.isFinite(Number(value));
+  const decimalOrNull = (value) => value === null || decimalString(value);
+  const hasDecimal = (value, key) =>
+    hasOwn(value, key) && decimalOrNull(value[key]);
+  const utcTimestampOrNull = (value) =>
+    value === null ||
+    (typeof value === "string" &&
+      value.endsWith("Z") &&
+      Number.isFinite(Date.parse(value)));
+  const dateString = (value) => {
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return false;
+    }
+    const parsed = Date.parse(`${value}T00:00:00Z`);
+    return (
+      Number.isFinite(parsed) &&
+      new Date(parsed).toISOString().slice(0, 10) === value
+    );
+  };
+  const symbol = (value) =>
+    typeof value === "string" && /^[A-Z]{1,5}(?:\.[A-Z])?$/.test(value);
+  const validatePortfolio = (portfolio) => {
+    if (
+      !object(portfolio) ||
+      !["OK", "INSUFFICIENT_DATA", "NO_DATA"].includes(
+        portfolio.data_status,
+      ) ||
+      !Array.isArray(portfolio.holdings) ||
+      !Array.isArray(portfolio.recent_trades) ||
+      !Array.isArray(portfolio.daily) ||
+      !object(portfolio.metrics) ||
+      (hasOwn(portfolio, "cash") && !decimalOrNull(portfolio.cash)) ||
+      (hasOwn(portfolio, "initial_cash") &&
+        !decimalOrNull(portfolio.initial_cash)) ||
+      (hasOwn(portfolio, "realized_pnl_per_trade") &&
+        !Array.isArray(portfolio.realized_pnl_per_trade))
+    ) {
+      fail();
+    }
+    for (const holding of portfolio.holdings) {
+      if (
+        !object(holding) ||
+        !symbol(holding.symbol) ||
+        !decimalString(holding.shares) ||
+        !decimalString(holding.avg_cost) ||
+        !decimalString(holding.cost_basis) ||
+        !hasDecimal(holding, "current_price") ||
+        !hasDecimal(holding, "market_value") ||
+        !hasDecimal(holding, "unrealized_pnl") ||
+        !hasDecimal(holding, "unrealized_pnl_pct") ||
+        !utcTimestampOrNull(holding.market_price_as_of)
+      ) {
+        fail();
+      }
+    }
+    for (const trade of portfolio.recent_trades) {
+      if (
+        !object(trade) ||
+        !["BUY", "SELL", "CASH_FLOW"].includes(trade.action) ||
+        typeof trade.event_id !== "string" ||
+        !utcTimestampOrNull(trade.occurred_at) ||
+        !utcTimestampOrNull(trade.created_at) ||
+        typeof trade.source !== "string" ||
+        !Number.isInteger(trade.ledger_seq) ||
+        trade.ledger_seq < 1
+      ) {
+        fail();
+      }
+      if (
+        ["BUY", "SELL"].includes(trade.action) &&
+        (!symbol(trade.symbol) ||
+          !decimalString(trade.shares) ||
+          !decimalString(trade.price) ||
+          !decimalString(trade.fee) ||
+          !hasDecimal(trade, "pnl") ||
+          !hasDecimal(trade, "pnl_pct"))
+      ) {
+        fail();
+      }
+      if (
+        trade.action === "CASH_FLOW" &&
+        (trade.symbol !== "USD" ||
+          !decimalString(trade.amount) ||
+          !hasDecimal(trade, "pnl") ||
+          !hasDecimal(trade, "pnl_pct"))
+      ) {
+        fail();
+      }
+    }
+    for (const realized of portfolio.realized_pnl_per_trade || []) {
+      if (
+        !object(realized) ||
+        typeof realized.event_id !== "string" ||
+        !symbol(realized.symbol) ||
+        !utcTimestampOrNull(realized.occurred_at) ||
+        !decimalString(realized.shares) ||
+        !decimalString(realized.price) ||
+        !decimalString(realized.fee) ||
+        !decimalString(realized.pnl) ||
+        !decimalString(realized.pnl_pct) ||
+        !decimalString(realized.cumulative_pnl) ||
+        !Array.isArray(realized.matches)
+      ) {
+        fail();
+      }
+      for (const match of realized.matches) {
+        if (
+          !object(match) ||
+          typeof match.buy_event_id !== "string" ||
+          ![
+            "shares",
+            "buy_price",
+            "sell_price",
+            "buy_fee",
+            "sell_fee",
+            "cost",
+            "proceeds",
+            "pnl",
+          ].every((key) => decimalString(match[key]))
+        ) {
+          fail();
+        }
+      }
+    }
+    for (const point of portfolio.daily) {
+      if (
+        !object(point) ||
+        !dateString(point.date) ||
+        !["OK", "INSUFFICIENT_MARKET_DATA"].includes(point.data_status) ||
+        !hasDecimal(point, "nav") ||
+        !hasDecimal(point, "cash") ||
+        !hasDecimal(point, "external_flow") ||
+        !hasDecimal(point, "daily_return") ||
+        !hasDecimal(point, "cumulative_return") ||
+        !hasDecimal(point, "segment_return") ||
+        !hasDecimal(point, "pnl") ||
+        !Array.isArray(point.missing_symbols) ||
+        !point.missing_symbols.every(symbol) ||
+        !(
+          point.segment_id === null ||
+          (Number.isInteger(point.segment_id) && point.segment_id > 0)
+        )
+      ) {
+        fail();
+      }
+    }
+    if (
+      !["OK", "INSUFFICIENT_DATA", "NO_DATA", "FALLBACK"].includes(
+        portfolio.metrics.data_status,
+      ) ||
+      !hasDecimal(portfolio.metrics, "total_return") ||
+      !hasDecimal(portfolio.metrics, "realized_pnl") ||
+      !hasDecimal(portfolio.metrics, "win_rate") ||
+      !hasDecimal(portfolio.metrics, "max_drawdown") ||
+      !hasDecimal(portfolio.metrics, "sharpe_ratio") ||
+      !Number.isInteger(portfolio.metrics.closed_episodes) ||
+      portfolio.metrics.closed_episodes < 0
+    ) {
+      fail();
+    }
+  };
+
+  if (
+    !object(snapshot) ||
+    snapshot.schema_version !== 3 ||
+    !Number.isInteger(snapshot.revision) ||
+    snapshot.revision < 0 ||
+    !utcTimestampOrNull(snapshot.generated_at) ||
+    snapshot.generated_at === null ||
+    !hasOwn(snapshot, "data_as_of") ||
+    !utcTimestampOrNull(snapshot.data_as_of) ||
+    !hasOwn(snapshot, "prices_as_of") ||
+    !utcTimestampOrNull(snapshot.prices_as_of) ||
+    snapshot.currency !== "USD" ||
+    !object(snapshot.source_head) ||
+    !object(snapshot.portfolios) ||
+    !object(snapshot.portfolios.paper) ||
+    !object(snapshot.portfolios.live) ||
+    !object(snapshot.benchmark) ||
+    snapshot.benchmark.symbol !== "SPY" ||
+    !Array.isArray(snapshot.benchmark.daily) ||
+    !Array.isArray(snapshot.warnings) ||
+    !snapshot.warnings.every((warning) => typeof warning === "string")
+  ) {
+    fail();
+  }
+  for (const name of ["paper", "live", "market"]) {
+    const head = snapshot.source_head[name];
+    if (
+      !object(head) ||
+      !Number.isInteger(head.count) ||
+      head.count < 0 ||
+      typeof head.hash !== "string" ||
+      !/^[a-f0-9]{64}$/.test(head.hash) ||
+      !(
+        head.last_event_id === null ||
+        typeof head.last_event_id === "string"
+      )
+    ) {
+      fail();
+    }
+  }
+  validatePortfolio(snapshot.portfolios.paper);
+  validatePortfolio(snapshot.portfolios.live);
+  for (const point of snapshot.benchmark.daily) {
+    if (
+      !object(point) ||
+      !dateString(point.date) ||
+      !["OK", "INSUFFICIENT_MARKET_DATA"].includes(point.data_status) ||
+      !hasDecimal(point, "close") ||
+      !hasDecimal(point, "daily_return") ||
+      !hasDecimal(point, "cumulative_return") ||
+      !hasDecimal(point, "segment_return") ||
+      !(
+        point.segment_id === null ||
+        (Number.isInteger(point.segment_id) && point.segment_id > 0)
+      )
+    ) {
+      fail();
+    }
   }
   return snapshot;
 }
@@ -99,6 +330,44 @@ function consumeFetchBudget(config, now) {
   budget.count += 1;
   writeStoredJson(key, budget);
   return { allowed: true, retryAfterMs: 0 };
+}
+
+function acquireFetchLease(config) {
+  const local = storage();
+  if (!local) return { key: null, token: null };
+  const key = storageKey(config, "fetch-lease");
+  const now = Date.now();
+  const duration = Number(config.fetchLeaseMs) || 4000;
+  const existing = readStoredJson(key);
+  if (
+    existing &&
+    typeof existing.expiresAt === "number" &&
+    existing.expiresAt > now
+  ) {
+    return null;
+  }
+  const token = `${now}-${Math.random().toString(36).slice(2)}`;
+  writeStoredJson(key, { token, expiresAt: now + duration });
+  const confirmed = readStoredJson(key);
+  return confirmed?.token === token ? { key, token } : null;
+}
+
+function releaseFetchLease(lease) {
+  if (!lease?.key) return;
+  const current = readStoredJson(lease.key);
+  if (current?.token === lease.token) removeStored(lease.key);
+}
+
+async function waitForSharedSnapshot(config, cachedAt) {
+  const deadline = Date.now() + (Number(config.fetchLeaseMs) || 4000) + 250;
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const candidate = cachedSnapshot(config);
+    if (candidate && candidate.cachedAt > cachedAt) return candidate;
+    const lease = readStoredJson(storageKey(config, "fetch-lease"));
+    if (!lease || Number(lease.expiresAt) <= Date.now()) break;
+  }
+  return null;
 }
 
 function staleSnapshot(snapshot, message, source) {
@@ -379,42 +648,67 @@ export async function loadDashboardData(
     );
   }
 
-  const budget = consumeFetchBudget(config, now);
-  if (!budget.allowed) {
-    const minutes = Math.max(1, Math.ceil(budget.retryAfterMs / 60000));
+  const lease = acquireFetchLease(config);
+  if (!lease) {
     if (cached) {
       return staleSnapshot(
         cached.snapshot,
-        `已達共享更新上限；約 ${minutes} 分鐘後自動恢復`,
+        "另一個瀏覽器分頁正在更新；現正使用 last-good cache",
         "stale-cache",
+      );
+    }
+    const shared = await waitForSharedSnapshot(config, -1);
+    if (shared) {
+      return freshness(
+        { ...shared.snapshot, source: "cache" },
+        config,
+        now,
       );
     }
     const fallback = await loadFallback(config);
-    return staleSnapshot(
-      fallback,
-      `已達共享更新上限；約 ${minutes} 分鐘後自動恢復`,
-      "fallback",
-    );
+    return staleSnapshot(fallback, "另一個瀏覽器分頁更新逾時", "fallback");
   }
 
   try {
-    const snapshot = await fetchSnapshot(config);
-    saveSnapshot(config, snapshot, now);
-    return freshness({ ...snapshot, source: "snapshot" }, config, now);
-  } catch (snapshotError) {
-    if (cached) {
+    const budget = consumeFetchBudget(config, now);
+    if (!budget.allowed) {
+      const minutes = Math.max(1, Math.ceil(budget.retryAfterMs / 60000));
+      if (cached) {
+        return staleSnapshot(
+          cached.snapshot,
+          `已達共享更新上限；約 ${minutes} 分鐘後自動恢復`,
+          "stale-cache",
+        );
+      }
+      const fallback = await loadFallback(config);
       return staleSnapshot(
-        cached.snapshot,
-        `無法取得最新快照；現正使用 last-good cache（${snapshotError.message}）`,
-        "stale-cache",
+        fallback,
+        `已達共享更新上限；約 ${minutes} 分鐘後自動恢復`,
+        "fallback",
       );
     }
+
     try {
-      return await loadFallback(config);
-    } catch (fallbackError) {
-      throw new Error(
-        `無法載入投資組合數據：${snapshotError.message}; ${fallbackError.message}`,
-      );
+      const snapshot = await fetchSnapshot(config);
+      saveSnapshot(config, snapshot, now);
+      return freshness({ ...snapshot, source: "snapshot" }, config, now);
+    } catch (snapshotError) {
+      if (cached) {
+        return staleSnapshot(
+          cached.snapshot,
+          `無法取得最新快照；現正使用 last-good cache（${snapshotError.message}）`,
+          "stale-cache",
+        );
+      }
+      try {
+        return await loadFallback(config);
+      } catch (fallbackError) {
+        throw new Error(
+          `無法載入投資組合數據：${snapshotError.message}; ${fallbackError.message}`,
+        );
+      }
     }
+  } finally {
+    releaseFetchLease(lease);
   }
 }

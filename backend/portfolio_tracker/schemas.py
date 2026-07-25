@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from typing import Any, Mapping
 
@@ -16,6 +17,14 @@ MARKET_ACTIONS = {"QUOTE", "BENCHMARK_CLOSE"}
 ACTIONS = ECONOMIC_ACTIONS | CORRECTION_ACTIONS | MARKET_ACTIONS
 CORRECTABLE_ACTIONS = {"BUY", "SELL", "CASH_FLOW"}
 MUTABLE_FIELDS = {"note", "fee", "reason", "strategy"}
+SOURCES = {
+    "bootstrap",
+    "telegram",
+    "swing-trader",
+    "manual-import",
+    "cron-benchmark",
+    "cron-quote",
+}
 SYMBOL_RE = re.compile(r"^[A-Z]{1,5}(?:\.[A-Z])?$")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
@@ -92,8 +101,10 @@ def validate_event(
 
     for optional in ("note", "reason", "strategy", "source"):
         _validate_string(event, optional)
-    if not event["source"]:
-        raise ValidationError("source must be a non-empty string")
+    if event["source"] not in SOURCES:
+        raise ValidationError(
+            f"source must be one of: {', '.join(sorted(SOURCES))}"
+        )
 
     if portfolio == "market" and action not in MARKET_ACTIONS:
         raise ValidationError("market ledger only accepts QUOTE/BENCHMARK_CLOSE")
@@ -107,7 +118,7 @@ def validate_event(
         if event["currency"] != "USD":
             raise ValidationError("currency must be USD")
     elif action in {"BUY", "SELL"}:
-        _require(event, {"symbol", "shares", "price"})
+        _require(event, {"symbol", "shares", "price", "fee"})
         _validate_symbol(event["symbol"])
         if input_shares(event["shares"]) <= 0:
             raise ValidationError("shares must be greater than zero")
@@ -116,12 +127,19 @@ def validate_event(
         if money(event.get("fee", 0), field="fee") < 0:
             raise ValidationError("fee must be non-negative")
     elif action == "CASH_FLOW":
-        _require(event, {"amount"})
+        _require(event, {"amount", "symbol"})
+        if event["symbol"] != "USD":
+            raise ValidationError("CASH_FLOW symbol must be USD")
         money(event["amount"])
     elif action == "AMEND":
-        _require(event, {"amend_target", "changes"})
+        _require(event, {"amend_target", "changes", "amend_reason"})
         if not isinstance(event["amend_target"], str):
             raise ValidationError("amend_target must be an event_id")
+        if (
+            not isinstance(event["amend_reason"], str)
+            or not event["amend_reason"].strip()
+        ):
+            raise ValidationError("amend_reason must be a non-empty string")
         changes = event["changes"]
         if not isinstance(changes, dict) or not changes:
             raise ValidationError("changes must be a non-empty object")
@@ -134,15 +152,68 @@ def validate_event(
             if changes[field] is not None and not isinstance(changes[field], str):
                 raise ValidationError(f"changes.{field} must be a string or null")
     elif action == "VOID":
-        _require(event, {"void_target"})
+        _require(event, {"void_target", "void_reason"})
         if not isinstance(event["void_target"], str):
             raise ValidationError("void_target must be an event_id")
+        if (
+            not isinstance(event["void_reason"], str)
+            or not event["void_reason"].strip()
+        ):
+            raise ValidationError("void_reason must be a non-empty string")
     elif action in MARKET_ACTIONS:
         _require(event, {"symbol", "close", "session_date"})
         _validate_symbol(event["symbol"])
+        if action == "BENCHMARK_CLOSE" and event["symbol"] != "SPY":
+            raise ValidationError("BENCHMARK_CLOSE symbol must be SPY")
         if input_price(event["close"], field="close") <= 0:
             raise ValidationError("close must be greater than zero")
         if not isinstance(event["session_date"], str) or not DATE_RE.fullmatch(
             event["session_date"]
         ):
             raise ValidationError("session_date must use YYYY-MM-DD")
+
+
+def _decimal_string(value: Any, *, field: str) -> str:
+    parsed = money(value, field=field)
+    return format(parsed, "f")
+
+
+def normalize_event(event: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a JSON-safe event with every Decimal master fact as a string."""
+
+    normalized = deepcopy(dict(event))
+    action = normalized["action"]
+    if action == "PORTFOLIO_OPEN":
+        normalized["initial_cash"] = _decimal_string(
+            normalized["initial_cash"],
+            field="initial_cash",
+        )
+    elif action in {"BUY", "SELL"}:
+        normalized["shares"] = format(
+            input_shares(normalized["shares"]),
+            "f",
+        )
+        normalized["price"] = format(
+            input_price(normalized["price"]),
+            "f",
+        )
+        normalized["fee"] = _decimal_string(
+            normalized["fee"],
+            field="fee",
+        )
+    elif action == "CASH_FLOW":
+        normalized["amount"] = _decimal_string(
+            normalized["amount"],
+            field="amount",
+        )
+    elif action == "AMEND" and "fee" in normalized["changes"]:
+        normalized["changes"]["fee"] = _decimal_string(
+            normalized["changes"]["fee"],
+            field="changes.fee",
+        )
+    elif action in MARKET_ACTIONS:
+        normalized["close"] = format(
+            input_price(normalized["close"], field="close"),
+            "f",
+        )
+    return normalized

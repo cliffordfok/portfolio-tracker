@@ -71,7 +71,7 @@ def build_parser() -> argparse.ArgumentParser:
     publish = subcommands.add_parser("publish", help="publish snapshot to GitHub")
     publish.add_argument("--repository", required=True, help="owner/repository")
     publish.add_argument("--branch", default="portfolio-data")
-    publish.add_argument("--path", default="data/portfolio-snapshot.json")
+    publish.add_argument("--path", default="portfolio-snapshot.json")
     publish.add_argument(
         "--bootstrap",
         action="store_true",

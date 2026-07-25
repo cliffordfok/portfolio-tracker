@@ -33,21 +33,22 @@ function metricCard(label, value, detail, className = "") {
 }
 
 function portfolioNav(portfolio) {
+  if (portfolio.data_status === "NO_DATA") return null;
   const last = [...(portfolio.daily || [])]
     .reverse()
     .find((point) => numeric(point.nav) !== null);
   if (last) return numeric(last.nav);
   if (portfolio.estimated_nav != null) return numeric(portfolio.estimated_nav);
-  return (
-    numeric(portfolio.cash) +
-    (portfolio.holdings || []).reduce(
-      (sum, holding) => sum + (numeric(holding.market_value) || 0),
-      0,
-    )
+  const cash = numeric(portfolio.cash);
+  const quotedValue = (portfolio.holdings || []).reduce(
+    (sum, holding) => sum + (numeric(holding.market_value) || 0),
+    0,
   );
+  return cash === null ? null : cash + quotedValue;
 }
 
 function portfolioTotalPnl(portfolio) {
+  if (portfolio.data_status === "NO_DATA") return null;
   const nav = portfolioNav(portfolio);
   const initial = numeric(portfolio.initial_cash);
   if (nav !== null && initial !== null) {

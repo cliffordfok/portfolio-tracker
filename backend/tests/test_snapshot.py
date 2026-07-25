@@ -35,6 +35,17 @@ class SnapshotTests(unittest.TestCase):
             )
         )
 
+    def test_clean_start_builds_valid_empty_snapshot(self) -> None:
+        snapshot = build_snapshot(self.root)
+        self.assertEqual(snapshot["schema_version"], 3)
+        self.assertEqual(snapshot["revision"], 0)
+        self.assertEqual(snapshot["portfolios"]["paper"]["data_status"], "NO_DATA")
+        self.assertEqual(snapshot["portfolios"]["live"]["holdings"], [])
+        self.assertEqual(snapshot["benchmark"]["daily"], [])
+        self.assertTrue(
+            (self.root / "snapshots" / "portfolio-snapshot.json").exists()
+        )
+
     def test_missing_quote_breaks_global_return_chain(self) -> None:
         self.append(
             "PORTFOLIO_OPEN",
@@ -95,6 +106,32 @@ class SnapshotTests(unittest.TestCase):
             "INSUFFICIENT_DATA",
         )
 
+    def test_rebuild_repairs_incomplete_tail_and_surfaces_warning(self) -> None:
+        self.append(
+            "PORTFOLIO_OPEN",
+            "paper-open",
+            "2024-01-02T14:00:00Z",
+            initial_cash="1000",
+        )
+        path = self.store.path_for("paper")
+        with path.open("ab") as handle:
+            handle.write(b'{"event_id":')
+
+        snapshot = build_snapshot(self.root)
+
+        self.assertTrue(
+            any(
+                "paper ledger tail repaired" in warning
+                for warning in snapshot["warnings"]
+            )
+        )
+        self.assertEqual(len(self.store.read("paper")), 1)
+        self.assertEqual(len(list((self.root / "backups").glob("*.bak"))), 1)
+        self.assertEqual(
+            len(list((self.root / "quarantine").glob("*.quarantine"))),
+            1,
+        )
+
     def test_successful_snapshot_clears_rebuild_marker(self) -> None:
         self.append(
             "PORTFOLIO_OPEN",
@@ -108,7 +145,11 @@ class SnapshotTests(unittest.TestCase):
         self.assertFalse(marker.exists())
         self.assertEqual(
             snapshot["portfolios"]["paper"]["metrics"]["data_status"],
-            "INSUFFICIENT_DATA",
+            "OK",
+        )
+        self.assertEqual(
+            snapshot["portfolios"]["paper"]["metrics"]["total_return"],
+            "0",
         )
 
     def test_after_hours_trade_maps_to_next_nyse_session(self) -> None:
@@ -196,6 +237,63 @@ class SnapshotTests(unittest.TestCase):
                 "market_price_as_of"
             ],
             "2024-01-08T21:00:00Z",
+        )
+
+    def test_trade_after_latest_quote_extends_calendar_and_creates_gap(self) -> None:
+        self.append(
+            "PORTFOLIO_OPEN",
+            "paper-open",
+            "2024-01-02T14:00:00Z",
+            initial_cash="1000",
+        )
+        self.append(
+            "BUY",
+            "paper-buy-aapl",
+            "2024-01-02T15:00:00Z",
+            symbol="AAPL",
+            shares="1",
+            price="100",
+            fee="0",
+        )
+        self.append(
+            "BENCHMARK_CLOSE",
+            "market-spy-2024-01-02",
+            "2024-01-02T21:00:00Z",
+            symbol="SPY",
+            close="470",
+            session_date="2024-01-02",
+        )
+        self.append(
+            "QUOTE",
+            "market-aapl-2024-01-02",
+            "2024-01-02T21:00:00Z",
+            symbol="AAPL",
+            close="100",
+            session_date="2024-01-02",
+        )
+        self.append(
+            "BUY",
+            "paper-buy-msft",
+            "2024-01-03T15:00:00Z",
+            symbol="MSFT",
+            shares="1",
+            price="100",
+            fee="0",
+        )
+
+        snapshot = build_snapshot(self.root, write=False)
+        by_day = {
+            point["date"]: point
+            for point in snapshot["portfolios"]["paper"]["daily"]
+        }
+        self.assertIn("2024-01-03", by_day)
+        self.assertEqual(
+            by_day["2024-01-03"]["data_status"],
+            "INSUFFICIENT_MARKET_DATA",
+        )
+        self.assertCountEqual(
+            by_day["2024-01-03"]["missing_symbols"],
+            ["AAPL", "MSFT"],
         )
 
     def test_if_needed_rebuild_skips_unchanged_source_heads(self) -> None:
