@@ -361,7 +361,10 @@ Rebuild path unit 會即時處理 `rebuild.pending`；安全 timer 每五分鐘�
 JSONL source heads，資料無變更時不會重寫 snapshot 或製造 GitHub commit。
 Publisher 寫入 `publication-attempt.json` 後才 PUT。若 PUT 成功但 response
 timeout／process crash，下次會以 intended content hash 採納成功 commit；
-未知 remote edit 會 fail closed。
+未知 remote edit 會 fail closed。`publish.pending` 只係快速觸發提示；安全
+timer 會比較 local snapshot hash 與 `published-state.json`。兩者相同就直接
+回報 `idle`，不會向 GitHub 發出 request；兩者不同就算 pending marker 因
+crash 遺失，亦會繼續 publication recovery。
 
 如果新建 `portfolio-data` 時已經有一份 sample snapshot，而 VPS 尚未有
 `published-state.json`，第一次覆寫必須由人明確確認：

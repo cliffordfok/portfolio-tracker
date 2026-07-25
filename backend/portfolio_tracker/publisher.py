@@ -472,6 +472,12 @@ class SnapshotPublisher:
             )
 
     def publish(self) -> dict[str, Any]:
+        if not self.pending_path.exists() and not self.attempt_path.exists():
+            published = _read_json(self.published_state_path)
+            if published is not None:
+                _, _, local_hash = self._snapshot()
+                if published.get("local_snapshot_hash") == local_hash:
+                    return {"status": "idle", "attempts": 0}
         try:
             return self._publish_with_lock()
         except TimeoutError:

@@ -99,11 +99,14 @@ export function filterByRange(items, range, accessor = (item) => item.date) {
   });
 }
 
-function csvEscape(value) {
+export function csvEscape(value) {
   const normalized = String(value ?? "").replace(/\s+/g, " ").trim();
-  return /[",\n]/.test(normalized)
-    ? `"${normalized.replaceAll('"', '""')}"`
+  const safe = /^[=+\-@]/.test(normalized)
+    ? `'${normalized}`
     : normalized;
+  return /[",\n]/.test(safe)
+    ? `"${safe.replaceAll('"', '""')}"`
+    : safe;
 }
 
 export function exportTableToCsv(table, filename) {

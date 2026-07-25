@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import unittest
 import tempfile
@@ -19,9 +20,37 @@ from integrations.hermes_bridge import (
     quote_batch_events,
 )
 from portfolio_tracker.ledger import LedgerStore
+from portfolio_tracker.publisher import (
+    PutResult,
+    RemoteContent,
+    SnapshotPublisher,
+)
 from portfolio_tracker.snapshot import build_snapshot, build_snapshot_if_needed
 
 from .helpers import candidate
+
+
+class InMemoryContentsClient:
+    def __init__(self) -> None:
+        self.remote: RemoteContent | None = None
+
+    def branch_exists(self) -> bool:
+        return True
+
+    def get_content(self) -> RemoteContent | None:
+        return self.remote
+
+    def put_content(
+        self,
+        content: bytes,
+        *,
+        expected_blob_sha: str | None,
+        message: str,
+    ) -> PutResult:
+        blob_sha = hashlib.sha1(content).hexdigest()
+        commit_sha = f"commit-{blob_sha}"
+        self.remote = RemoteContent(blob_sha, content, commit_sha)
+        return PutResult(200, blob_sha, commit_sha)
 
 
 class HermesBridgeTests(unittest.TestCase):
@@ -428,6 +457,92 @@ class HermesBridgeTests(unittest.TestCase):
             self.assertEqual(
                 [event["event_id"] for event in LedgerStore(root).read("live")],
                 ["live-open", "live-buy-msft"],
+            )
+
+    def test_trade_to_public_snapshot_end_to_end(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            for portfolio, initial_cash in (
+                ("paper", "100000"),
+                ("live", "50000"),
+            ):
+                append_and_rebuild(
+                    root,
+                    candidate(
+                        "PORTFOLIO_OPEN",
+                        portfolio=portfolio,
+                        event_id=f"{portfolio}-open",
+                        occurred_at="2024-01-02T14:00:00Z",
+                        initial_cash=initial_cash,
+                    ),
+                )
+            append_and_rebuild(
+                root,
+                candidate(
+                    "BUY",
+                    portfolio="paper",
+                    event_id="paper-buy-aapl",
+                    occurred_at="2024-01-02T15:00:00Z",
+                    symbol="AAPL",
+                    shares="2",
+                    price="100",
+                    fee="0",
+                ),
+            )
+            append_and_rebuild(
+                root,
+                candidate(
+                    "BUY",
+                    portfolio="live",
+                    event_id="live-buy-msft",
+                    occurred_at="2024-01-02T15:30:00Z",
+                    symbol="MSFT",
+                    shares="3",
+                    price="200",
+                    fee="0",
+                ),
+            )
+            quote_result = append_quote_batch_and_rebuild(
+                root,
+                quote_batch_events(self.quote_batch()),
+            )
+            self.assertEqual(quote_result["snapshot_status"], "rebuilt")
+
+            client = InMemoryContentsClient()
+            publish_result = SnapshotPublisher(
+                root=root,
+                client=client,
+                sleep=lambda _: None,
+            ).publish()
+
+            self.assertEqual(publish_result["status"], "published")
+            self.assertIsNotNone(client.remote)
+            published = json.loads(client.remote.content)
+            self.assertEqual(published["schema_version"], 3)
+            self.assertEqual(published["revision"], 7)
+            self.assertEqual(
+                published["portfolios"]["paper"]["holdings"][0]["symbol"],
+                "AAPL",
+            )
+            self.assertEqual(
+                published["portfolios"]["paper"]["holdings"][0][
+                    "current_price"
+                ],
+                "110",
+            )
+            self.assertEqual(
+                published["portfolios"]["live"]["holdings"][0]["symbol"],
+                "MSFT",
+            )
+            self.assertEqual(
+                published["portfolios"]["live"]["holdings"][0][
+                    "current_price"
+                ],
+                "210",
+            )
+            self.assertFalse((root / "state" / "publish.pending").exists())
+            self.assertTrue(
+                (root / "state" / "published-state.json").exists()
             )
 
 

@@ -15,7 +15,7 @@ from portfolio_tracker.errors import (
     LedgerCorruptionError,
     ValidationError,
 )
-from portfolio_tracker.ledger import LedgerStore, read_jsonl
+from portfolio_tracker.ledger import FileLock, LedgerStore, read_jsonl
 from portfolio_tracker.snapshot import build_snapshot
 
 from .helpers import candidate
@@ -36,6 +36,14 @@ class LedgerTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.temp.cleanup()
+
+    def test_lock_file_permissions_do_not_depend_on_caller_umask(self) -> None:
+        lock_path = self.root / "locks" / "test.lock"
+        with patch("portfolio_tracker.ledger.os.chmod") as chmod:
+            with FileLock(lock_path):
+                pass
+
+        chmod.assert_called_with(lock_path, 0o600)
 
     def test_idempotent_retry_is_noop(self) -> None:
         first = self.store.append(self.open)

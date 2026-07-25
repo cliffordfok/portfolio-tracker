@@ -37,6 +37,7 @@ class FileLock(AbstractContextManager["FileLock"]):
     def __enter__(self) -> "FileLock":
         _ensure_private_dir(self.path.parent)
         self._file = self.path.open("a+b")
+        os.chmod(self.path, 0o600)
         if self.path.stat().st_size == 0:
             self._file.write(b"0")
             self._file.flush()

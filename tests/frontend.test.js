@@ -11,6 +11,7 @@ import {
   normalizeBenchmark,
 } from "../js/data.js";
 import {
+  csvEscape,
   filterByRange,
   escapeHtml,
   formatCurrency,
@@ -251,6 +252,13 @@ test("untrusted table text is HTML-escaped", () => {
   );
 });
 
+test("CSV export neutralizes spreadsheet formulas", () => {
+  for (const prefix of ["=", "+", "-", "@"]) {
+    assert.equal(csvEscape(`${prefix}SUM(1,1)`), `"'${prefix}SUM(1,1)"`);
+  }
+  assert.equal(csvEscape("ordinary note"), "ordinary note");
+});
+
 test("static page contains all required tabs, tables, and D3 v7", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const config = await readFile(new URL("../js/config.js", import.meta.url), "utf8");
@@ -262,7 +270,9 @@ test("static page contains all required tabs, tables, and D3 v7", async () => {
     'id="live-trades"',
     'id="compare-chart"',
     'id="snapshot-generated-at"',
-    "d3@7",
+    "d3@7.9.0",
+    'integrity="sha384-',
+    'crossorigin="anonymous"',
   ]) {
     assert.ok(html.includes(required), `missing ${required}`);
   }

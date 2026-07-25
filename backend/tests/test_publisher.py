@@ -24,12 +24,15 @@ class FakeClient:
         self.put_statuses: list[int | str] = [200]
         self.put_headers: list[dict[str, str]] = []
         self.put_calls: list[bytes] = []
+        self.branch_calls = 0
+        self.get_calls = 0
         self.exists = True
         self.branch_failures = 0
         self.branch_failure_headers: list[dict[str, str]] = []
         self.conflict_remote: RemoteContent | None = None
 
     def branch_exists(self) -> bool:
+        self.branch_calls += 1
         if self.branch_failures:
             self.branch_failures -= 1
             headers = (
@@ -44,6 +47,7 @@ class FakeClient:
         return self.exists
 
     def get_content(self) -> RemoteContent | None:
+        self.get_calls += 1
         return self.remote
 
     def put_content(
@@ -71,6 +75,10 @@ class PublisherTests(unittest.TestCase):
         self.snapshot_path.parent.mkdir(parents=True)
         self.write_snapshot(1, "first")
         self.client = FakeClient()
+        atomic_write_json(
+            self.root / "state" / "publish.pending",
+            {"revision": 1},
+        )
 
     def tearDown(self) -> None:
         self.temp.cleanup()
@@ -96,7 +104,55 @@ class PublisherTests(unittest.TestCase):
         self.assertEqual(result["status"], "published")
         self.assertTrue((self.root / "state" / "published-state.json").exists())
         self.assertFalse((self.root / "state" / "publication-attempt.json").exists())
+        self.assertFalse((self.root / "state" / "publish.pending").exists())
         self.assertEqual(len(self.client.put_calls), 1)
+
+    def test_missing_pending_marker_exits_without_github_requests(self) -> None:
+        content = self.snapshot_path.read_bytes()
+        atomic_write_json(
+            self.root / "state" / "published-state.json",
+            {
+                "local_snapshot_hash": hashlib.sha256(content).hexdigest(),
+                "remote_blob_sha": "known-sha",
+                "remote_commit_sha": "known-commit",
+                "published_revision": 1,
+            },
+        )
+        (self.root / "state" / "publish.pending").unlink()
+
+        result = self.publisher().publish()
+
+        self.assertEqual(result, {"status": "idle", "attempts": 0})
+        self.assertEqual(self.client.put_calls, [])
+        self.assertEqual(self.client.branch_calls, 0)
+        self.assertEqual(self.client.get_calls, 0)
+
+    def test_timer_recovers_changed_snapshot_without_pending_marker(self) -> None:
+        old_content = self.snapshot_path.read_bytes()
+        old_sha = "known-sha"
+        self.client.remote = RemoteContent(
+            old_sha,
+            old_content,
+            "known-commit",
+        )
+        atomic_write_json(
+            self.root / "state" / "published-state.json",
+            {
+                "local_snapshot_hash": hashlib.sha256(old_content).hexdigest(),
+                "remote_blob_sha": old_sha,
+                "remote_commit_sha": "known-commit",
+                "published_revision": 1,
+            },
+        )
+        latest = self.write_snapshot(2, "changed-before-pending")
+        (self.root / "state" / "publish.pending").unlink()
+
+        result = self.publisher().publish()
+
+        self.assertEqual(result["status"], "published")
+        self.assertEqual(self.client.put_calls, [latest])
+        self.assertEqual(self.client.branch_calls, 1)
+        self.assertEqual(self.client.get_calls, 1)
 
     def test_three_conflicts_exhaust_retry_budget(self) -> None:
         self.client.put_statuses = [409, 409, 409]
@@ -155,6 +211,34 @@ class PublisherTests(unittest.TestCase):
         result = self.publisher().publish()
         self.assertEqual(result["status"], "recovered")
         self.assertEqual(len(self.client.put_calls), 0)
+
+    def test_unresolved_attempt_recovers_even_if_pending_marker_is_missing(
+        self,
+    ) -> None:
+        content = self.snapshot_path.read_bytes()
+        intended = hashlib.sha256(content).hexdigest()
+        self.client.remote = RemoteContent(
+            "remote-success",
+            content,
+            "commit-success",
+        )
+        atomic_write_json(
+            self.root / "state" / "publication-attempt.json",
+            {
+                "intended_hash": intended,
+                "expected_remote_blob_sha": None,
+                "revision": 1,
+            },
+        )
+        (self.root / "state" / "publish.pending").unlink()
+
+        result = self.publisher().publish()
+
+        self.assertEqual(result["status"], "recovered")
+        self.assertEqual(self.client.put_calls, [])
+        self.assertFalse(
+            (self.root / "state" / "publication-attempt.json").exists()
+        )
 
     def test_new_local_snapshot_replaces_stale_attempt(self) -> None:
         old = b'{"marker":"old","revision":1,"schema_version":3}'
