@@ -13,12 +13,18 @@ def event(
     **fields: Any,
 ) -> dict[str, Any]:
     prefix = portfolio
+    default_source = {
+        "PORTFOLIO_OPEN": "bootstrap",
+        "QUOTE": "cron-quote",
+        "BENCHMARK_CLOSE": "cron-benchmark",
+    }.get(action, "manual-import")
+    source = fields.pop("source", default_source)
     return {
         "event_id": event_id or f"{prefix}-{seq}",
         "portfolio": portfolio,
         "occurred_at": occurred_at or f"2024-01-{min(seq, 28):02d}T15:00:00Z",
         "created_at": f"2024-02-{min(seq, 28):02d}T10:00:00Z",
-        "source": "manual-import",
+        "source": source,
         "ledger_seq": seq,
         "action": action,
         **({"currency": "USD"} if action == "PORTFOLIO_OPEN" else {}),
@@ -37,12 +43,18 @@ def candidate(
     occurred_at: str,
     **fields: Any,
 ) -> dict[str, Any]:
+    default_source = {
+        "PORTFOLIO_OPEN": "bootstrap",
+        "QUOTE": "cron-quote",
+        "BENCHMARK_CLOSE": "cron-benchmark",
+    }.get(action, "manual-import")
+    source = fields.pop("source", default_source)
     return {
         "event_id": event_id,
         "portfolio": portfolio,
         "occurred_at": occurred_at,
         "created_at": "2024-02-01T10:00:00Z",
-        "source": "manual-import",
+        "source": source,
         "action": action,
         **({"currency": "USD"} if action == "PORTFOLIO_OPEN" else {}),
         **({"symbol": "USD"} if action == "CASH_FLOW" else {}),

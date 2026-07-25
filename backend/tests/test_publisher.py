@@ -26,12 +26,21 @@ class FakeClient:
         self.put_calls: list[bytes] = []
         self.exists = True
         self.branch_failures = 0
+        self.branch_failure_headers: list[dict[str, str]] = []
         self.conflict_remote: RemoteContent | None = None
 
     def branch_exists(self) -> bool:
         if self.branch_failures:
             self.branch_failures -= 1
-            raise NetworkFailure("temporary branch lookup timeout")
+            headers = (
+                self.branch_failure_headers.pop(0)
+                if self.branch_failure_headers
+                else {}
+            )
+            raise NetworkFailure(
+                "temporary branch lookup timeout",
+                headers=headers,
+            )
         return self.exists
 
     def get_content(self) -> RemoteContent | None:
@@ -101,6 +110,20 @@ class PublisherTests(unittest.TestCase):
         self.assertEqual(result["status"], "published")
         self.assertEqual(result["attempts"], 2)
         self.assertEqual(len(self.client.put_calls), 1)
+
+    def test_get_rate_limit_honors_retry_after_header(self) -> None:
+        sleeps: list[float] = []
+        self.client.branch_failures = 1
+        self.client.branch_failure_headers = [{"Retry-After": "7"}]
+        publisher = SnapshotPublisher(
+            root=self.root,
+            client=self.client,
+            sleep=sleeps.append,
+        )
+        result = publisher.publish()
+        self.assertEqual(result["status"], "published")
+        self.assertEqual(result["attempts"], 2)
+        self.assertEqual(sleeps, [7.0])
 
     def test_put_timeout_rechecks_remote_before_retry(self) -> None:
         self.client.put_statuses = ["network", 200]

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
 
 from portfolio_tracker.ledger import LedgerStore
@@ -9,6 +10,7 @@ from portfolio_tracker.snapshot import (
     _session_for_event,
     build_snapshot,
     build_snapshot_if_needed,
+    is_nyse_session,
 )
 
 from .helpers import candidate
@@ -93,6 +95,7 @@ class SnapshotTests(unittest.TestCase):
         snapshot = build_snapshot(self.root, write=False)
         daily = snapshot["portfolios"]["paper"]["daily"]
         self.assertEqual(daily[0]["segment_id"], 1)
+        self.assertEqual(daily[0]["daily_return"], "0")
         self.assertEqual(daily[1]["data_status"], "INSUFFICIENT_MARKET_DATA")
         self.assertIsNone(daily[1]["nav"])
         self.assertEqual(daily[2]["segment_id"], 2)
@@ -104,6 +107,63 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(
             snapshot["portfolios"]["paper"]["metrics"]["data_status"],
             "INSUFFICIENT_DATA",
+        )
+
+    def test_voided_event_does_not_extend_the_performance_calendar(self) -> None:
+        self.append(
+            "PORTFOLIO_OPEN",
+            "paper-open",
+            "2024-01-02T14:00:00Z",
+            initial_cash="1000",
+        )
+        self.append(
+            "BUY",
+            "paper-buy-aapl",
+            "2024-01-02T15:00:00Z",
+            symbol="AAPL",
+            shares="1",
+            price="100",
+            fee="0",
+        )
+        self.append(
+            "BENCHMARK_CLOSE",
+            "market-spy-2024-01-02",
+            "2024-01-02T21:00:00Z",
+            symbol="SPY",
+            close="470",
+            session_date="2024-01-02",
+        )
+        self.append(
+            "QUOTE",
+            "market-aapl-2024-01-02",
+            "2024-01-02T21:00:00Z",
+            symbol="AAPL",
+            close="100",
+            session_date="2024-01-02",
+        )
+        self.append(
+            "BUY",
+            "paper-buy-msft-voided",
+            "2024-01-03T15:00:00Z",
+            symbol="MSFT",
+            shares="1",
+            price="100",
+            fee="0",
+        )
+        self.append(
+            "VOID",
+            "paper-void-msft",
+            "2024-01-04T15:00:00Z",
+            void_target="paper-buy-msft-voided",
+        )
+
+        snapshot = build_snapshot(self.root, write=False)
+        self.assertEqual(
+            [
+                point["date"]
+                for point in snapshot["portfolios"]["paper"]["daily"]
+            ],
+            ["2024-01-02"],
         )
 
     def test_rebuild_repairs_incomplete_tail_and_surfaces_warning(self) -> None:
@@ -183,6 +243,30 @@ class SnapshotTests(unittest.TestCase):
         )
         self.assertEqual(_session_for_event(before_close, sessions), "2024-07-01")
         self.assertEqual(_session_for_event(after_close, sessions), "2024-07-02")
+
+    def test_new_year_observed_holiday_is_not_a_session(self) -> None:
+        self.assertFalse(is_nyse_session(date(2021, 12, 31)))
+        self.assertTrue(is_nyse_session(date(2021, 12, 30)))
+
+    def test_special_exchange_closures_are_not_sessions(self) -> None:
+        closures = (
+            date(2001, 9, 11),
+            date(2001, 9, 12),
+            date(2001, 9, 13),
+            date(2001, 9, 14),
+            date(2004, 6, 11),
+            date(2007, 1, 2),
+            date(2012, 10, 29),
+            date(2012, 10, 30),
+            date(2018, 12, 5),
+            date(2025, 1, 9),
+        )
+        for closure in closures:
+            with self.subTest(closure=closure):
+                self.assertFalse(is_nyse_session(closure))
+
+        self.assertTrue(is_nyse_session(date(2001, 9, 17)))
+        self.assertTrue(is_nyse_session(date(2025, 1, 10)))
 
     def test_weekend_forward_fills_quotes_without_bridging_trading_days(self) -> None:
         self.append(
@@ -392,6 +476,47 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(daily[1]["external_flow"], "100")
         self.assertEqual(daily[1]["daily_return"], "0")
         self.assertEqual(daily[1]["nav"], "1100")
+
+    def test_zero_return_denominator_creates_a_new_performance_segment(self) -> None:
+        self.append(
+            "PORTFOLIO_OPEN",
+            "paper-open",
+            "2024-01-02T14:00:00Z",
+            initial_cash="0",
+        )
+        self.append(
+            "CASH_FLOW",
+            "paper-funding",
+            "2024-01-04T14:00:00Z",
+            amount="100",
+        )
+        for day, close in (
+            ("2024-01-02", "470"),
+            ("2024-01-03", "471"),
+            ("2024-01-04", "472"),
+        ):
+            self.append(
+                "BENCHMARK_CLOSE",
+                f"market-spy-{day}",
+                f"{day}T21:00:00Z",
+                symbol="SPY",
+                close=close,
+                session_date=day,
+            )
+
+        snapshot = build_snapshot(self.root, write=False)
+        daily = snapshot["portfolios"]["paper"]["daily"]
+        self.assertEqual(daily[0]["daily_return"], "0")
+        self.assertEqual(daily[1]["data_status"], "INSUFFICIENT_DATA")
+        self.assertIsNone(daily[1]["daily_return"])
+        self.assertIsNone(daily[1]["segment_id"])
+        self.assertEqual(daily[2]["data_status"], "OK")
+        self.assertEqual(daily[2]["segment_id"], 2)
+        self.assertIsNone(daily[2]["daily_return"])
+        self.assertEqual(
+            snapshot["portfolios"]["paper"]["metrics"]["data_status"],
+            "INSUFFICIENT_DATA",
+        )
 
     def test_max_drawdown_uses_standard_peak_to_trough_ratio(self) -> None:
         self.append(

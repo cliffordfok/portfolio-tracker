@@ -111,6 +111,27 @@ class LedgerTests(unittest.TestCase):
         self.assertEqual(len(backups), 1)
         self.assertEqual(quarantines[0].read_bytes(), b'{"event_id":')
         self.assertIn(b'{"event_id":', backups[0].read_bytes())
+        marker = json.loads(
+            (self.root / "state" / "rebuild.pending").read_text()
+        )
+        self.assertEqual(marker["requested_by"], "ledger-tail-repair")
+        self.assertEqual(marker["portfolios"], ["paper"])
+
+    def test_tail_repair_marks_rebuild_even_when_retry_is_duplicate(self) -> None:
+        self.store.append(self.open)
+        path = self.store.path_for("paper")
+        with path.open("ab") as handle:
+            handle.write(b'{"event_id":')
+        (self.root / "state" / "rebuild.pending").unlink()
+
+        result = self.store.append(self.open)
+
+        self.assertEqual(result["status"], "duplicate")
+        self.assertEqual(len(result["ledger_repairs"]), 1)
+        marker = json.loads(
+            (self.root / "state" / "rebuild.pending").read_text()
+        )
+        self.assertEqual(marker["requested_by"], "ledger-tail-repair")
 
     def test_complete_json_without_newline_is_quarantined_before_retry(self) -> None:
         self.store.append(self.open)

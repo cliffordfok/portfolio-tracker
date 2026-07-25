@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from copy import deepcopy
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any, Mapping
 
 from .decimal_utils import input_price, input_shares, money
@@ -105,6 +105,13 @@ def validate_event(
         raise ValidationError(
             f"source must be one of: {', '.join(sorted(SOURCES))}"
         )
+    required_source = {
+        "PORTFOLIO_OPEN": "bootstrap",
+        "QUOTE": "cron-quote",
+        "BENCHMARK_CLOSE": "cron-benchmark",
+    }.get(action)
+    if required_source is not None and event["source"] != required_source:
+        raise ValidationError(f"{action} source must be {required_source}")
 
     if portfolio == "market" and action not in MARKET_ACTIONS:
         raise ValidationError("market ledger only accepts QUOTE/BENCHMARK_CLOSE")
@@ -171,6 +178,10 @@ def validate_event(
             event["session_date"]
         ):
             raise ValidationError("session_date must use YYYY-MM-DD")
+        try:
+            date.fromisoformat(event["session_date"])
+        except ValueError as exc:
+            raise ValidationError("session_date must be a real calendar date") from exc
 
 
 def _decimal_string(value: Any, *, field: str) -> str:

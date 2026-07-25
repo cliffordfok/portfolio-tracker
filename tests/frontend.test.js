@@ -5,6 +5,8 @@ import test from "node:test";
 import {
   buildCommonComparison,
   calculateFallbackPortfolio,
+  currentPortfolioNav,
+  currentPortfolioTotalPnl,
   loadDashboardData,
   normalizeBenchmark,
 } from "../js/data.js";
@@ -61,6 +63,74 @@ test("fallback calculation rejects an oversell instead of fabricating P&L", () =
       ),
     /oversells AAPL/,
   );
+});
+
+test("current portfolio totals never substitute a stale or cash-only NAV", () => {
+  const incomplete = {
+    data_status: "INSUFFICIENT_DATA",
+    initial_cash: "1000",
+    cash: "900",
+    estimated_nav: "9999",
+    holdings: [
+      { symbol: "AAPL", market_value: "120", unrealized_pnl: "20" },
+      { symbol: "MSFT", market_value: null, unrealized_pnl: null },
+    ],
+    daily: [
+      {
+        date: "2026-01-01",
+        nav: "1020",
+        external_flow: "0",
+        data_status: "OK",
+      },
+      {
+        date: "2026-01-02",
+        nav: null,
+        external_flow: "0",
+        data_status: "INSUFFICIENT_MARKET_DATA",
+      },
+    ],
+    metrics: { realized_pnl: "10" },
+  };
+  assert.equal(currentPortfolioNav(incomplete), null);
+  assert.equal(currentPortfolioTotalPnl(incomplete), null);
+
+  const invalidReturnBase = {
+    ...incomplete,
+    daily: [
+      {
+        date: "2026-01-02",
+        nav: "1025",
+        external_flow: "0",
+        data_status: "INSUFFICIENT_DATA",
+      },
+    ],
+  };
+  assert.equal(currentPortfolioNav(invalidReturnBase), 1025);
+  assert.equal(currentPortfolioTotalPnl(invalidReturnBase), 25);
+
+  const recovered = {
+    ...incomplete,
+    daily: [
+      ...incomplete.daily,
+      {
+        date: "2026-01-03",
+        nav: "1050",
+        external_flow: "0",
+        data_status: "OK",
+      },
+    ],
+  };
+  assert.equal(currentPortfolioNav(recovered), 1050);
+  assert.equal(currentPortfolioTotalPnl(recovered), 50);
+
+  const fallback = {
+    ...incomplete,
+    data_status: "FALLBACK",
+    estimated_nav: 1015,
+    daily: [],
+  };
+  assert.equal(currentPortfolioNav(fallback), 1015);
+  assert.equal(currentPortfolioTotalPnl(fallback), 15);
 });
 
 test("benchmark is normalized from its first close", () => {
@@ -232,6 +302,55 @@ function validSnapshot(revision = 1) {
     warnings: [],
   };
 }
+
+test("snapshot validation accepts an invalid return-base gap", async () => {
+  const previousWindow = globalThis.window;
+  const previousFetch = globalThis.fetch;
+  globalThis.window = {
+    location: { href: "https://cliffordfok.github.io/portfolio-tracker/" },
+    localStorage: new MemoryStorage(),
+  };
+  const payload = validSnapshot(31);
+  payload.portfolios.paper.data_status = "INSUFFICIENT_DATA";
+  payload.portfolios.paper.metrics.data_status = "INSUFFICIENT_DATA";
+  payload.portfolios.paper.daily = [
+    {
+      date: "2026-01-02",
+      nav: "0",
+      cash: "0",
+      external_flow: "0",
+      daily_return: null,
+      cumulative_return: null,
+      segment_id: null,
+      segment_return: null,
+      pnl: "0",
+      data_status: "INSUFFICIENT_DATA",
+      missing_symbols: [],
+    },
+  ];
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => payload,
+  });
+  try {
+    const result = await loadDashboardData(
+      {
+        snapshotUrls: ["https://example.test/snapshot.json"],
+        storagePrefix: "return-base-gap-test",
+        staleAfterMinutes: 999999,
+      },
+      { now: 1000 },
+    );
+    assert.equal(result.source, "snapshot");
+    assert.equal(
+      result.portfolios.paper.daily[0].data_status,
+      "INSUFFICIENT_DATA",
+    );
+  } finally {
+    globalThis.window = previousWindow;
+    globalThis.fetch = previousFetch;
+  }
+});
 
 test("dashboard cache prevents a second fetch inside the two-minute TTL", async () => {
   const previousWindow = globalThis.window;

@@ -1,5 +1,10 @@
 import { renderSeriesChart } from "./charts.js";
-import { buildCommonComparison, loadDashboardData } from "./data.js";
+import {
+  buildCommonComparison,
+  currentPortfolioNav,
+  currentPortfolioTotalPnl,
+  loadDashboardData,
+} from "./data.js";
 import {
   dateOnly,
   emptyRow,
@@ -32,44 +37,10 @@ function metricCard(label, value, detail, className = "") {
   </article>`;
 }
 
-function portfolioNav(portfolio) {
-  if (portfolio.data_status === "NO_DATA") return null;
-  const last = [...(portfolio.daily || [])]
-    .reverse()
-    .find((point) => numeric(point.nav) !== null);
-  if (last) return numeric(last.nav);
-  if (portfolio.estimated_nav != null) return numeric(portfolio.estimated_nav);
-  const cash = numeric(portfolio.cash);
-  const quotedValue = (portfolio.holdings || []).reduce(
-    (sum, holding) => sum + (numeric(holding.market_value) || 0),
-    0,
-  );
-  return cash === null ? null : cash + quotedValue;
-}
-
-function portfolioTotalPnl(portfolio) {
-  if (portfolio.data_status === "NO_DATA") return null;
-  const nav = portfolioNav(portfolio);
-  const initial = numeric(portfolio.initial_cash);
-  if (nav !== null && initial !== null) {
-    const flows = (portfolio.daily || []).reduce(
-      (sum, point) => sum + (numeric(point.external_flow) || 0),
-      0,
-    );
-    return nav - initial - flows;
-  }
-  const realized = numeric(portfolio.metrics?.realized_pnl) || 0;
-  const unrealized = (portfolio.holdings || []).reduce(
-    (sum, holding) => sum + (numeric(holding.unrealized_pnl) || 0),
-    0,
-  );
-  return realized + unrealized;
-}
-
 function renderPortfolioMetrics(name) {
   const portfolio = state.data.portfolios[name];
-  const nav = portfolioNav(portfolio);
-  const pnl = portfolioTotalPnl(portfolio);
+  const nav = currentPortfolioNav(portfolio);
+  const pnl = currentPortfolioTotalPnl(portfolio);
   const totalReturn = numeric(portfolio.metrics?.total_return);
   const cash = numeric(portfolio.cash);
   const winRate = numeric(portfolio.metrics?.win_rate);

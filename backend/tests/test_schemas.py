@@ -141,6 +141,52 @@ class SchemaTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "source must be one of"):
             validate_event(value)
 
+    def test_automated_actions_require_their_canonical_source(self) -> None:
+        cases = (
+            (
+                candidate(
+                    "PORTFOLIO_OPEN",
+                    portfolio="paper",
+                    event_id="paper-open-wrong-source",
+                    occurred_at="2024-01-02T15:00:00Z",
+                    initial_cash="1000",
+                ),
+                "manual-import",
+                "PORTFOLIO_OPEN source must be bootstrap",
+            ),
+            (
+                candidate(
+                    "QUOTE",
+                    portfolio="market",
+                    event_id="market-quote-wrong-source",
+                    occurred_at="2024-01-02T21:00:00Z",
+                    symbol="AAPL",
+                    close="100",
+                    session_date="2024-01-02",
+                ),
+                "manual-import",
+                "QUOTE source must be cron-quote",
+            ),
+            (
+                candidate(
+                    "BENCHMARK_CLOSE",
+                    portfolio="market",
+                    event_id="market-benchmark-wrong-source",
+                    occurred_at="2024-01-02T21:00:00Z",
+                    symbol="SPY",
+                    close="470",
+                    session_date="2024-01-02",
+                ),
+                "cron-quote",
+                "BENCHMARK_CLOSE source must be cron-benchmark",
+            ),
+        )
+        for value, invalid_source, message in cases:
+            with self.subTest(action=value["action"]):
+                value["source"] = invalid_source
+                with self.assertRaisesRegex(ValidationError, message):
+                    validate_event(value)
+
     def test_corrections_require_a_non_empty_audit_reason(self) -> None:
         amend = candidate(
             "AMEND",
@@ -176,6 +222,19 @@ class SchemaTests(unittest.TestCase):
             session_date="2024-01-02",
         )
         with self.assertRaisesRegex(ValidationError, "symbol must be SPY"):
+            validate_event(value)
+
+    def test_market_session_date_must_be_a_real_calendar_date(self) -> None:
+        value = candidate(
+            "QUOTE",
+            portfolio="market",
+            event_id="market-quote-invalid-date",
+            occurred_at="2024-02-28T21:00:00Z",
+            symbol="AAPL",
+            close="100",
+            session_date="2024-02-31",
+        )
+        with self.assertRaisesRegex(ValidationError, "real calendar date"):
             validate_event(value)
 
     def test_demo_seed_events_follow_master_schema(self) -> None:

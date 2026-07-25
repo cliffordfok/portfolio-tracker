@@ -288,6 +288,31 @@ class LedgerStore:
     def path_for(self, portfolio: str) -> Path:
         return self.ledger_dir / f"{portfolio}.jsonl"
 
+    def _mark_rebuild_after_repair(
+        self,
+        repairs: list[dict[str, Any]],
+    ) -> None:
+        if not repairs:
+            return
+        portfolios = sorted(
+            {
+                Path(repair["ledger"]).stem
+                for repair in repairs
+                if isinstance(repair.get("ledger"), str)
+            }
+        )
+        atomic_write_json(
+            self.root / "state" / "rebuild.pending",
+            {
+                "portfolios": portfolios,
+                "requested_by": "ledger-tail-repair",
+                "repairs": repairs,
+                "requested_at": datetime.now(UTC)
+                .isoformat()
+                .replace("+00:00", "Z"),
+            },
+        )
+
     def read(
         self,
         portfolio: str,
@@ -332,6 +357,7 @@ class LedgerStore:
                 repair_tail=True,
                 repair_records=repairs,
             )
+            self._mark_rebuild_after_repair(repairs)
             for existing in all_events:
                 if existing["event_id"] != normalized_candidate["event_id"]:
                     continue
@@ -378,9 +404,13 @@ class LedgerStore:
 
     def repair_tail(self, portfolio: str) -> list[dict[str, Any]]:
         with FileLock(self.lock_path, timeout=self.lock_timeout):
-            return read_jsonl(
+            repairs: list[dict[str, Any]] = []
+            events = read_jsonl(
                 self.path_for(portfolio),
                 repair_tail=True,
                 backup_dir=self.root / "backups",
                 quarantine_dir=self.root / "quarantine",
+                repair_records=repairs,
             )
+            self._mark_rebuild_after_repair(repairs)
+            return events

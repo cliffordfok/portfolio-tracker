@@ -23,6 +23,15 @@ from .ledger import FileLock, atomic_write_json, durable_unlink
 class NetworkFailure(Exception):
     """A request may have reached GitHub but no response was received."""
 
+    def __init__(
+        self,
+        message: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.headers = dict(headers or {})
+
 
 @dataclass
 class RemoteContent:
@@ -129,7 +138,10 @@ class GitHubContentsClient:
                 or lowered.get("x-ratelimit-remaining") == "0"
             )
         ):
-            raise NetworkFailure(f"retryable branch lookup failure: {status}")
+            raise NetworkFailure(
+                f"retryable branch lookup failure: {status}",
+                headers=headers,
+            )
         raise PublicationError(f"cannot check data branch: GitHub returned {status}")
 
     def get_content(self) -> RemoteContent | None:
@@ -148,7 +160,10 @@ class GitHubContentsClient:
                 or lowered.get("x-ratelimit-remaining") == "0"
             )
         ):
-            raise NetworkFailure(f"retryable content lookup failure: {status}")
+            raise NetworkFailure(
+                f"retryable content lookup failure: {status}",
+                headers=headers,
+            )
         if status != 200 or not payload:
             raise PublicationError(f"cannot read remote snapshot: GitHub returned {status}")
         if payload.get("type") != "file":
@@ -280,17 +295,30 @@ class SnapshotPublisher:
         )
         durable_unlink(self.attempt_path)
 
-    def _retry_delay(self, attempt: int, result: PutResult | None = None) -> float:
-        headers = {key.lower(): value for key, value in (result.headers or {}).items()} if result else {}
+    def _retry_delay(
+        self,
+        attempt: int,
+        result: PutResult | None = None,
+        *,
+        failure: NetworkFailure | None = None,
+    ) -> float:
+        source_headers: Mapping[str, str] = {}
+        if result is not None:
+            source_headers = result.headers
+        elif failure is not None:
+            source_headers = failure.headers
+        headers = {
+            key.lower(): value for key, value in (source_headers or {}).items()
+        }
         if "retry-after" in headers:
             try:
-                return min(max(float(headers["retry-after"]), 0), 60)
+                return max(float(headers["retry-after"]), 0)
             except ValueError:
                 return 1
         if headers.get("x-ratelimit-remaining") == "0":
             try:
                 reset = float(headers.get("x-ratelimit-reset", "0"))
-                return min(max(reset - time.time(), 0), 60)
+                return max(reset - time.time(), 0)
             except ValueError:
                 return 1
         return min((2**attempt) + random.random(), 8)
@@ -443,10 +471,12 @@ class SnapshotPublisher:
                         f"{result.message or 'unknown error'}"
                     )
 
-                except NetworkFailure:
+                except NetworkFailure as exc:
                     if attempt_number == self.max_attempts:
                         break
-                    self.sleep(self._retry_delay(attempt_number - 1))
+                    self.sleep(
+                        self._retry_delay(attempt_number - 1, failure=exc)
+                    )
                     continue
 
             raise PublicationError(

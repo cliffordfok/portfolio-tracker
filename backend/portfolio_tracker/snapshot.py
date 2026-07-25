@@ -61,6 +61,20 @@ def _easter_sunday(year: int) -> date:
     return date(year, month, day)
 
 
+_SPECIAL_NYSE_CLOSURES = {
+    date(2001, 9, 11),
+    date(2001, 9, 12),
+    date(2001, 9, 13),
+    date(2001, 9, 14),
+    date(2004, 6, 11),
+    date(2007, 1, 2),
+    date(2012, 10, 29),
+    date(2012, 10, 30),
+    date(2018, 12, 5),
+    date(2025, 1, 9),
+}
+
+
 def _nyse_holidays(year: int) -> set[date]:
     holidays = {
         _observed(date(year, 1, 1)),
@@ -75,6 +89,10 @@ def _nyse_holidays(year: int) -> set[date]:
     }
     if year >= 2022:
         holidays.add(_observed(date(year, 6, 19)))
+    next_new_year_observed = _observed(date(year + 1, 1, 1))
+    if next_new_year_observed.year == year:
+        holidays.add(next_new_year_observed)
+    holidays.update(day for day in _SPECIAL_NYSE_CLOSURES if day.year == year)
     return holidays
 
 
@@ -410,24 +428,38 @@ def _daily_series(
         )
         nav = money(cash + market_value)
 
+        pnl = money(nav - result.initial_cash - cumulative_external_flow)
         if previous_nav is None:
             segment_id += 1
-            daily_return = None
+            daily_return = None if gap_seen else ZERO
             segment_return = ZERO
         else:
             denominator = money(previous_nav + external_flow)
             if denominator <= 0:
-                segment_id += 1
-                daily_return = None
-                segment_return = ZERO
+                daily.append(
+                    {
+                        "date": session,
+                        "nav": nav,
+                        "cash": cash,
+                        "external_flow": external_flow,
+                        "daily_return": None,
+                        "cumulative_return": None,
+                        "segment_id": None,
+                        "segment_return": None,
+                        "pnl": pnl,
+                        "data_status": "INSUFFICIENT_DATA",
+                        "missing_symbols": [],
+                    }
+                )
+                previous_nav = None
+                previous_segment_return = None
                 gap_seen = True
-            else:
-                daily_return = percent(nav / denominator - 1)
-                base = previous_segment_return if previous_segment_return is not None else ZERO
-                segment_return = percent((1 + base) * (1 + daily_return) - 1)
+                continue
+            daily_return = percent(nav / denominator - 1)
+            base = previous_segment_return if previous_segment_return is not None else ZERO
+            segment_return = percent((1 + base) * (1 + daily_return) - 1)
 
         cumulative_return = None if gap_seen else segment_return
-        pnl = money(nav - result.initial_cash - cumulative_external_flow)
         daily.append(
             {
                 "date": session,
@@ -530,26 +562,25 @@ def _build_snapshot_locked(
         repair_records=repairs,
     )
     quotes, benchmark, market_sessions = _market_data(market_events)
+    replay_results = {
+        name: replay_portfolio(events, portfolio=name)
+        for name, events in (("paper", paper_events), ("live", live_events))
+        if events
+    }
     session_candidates = set(market_sessions)
-    for event in paper_events + live_events:
-        if event["action"] not in {
-            "PORTFOLIO_OPEN",
-            "BUY",
-            "SELL",
-            "CASH_FLOW",
-        }:
-            continue
-        occurred = parse_timestamp(event["occurred_at"], field="occurred_at")
-        local = _new_york_local(occurred)
-        candidate = local.date()
-        if (
-            local.timetz().replace(tzinfo=None) > MARKET_CLOSE
-            or not is_nyse_session(candidate)
-        ):
-            candidate += timedelta(days=1)
-            while not is_nyse_session(candidate):
+    for result in replay_results.values():
+        for event in result.effective_events:
+            occurred = parse_timestamp(event["occurred_at"], field="occurred_at")
+            local = _new_york_local(occurred)
+            candidate = local.date()
+            if (
+                local.timetz().replace(tzinfo=None) > MARKET_CLOSE
+                or not is_nyse_session(candidate)
+            ):
                 candidate += timedelta(days=1)
-        session_candidates.add(candidate.isoformat())
+                while not is_nyse_session(candidate):
+                    candidate += timedelta(days=1)
+            session_candidates.add(candidate.isoformat())
     sessions = (
         nyse_sessions(
             date.fromisoformat(min(session_candidates)),
@@ -596,7 +627,7 @@ def _build_snapshot_locked(
             }
             continue
 
-        result = replay_portfolio(events, portfolio=name)
+        result = replay_results[name]
         daily = _daily_series(result, quotes, days, sessions)
         last_day = days[-1] if days else None
         holdings = _enrich_holdings(result, quotes, last_day, session_set)

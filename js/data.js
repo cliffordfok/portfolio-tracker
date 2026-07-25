@@ -192,7 +192,9 @@ function validateSnapshot(snapshot) {
       if (
         !object(point) ||
         !dateString(point.date) ||
-        !["OK", "INSUFFICIENT_MARKET_DATA"].includes(point.data_status) ||
+        !["OK", "INSUFFICIENT_DATA", "INSUFFICIENT_MARKET_DATA"].includes(
+          point.data_status,
+        ) ||
         !hasDecimal(point, "nav") ||
         !hasDecimal(point, "cash") ||
         !hasDecimal(point, "external_flow") ||
@@ -286,6 +288,29 @@ function validateSnapshot(snapshot) {
     }
   }
   return snapshot;
+}
+
+export function currentPortfolioNav(portfolio) {
+  if (!portfolio || portfolio.data_status === "NO_DATA") return null;
+  if (portfolio.data_status === "FALLBACK") {
+    return numeric(portfolio.estimated_nav);
+  }
+  const daily = Array.isArray(portfolio.daily) ? portfolio.daily : [];
+  if (!daily.length) return null;
+  const latest = daily.at(-1);
+  if (!["OK", "INSUFFICIENT_DATA"].includes(latest?.data_status)) return null;
+  return numeric(latest.nav);
+}
+
+export function currentPortfolioTotalPnl(portfolio) {
+  const nav = currentPortfolioNav(portfolio);
+  const initial = numeric(portfolio?.initial_cash);
+  if (nav === null || initial === null) return null;
+  const flows = (portfolio.daily || []).reduce(
+    (sum, point) => sum + (numeric(point.external_flow) || 0),
+    0,
+  );
+  return nav - initial - flows;
 }
 
 function cachedSnapshot(config) {
