@@ -429,7 +429,7 @@
   },
   "currency": "USD",
   "data_as_of": "2026-07-17T20:30:00Z",
-  "generated_at": "2026-07-25T05:56:00.670098Z",
+  "generated_at": "2026-07-25T13:12:39.531516Z",
   "portfolios": {
     "live": {
       "cash": "39326",
@@ -1088,7 +1088,7 @@
         "data_status": "OK",
         "max_drawdown": "-0.00117108",
         "realized_pnl": "118.666666666666666666666667",
-        "sharpe_ratio": "5.53678914",
+        "sharpe_ratio": "6.75773896",
         "total_return": "0.01612501",
         "win_rate": null
       },
@@ -1857,7 +1857,7 @@
         "data_status": "OK",
         "max_drawdown": "-0.0029432",
         "realized_pnl": "560",
-        "sharpe_ratio": "5.57460753",
+        "sharpe_ratio": "6.80649425",
         "total_return": "0.0247",
         "win_rate": null
       },
