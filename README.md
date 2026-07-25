@@ -233,34 +233,62 @@ python3 integrations/hermes_bridge.py \
 
 ### 報價
 
-Quote provider 由部署者選擇。任何 cron/provider 只需把 daily close 傳給 bridge：
+Quote provider 由部署者選擇。正式 daily cron 必須把同一個 session 的所有
+持倉 close 及一個 SPY benchmark 組成單一 JSON batch，再交給 bridge：
+
+```bash
+cat <<'JSON' | python3 integrations/hermes_bridge.py \
+  --root /var/lib/portfolio-tracker \
+  quote-batch \
+  --file -
+[
+  {
+    "event_id": "market-aapl-2026-07-24",
+    "occurred_at": "2026-07-24T20:30:00Z",
+    "session_date": "2026-07-24",
+    "symbol": "AAPL",
+    "close": "218.40"
+  },
+  {
+    "event_id": "market-spy-quote-2026-07-24",
+    "occurred_at": "2026-07-24T20:30:01Z",
+    "session_date": "2026-07-24",
+    "symbol": "SPY",
+    "close": "620.10"
+  },
+  {
+    "event_id": "market-spy-benchmark-2026-07-24",
+    "occurred_at": "2026-07-24T20:30:02Z",
+    "session_date": "2026-07-24",
+    "symbol": "SPY",
+    "close": "620.10",
+    "benchmark": true
+  }
+]
+JSON
+```
+
+`quote-batch` 會先驗證整批資料必須屬於同一個 session、每個
+`(action, symbol)` 唯一，而且剛好有一個 SPY benchmark。全部通過後才會
+在同一把 global ledger lock 下寫入，最後只 rebuild／request publish 一次。
+同一批資料 retry 會按 stable event ID 成為 no-op。
+
+單筆 `quote` 只應用於人工補數：
 
 ```bash
 python3 integrations/hermes_bridge.py \
   --root /var/lib/portfolio-tracker \
   quote \
-  --event-id market-aapl-2026-07-24 \
+  --event-id market-aapl-correction-2026-07-24 \
   --occurred-at 2026-07-24T20:30:00Z \
   --session-date 2026-07-24 \
   --symbol AAPL \
   --close 218.40
 ```
 
-SPY trading calendar／benchmark：
-
-```bash
-python3 integrations/hermes_bridge.py \
-  --root /var/lib/portfolio-tracker \
-  quote \
-  --event-id market-spy-benchmark-2026-07-24 \
-  --occurred-at 2026-07-24T20:30:00Z \
-  --session-date 2026-07-24 \
-  --symbol SPY \
-  --close 620.10 \
-  --benchmark
-```
-
-同一個 session 必須為所有未平倉 symbol 提供 close。任何一個缺失，該日整個 portfolio NAV 會標記為 `INSUFFICIENT_MARKET_DATA`。
+同一個 session 必須為所有未平倉 symbol 提供 close。任何一個缺失，該日整個
+portfolio NAV 會標記為 `INSUFFICIENT_MARKET_DATA`。如果 SPY 本身亦是持倉，
+batch 要同時包含 SPY `QUOTE` 及 `BENCHMARK_CLOSE`，兩者用途不同。
 
 ### Hermes 讀取
 
@@ -400,12 +428,14 @@ python seed_demo.py --runtime ../../work/new-demo-runtime --output ../data
 ## 上線前仍需決定
 
 - 獲准公開／再分發資料的 quote provider
-- 真實倉 `initial_cash` 及 effective date
-- 模擬倉初始資金及 effective date
-- GitHub repository、`portfolio-data` branch、fine-grained PAT
+- 真實倉 `initial_cash` 及 effective UTC
+- 模擬倉 effective UTC（`initial_cash` 已固定為 USD 100,000）
+- VPS 部署／存取方式
+- fine-grained PAT 是否已安全存放於 VPS
 - Hermes cron／Telegram handler 使用的 stable Import ID 規則
 
-這些是部署設定，不需要改動 ledger、FIFO 或 snapshot 架構。
+GitHub repository、`main` Pages 及 `portfolio-data` branch 已建立。以上剩餘項目
+全部是部署設定，不需要改動 ledger、FIFO 或 snapshot 架構。
 
 ## 安全與私隱
 

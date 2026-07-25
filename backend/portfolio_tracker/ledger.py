@@ -348,9 +348,25 @@ class LedgerStore:
     def append(self, candidate: dict[str, Any]) -> dict[str, Any]:
         """Validate, replay, and durably append exactly one event."""
 
-        validate_event(candidate)
-        normalized_candidate = normalize_event(candidate)
-        portfolio = normalized_candidate["portfolio"]
+        batch_result = self.append_many([candidate])
+        result = batch_result["results"][0]
+        if batch_result.get("ledger_repairs"):
+            result["ledger_repairs"] = batch_result["ledger_repairs"]
+        return result
+
+    def append_many(
+        self,
+        candidates: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Validate a batch fully, then append it under one global lock."""
+
+        if not isinstance(candidates, list) or not candidates:
+            raise ValueError("append_many requires at least one event")
+        normalized_candidates: list[dict[str, Any]] = []
+        for candidate in candidates:
+            validate_event(candidate)
+            normalized_candidates.append(normalize_event(candidate))
+
         with FileLock(self.lock_path, timeout=self.lock_timeout):
             repairs: list[dict[str, Any]] = []
             all_events = self.all_events(
@@ -358,46 +374,113 @@ class LedgerStore:
                 repair_records=repairs,
             )
             self._mark_rebuild_after_repair(repairs)
-            for existing in all_events:
-                if existing["event_id"] != normalized_candidate["event_id"]:
-                    continue
-                if _same_retry_payload(normalized_candidate, existing):
-                    result = {"status": "duplicate", "event": existing}
-                    if repairs:
-                        result["ledger_repairs"] = repairs
-                    return result
-                raise ConflictError(
-                    f"event_id already exists with different payload: "
-                    f"{normalized_candidate['event_id']}"
+            existing_by_id = {
+                event["event_id"]: event
+                for event in all_events
+            }
+            events_by_portfolio = {
+                portfolio: [
+                    event
+                    for event in all_events
+                    if event["portfolio"] == portfolio
+                ]
+                for portfolio in ("paper", "live", "market")
+            }
+            next_sequences = {
+                portfolio: max(
+                    (
+                        int(item["ledger_seq"])
+                        for item in events
+                    ),
+                    default=0,
                 )
+                + 1
+                for portfolio, events in events_by_portfolio.items()
+            }
+            results: list[dict[str, Any]] = []
+            pending_appends: list[dict[str, Any]] = []
+            affected_portfolios: set[str] = set()
 
-            ledger_events = [
-                event for event in all_events if event["portfolio"] == portfolio
-            ]
-            stored = deepcopy(normalized_candidate)
-            stored["ledger_seq"] = (
-                max((int(item["ledger_seq"]) for item in ledger_events), default=0) + 1
-            )
+            for normalized_candidate in normalized_candidates:
+                event_id = normalized_candidate["event_id"]
+                existing = existing_by_id.get(event_id)
+                if existing is not None:
+                    if _same_retry_payload(normalized_candidate, existing):
+                        results.append(
+                            {"status": "duplicate", "event": existing}
+                        )
+                        continue
+                    raise ConflictError(
+                        "event_id already exists with different payload: "
+                        f"{event_id}"
+                    )
 
-            proposed = ledger_events + [stored]
-            if portfolio in {"paper", "live"}:
-                replay_portfolio(proposed, portfolio=portfolio)
-            else:
-                resolve_effective_events(proposed)
+                portfolio = normalized_candidate["portfolio"]
+                stored = deepcopy(normalized_candidate)
+                stored["ledger_seq"] = next_sequences[portfolio]
+                next_sequences[portfolio] += 1
+                events_by_portfolio[portfolio].append(stored)
+                existing_by_id[event_id] = stored
+                pending_appends.append(stored)
+                affected_portfolios.add(portfolio)
+                results.append({"status": "appended", "event": stored})
 
-            _append_json_line(self.path_for(portfolio), stored)
-            atomic_write_json(
-                self.root / "state" / "rebuild.pending",
-                {
-                    "event_id": stored["event_id"],
-                    "portfolio": portfolio,
-                    "ledger_seq": stored["ledger_seq"],
-                    "requested_at": datetime.now(UTC)
+            for portfolio in affected_portfolios:
+                proposed = events_by_portfolio[portfolio]
+                if portfolio in {"paper", "live"}:
+                    replay_portfolio(proposed, portfolio=portfolio)
+                else:
+                    resolve_effective_events(proposed)
+
+            if pending_appends:
+                requested_at = (
+                    datetime.now(UTC)
                     .isoformat()
-                    .replace("+00:00", "Z"),
-                },
-            )
-            result = {"status": "appended", "event": stored}
+                    .replace("+00:00", "Z")
+                )
+                if len(pending_appends) == 1:
+                    stored = pending_appends[0]
+                    marker = {
+                        "event_id": stored["event_id"],
+                        "portfolio": stored["portfolio"],
+                        "ledger_seq": stored["ledger_seq"],
+                        "requested_at": requested_at,
+                    }
+                else:
+                    marker = {
+                        "event_ids": [
+                            event["event_id"]
+                            for event in pending_appends
+                        ],
+                        "portfolios": sorted(affected_portfolios),
+                        "event_count": len(pending_appends),
+                        "requested_by": "ledger-append-batch",
+                        "requested_at": requested_at,
+                    }
+                atomic_write_json(
+                    self.root / "state" / "rebuild.pending",
+                    marker,
+                )
+                for stored in pending_appends:
+                    _append_json_line(
+                        self.path_for(stored["portfolio"]),
+                        stored,
+                    )
+
+            appended_count = len(pending_appends)
+            duplicate_count = len(results) - appended_count
+            if appended_count == len(results):
+                status = "appended"
+            elif appended_count == 0:
+                status = "duplicate"
+            else:
+                status = "mixed"
+            result = {
+                "status": status,
+                "appended": appended_count,
+                "duplicates": duplicate_count,
+                "results": results,
+            }
             if repairs:
                 result["ledger_repairs"] = repairs
             return result

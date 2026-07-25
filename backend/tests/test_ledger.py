@@ -51,6 +51,92 @@ class LedgerTests(unittest.TestCase):
         with self.assertRaises(ConflictError):
             self.store.append(changed)
 
+    def test_batch_is_fully_validated_before_any_event_is_written(self) -> None:
+        self.store.append(self.open)
+        (self.root / "state" / "rebuild.pending").unlink()
+        valid_buy = candidate(
+            "BUY",
+            portfolio="paper",
+            event_id="paper-batch-buy",
+            occurred_at="2024-01-02T15:00:00Z",
+            symbol="AAPL",
+            shares="1",
+            price="100",
+            fee="0",
+        )
+        invalid_sell = candidate(
+            "SELL",
+            portfolio="paper",
+            event_id="paper-batch-oversell",
+            occurred_at="2024-01-02T15:01:00Z",
+            symbol="MSFT",
+            shares="1",
+            price="100",
+            fee="0",
+        )
+
+        with self.assertRaises(BusinessInvariantError):
+            self.store.append_many([valid_buy, invalid_sell])
+
+        self.assertEqual(self.store.read("paper"), [
+            {**self.open, "ledger_seq": 1}
+        ])
+        self.assertFalse((self.root / "state" / "rebuild.pending").exists())
+
+    def test_batch_uses_one_marker_and_contiguous_ledger_sequences(self) -> None:
+        events = [
+            candidate(
+                "QUOTE",
+                portfolio="market",
+                event_id="market-aapl-2024-01-02",
+                occurred_at="2024-01-02T21:00:00Z",
+                symbol="AAPL",
+                close="100",
+                session_date="2024-01-02",
+            ),
+            candidate(
+                "QUOTE",
+                portfolio="market",
+                event_id="market-msft-2024-01-02",
+                occurred_at="2024-01-02T21:00:01Z",
+                symbol="MSFT",
+                close="200",
+                session_date="2024-01-02",
+            ),
+            candidate(
+                "BENCHMARK_CLOSE",
+                portfolio="market",
+                event_id="market-spy-benchmark-2024-01-02",
+                occurred_at="2024-01-02T21:00:02Z",
+                symbol="SPY",
+                close="470",
+                session_date="2024-01-02",
+            ),
+        ]
+
+        result = self.store.append_many(events)
+
+        self.assertEqual(result["status"], "appended")
+        self.assertEqual(result["appended"], 3)
+        self.assertEqual(result["duplicates"], 0)
+        self.assertEqual(
+            [item["ledger_seq"] for item in self.store.read("market")],
+            [1, 2, 3],
+        )
+        marker = json.loads(
+            (self.root / "state" / "rebuild.pending").read_text()
+        )
+        self.assertEqual(marker["requested_by"], "ledger-append-batch")
+        self.assertEqual(marker["event_count"], 3)
+        self.assertEqual(marker["portfolios"], ["market"])
+
+        (self.root / "state" / "rebuild.pending").unlink()
+        retry = self.store.append_many(events)
+        self.assertEqual(retry["status"], "duplicate")
+        self.assertEqual(retry["appended"], 0)
+        self.assertEqual(retry["duplicates"], 3)
+        self.assertFalse((self.root / "state" / "rebuild.pending").exists())
+
     def test_numeric_inputs_are_stored_as_decimal_strings(self) -> None:
         numeric_open = dict(self.open, initial_cash=1000.0)
         self.store.append(numeric_open)

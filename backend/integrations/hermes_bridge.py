@@ -14,7 +14,7 @@ if __package__ in {None, ""}:
 
 from portfolio_tracker.errors import PortfolioError
 from portfolio_tracker.ledger import LedgerStore, atomic_write_json
-from portfolio_tracker.snapshot import build_snapshot
+from portfolio_tracker.snapshot import build_snapshot, build_snapshot_if_needed
 
 TRADE_COMMAND_RE = re.compile(
     r"^/trade\s+(BUY|SELL)\s+([A-Z]{1,5}(?:\.[A-Z])?)\s+"
@@ -65,28 +65,155 @@ def base_event(
     }
 
 
+def quote_batch_events(payload: Any) -> list[dict[str, Any]]:
+    if not isinstance(payload, list) or not payload:
+        raise ValueError("quote batch must be a non-empty JSON array")
+    allowed_fields = {
+        "event_id",
+        "occurred_at",
+        "created_at",
+        "session_date",
+        "symbol",
+        "close",
+        "benchmark",
+    }
+    required_fields = {
+        "event_id",
+        "occurred_at",
+        "session_date",
+        "symbol",
+        "close",
+    }
+    events: list[dict[str, Any]] = []
+    sessions: set[str] = set()
+    quote_keys: set[tuple[str, str]] = set()
+    benchmark_count = 0
+
+    for index, item in enumerate(payload, start=1):
+        if not isinstance(item, dict):
+            raise ValueError(f"quote batch item {index} must be an object")
+        missing = sorted(required_fields - set(item))
+        if missing:
+            raise ValueError(
+                f"quote batch item {index} missing: {', '.join(missing)}"
+            )
+        unknown = sorted(set(item) - allowed_fields)
+        if unknown:
+            raise ValueError(
+                f"quote batch item {index} has unknown fields: "
+                f"{', '.join(unknown)}"
+            )
+        is_benchmark = item.get("benchmark", False)
+        if not isinstance(is_benchmark, bool):
+            raise ValueError(
+                f"quote batch item {index} benchmark must be boolean"
+            )
+        action = "BENCHMARK_CLOSE" if is_benchmark else "QUOTE"
+        symbol = item["symbol"]
+        if not isinstance(symbol, str):
+            raise ValueError(f"quote batch item {index} symbol must be a string")
+        symbol = symbol.upper()
+        quote_key = (action, symbol)
+        if quote_key in quote_keys:
+            raise ValueError(
+                f"quote batch contains duplicate {action} for {symbol}"
+            )
+        quote_keys.add(quote_key)
+        session_date = item["session_date"]
+        if not isinstance(session_date, str):
+            raise ValueError(
+                f"quote batch item {index} session_date must be a string"
+            )
+        sessions.add(session_date)
+        if is_benchmark:
+            benchmark_count += 1
+
+        events.append(
+            {
+                "event_id": item["event_id"],
+                "portfolio": "market",
+                "occurred_at": item["occurred_at"],
+                "created_at": item.get("created_at") or item["occurred_at"],
+                "source": (
+                    "cron-benchmark"
+                    if is_benchmark
+                    else "cron-quote"
+                ),
+                "action": action,
+                "symbol": symbol,
+                "close": item["close"],
+                "session_date": session_date,
+            }
+        )
+
+    if len(sessions) != 1:
+        raise ValueError("quote batch must contain exactly one session_date")
+    if benchmark_count != 1:
+        raise ValueError("quote batch must contain exactly one benchmark event")
+    return events
+
+
+def load_quote_batch(path: str) -> list[dict[str, Any]]:
+    payload = (
+        sys.stdin.read()
+        if path == "-"
+        else Path(path).read_text(encoding="utf-8")
+    )
+    return quote_batch_events(json.loads(payload))
+
+
+def _rebuild_after_write(
+    root: Path,
+    result: dict[str, Any],
+    *,
+    has_new_events: bool,
+    requested_by: str,
+) -> dict[str, Any]:
+    rebuild_marker = root / "state" / "rebuild.pending"
+    if not has_new_events and not rebuild_marker.exists():
+        return result
+    try:
+        snapshot, rebuilt = build_snapshot_if_needed(root)
+    except (PortfolioError, ValueError, OSError) as exc:
+        if has_new_events:
+            result["write_status"] = result["status"]
+            result["status"] = "recorded_but_rebuild_pending"
+        result["snapshot_status"] = "rebuild_pending"
+        result["snapshot_error"] = str(exc)
+        return result
+    atomic_write_json(
+        root / "state" / "publish.pending",
+        {
+            "revision": snapshot["revision"],
+            "requested_by": requested_by,
+        },
+    )
+    result["snapshot_revision"] = snapshot["revision"]
+    result["snapshot_status"] = "rebuilt" if rebuilt else "current"
+    return result
+
+
 def append_and_rebuild(root: Path, event: dict[str, Any]) -> dict[str, Any]:
     result = LedgerStore(root).append(event)
-    rebuild_marker = root / "state" / "rebuild.pending"
-    if result["status"] == "appended" or rebuild_marker.exists():
-        try:
-            snapshot = build_snapshot(root)
-        except (PortfolioError, ValueError, OSError) as exc:
-            if result["status"] == "appended":
-                result["status"] = "recorded_but_rebuild_pending"
-            result["snapshot_status"] = "rebuild_pending"
-            result["snapshot_error"] = str(exc)
-            return result
-        atomic_write_json(
-            root / "state" / "publish.pending",
-            {
-                "revision": snapshot["revision"],
-                "requested_by": "hermes-bridge",
-            },
-        )
-        result["snapshot_revision"] = snapshot["revision"]
-        result["snapshot_status"] = "rebuilt"
-    return result
+    return _rebuild_after_write(
+        root,
+        result,
+        has_new_events=result["status"] == "appended",
+        requested_by="hermes-bridge",
+    )
+
+
+def append_quote_batch_and_rebuild(
+    root: Path,
+    events: list[dict[str, Any]],
+) -> dict[str, Any]:
+    result = LedgerStore(root).append_many(events)
+    return _rebuild_after_write(
+        root,
+        result,
+        has_new_events=result["appended"] > 0,
+        requested_by="hermes-quote-batch",
+    )
 
 
 def parser() -> argparse.ArgumentParser:
@@ -177,6 +304,13 @@ def parser() -> argparse.ArgumentParser:
     quote.add_argument("--close", required=True)
     quote.add_argument("--benchmark", action="store_true")
 
+    quote_batch = actions.add_parser("quote-batch")
+    quote_batch.add_argument(
+        "--file",
+        required=True,
+        help="UTF-8 JSON array path, or - to read from stdin",
+    )
+
     for event_parser in (
         open_portfolio,
         trade,
@@ -230,6 +364,11 @@ def main(argv: list[str] | None = None) -> int:
                 "revision": snapshot["revision"],
                 "warnings": snapshot["warnings"],
             }
+        elif args.command == "quote-batch":
+            result = append_quote_batch_and_rebuild(
+                root,
+                load_quote_batch(args.file),
+            )
         else:
             if args.command == "open":
                 event = base_event(args, "PORTFOLIO_OPEN", source="bootstrap")
