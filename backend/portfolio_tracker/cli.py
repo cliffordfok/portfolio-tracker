@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from .backup import backup_ledgers
+from .doctor import audit_runtime
 from .errors import PortfolioError
 from .ledger import LedgerStore, atomic_write_json
 from .publisher import SnapshotPublisher, client_from_environment
@@ -85,6 +86,14 @@ def build_parser() -> argparse.ArgumentParser:
         "backup",
         help="create one consistent private backup of all master ledgers",
     )
+    doctor = subcommands.add_parser(
+        "doctor",
+        help="run read-only production acceptance checks",
+    )
+    doctor.add_argument("--require-initialized", action="store_true")
+    doctor.add_argument("--require-current", action="store_true")
+    doctor.add_argument("--require-published", action="store_true")
+    doctor.add_argument("--require-backup", action="store_true")
 
     return parser
 
@@ -150,6 +159,14 @@ def main(argv: list[str] | None = None) -> int:
                 "status": "backed_up",
                 **backup_ledgers(root),
             }
+        elif args.command == "doctor":
+            result = audit_runtime(
+                root,
+                require_initialized=args.require_initialized,
+                require_current=args.require_current,
+                require_published=args.require_published,
+                require_backup=args.require_backup,
+            )
         else:
             raise ValueError(f"unknown command: {args.command}")
         print(json.dumps(result, ensure_ascii=False, indent=2, default=str))

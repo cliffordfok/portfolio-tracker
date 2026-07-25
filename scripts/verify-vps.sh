@@ -27,7 +27,8 @@ check() {
 
 environment_mode_is_private() {
   [[ -f "${config_file}" ]] &&
-    [[ "$(stat -c '%a' "${config_file}")" == "600" ]]
+    [[ "$(stat -c '%a' "${config_file}")" == "600" ]] &&
+    [[ "$(stat -c '%U:%G' "${config_file}")" == "root:root" ]]
 }
 
 runtime_owner_is_portfolio() {
@@ -52,7 +53,43 @@ runtime_tree_is_private() {
 }
 
 github_token_is_set() {
-  grep -Eq '^PORTFOLIO_GITHUB_TOKEN=.+$' "${config_file}"
+  local value
+  value="$(
+    sed -n 's/^PORTFOLIO_GITHUB_TOKEN=//p' "${config_file}" |
+      tail -n 1
+  )"
+  value="${value%$'\r'}"
+  if [[ "${value}" == \"*\" ]] || [[ "${value}" == \'*\' ]]; then
+    value="${value:1:${#value}-2}"
+  fi
+  [[ -n "${value//[[:space:]]/}" ]]
+}
+
+runtime_files_are_private() {
+  local path
+  while IFS= read -r -d '' path; do
+    [[ "$(stat -c '%a' "${path}")" == "600" ]] || return 1
+    [[ "$(stat -c '%U' "${path}")" == "portfolio" ]] || return 1
+  done < <(find "${runtime_root}" -type f -print0)
+}
+
+runtime_acceptance_is_valid() {
+  local arguments=(
+    -m portfolio_tracker.cli
+    --root "${runtime_root}"
+    doctor
+  )
+  if [[ "${check_active}" == true ]]; then
+    arguments+=(
+      --require-initialized
+      --require-current
+      --require-published
+      --require-backup
+    )
+  fi
+  runuser -u portfolio -- \
+    /usr/bin/env PYTHONPATH="${project_root}/backend" \
+    /usr/bin/python3 "${arguments[@]}"
 }
 
 triggers_are_enabled_and_active() {
@@ -72,10 +109,11 @@ check "project path" test -d "${project_root}/backend/portfolio_tracker"
 check "portfolio service user" id -u portfolio
 check "runtime directory" test -d "${runtime_root}/ledger"
 check "private environment file" test -f "${config_file}"
-check "environment file mode 600" environment_mode_is_private
+check "environment file root-owned mode 600" environment_mode_is_private
 check "GitHub token configured" github_token_is_set
 check "runtime owned by portfolio" runtime_owner_is_portfolio
 check "runtime tree mode 700 and ownership" runtime_tree_is_private
+check "runtime files mode 600 and ownership" runtime_files_are_private
 check "Python syntax" \
   /usr/bin/python3 -m compileall -q \
   "${project_root}/backend/portfolio_tracker" \
@@ -90,6 +128,7 @@ check "systemd unit syntax" \
   /etc/systemd/system/portfolio-publish.timer \
   /etc/systemd/system/portfolio-backup.service \
   /etc/systemd/system/portfolio-backup.timer
+check "runtime business invariants" runtime_acceptance_is_valid
 
 if [[ "${check_active}" == true ]]; then
   check "path/timer triggers enabled and active" triggers_are_enabled_and_active

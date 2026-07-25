@@ -348,7 +348,24 @@ python3 -m portfolio_tracker.cli \
 仍然會被拒絕。
 
 完成兩個 `PORTFOLIO_OPEN`、首個 snapshot rebuild 同一次人工確認嘅
-bootstrap publish 後，先啟用觸發器：
+bootstrap publish 後，先建立一份已驗證 backup：
+
+```bash
+cd /opt/portfolio-tracker/backend
+sudo -u portfolio /usr/bin/python3 -m portfolio_tracker.cli \
+  --root /var/lib/portfolio-tracker \
+  backup
+sudo -u portfolio /usr/bin/python3 -m portfolio_tracker.cli \
+  --root /var/lib/portfolio-tracker \
+  doctor \
+  --require-initialized \
+  --require-current \
+  --require-published \
+  --require-backup
+```
+
+`doctor` 只會輸出 event counts、revision、hash 狀態及 backup ID；唔會輸出
+持倉、交易內容或 token。全部通過後先啟用觸發器：
 
 ```bash
 sudo systemctl enable --now \
