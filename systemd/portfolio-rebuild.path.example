@@ -2,7 +2,7 @@
 Description=Watch for Portfolio Tracker snapshot rebuild requests
 
 [Path]
-PathChanged=/var/lib/portfolio-tracker/state/rebuild.pending
+PathExists=/var/lib/portfolio-tracker/state/rebuild.pending
 Unit=portfolio-rebuild.service
 
 [Install]

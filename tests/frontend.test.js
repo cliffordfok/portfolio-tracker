@@ -160,6 +160,19 @@ test("static page contains all required tabs, tables, and D3 v7", async () => {
   assert.doesNotMatch(config, /contents\/data\/portfolio-snapshot\.json/);
 });
 
+test("systemd path units trigger only while pending markers exist", async () => {
+  const unitPaths = [
+    "../systemd/portfolio-rebuild.path.example",
+    "../systemd/portfolio-publish.path.example",
+  ];
+
+  for (const unitPath of unitPaths) {
+    const unit = await readFile(new URL(unitPath, import.meta.url), "utf8");
+    assert.match(unit, /^PathExists=.*\.pending$/m);
+    assert.doesNotMatch(unit, /^PathChanged=/m);
+  }
+});
+
 class MemoryStorage {
   constructor() {
     this.values = new Map();

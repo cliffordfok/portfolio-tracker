@@ -2,7 +2,7 @@
 Description=Watch for Portfolio Tracker publication requests
 
 [Path]
-PathChanged=/var/lib/portfolio-tracker/state/publish.pending
+PathExists=/var/lib/portfolio-tracker/state/publish.pending
 Unit=portfolio-publish.service
 
 [Install]
