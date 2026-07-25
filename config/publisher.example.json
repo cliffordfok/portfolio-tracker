@@ -1,0 +1,6 @@
+{
+  "repository": "YOUR_GITHUB_USERNAME/portfolio-tracker",
+  "branch": "portfolio-data",
+  "path": "data/portfolio-snapshot.json",
+  "token_environment_variable": "PORTFOLIO_GITHUB_TOKEN"
+}

@@ -1,0 +1,709 @@
+{
+  "benchmark": {
+    "daily": [
+      {
+        "close": "596",
+        "cumulative_return": "0",
+        "daily_return": null,
+        "data_status": "OK",
+        "date": "2026-06-01"
+      },
+      {
+        "close": "599",
+        "cumulative_return": "0.00503356",
+        "daily_return": "0.00503356",
+        "data_status": "OK",
+        "date": "2026-06-05"
+      },
+      {
+        "close": "597",
+        "cumulative_return": "0.00167785",
+        "daily_return": "-0.0033389",
+        "data_status": "OK",
+        "date": "2026-06-10"
+      },
+      {
+        "close": "601",
+        "cumulative_return": "0.00838926",
+        "daily_return": "0.00670017",
+        "data_status": "OK",
+        "date": "2026-06-15"
+      },
+      {
+        "close": "603",
+        "cumulative_return": "0.01174497",
+        "daily_return": "0.00332779",
+        "data_status": "OK",
+        "date": "2026-06-19"
+      },
+      {
+        "close": "606",
+        "cumulative_return": "0.01677852",
+        "daily_return": "0.00497512",
+        "data_status": "OK",
+        "date": "2026-06-25"
+      },
+      {
+        "close": "609",
+        "cumulative_return": "0.02181208",
+        "daily_return": "0.0049505",
+        "data_status": "OK",
+        "date": "2026-07-01"
+      },
+      {
+        "close": "607",
+        "cumulative_return": "0.01845638",
+        "daily_return": "-0.00328407",
+        "data_status": "OK",
+        "date": "2026-07-06"
+      },
+      {
+        "close": "612",
+        "cumulative_return": "0.02684564",
+        "daily_return": "0.00823723",
+        "data_status": "OK",
+        "date": "2026-07-10"
+      },
+      {
+        "close": "616",
+        "cumulative_return": "0.03355705",
+        "daily_return": "0.00653595",
+        "data_status": "OK",
+        "date": "2026-07-17"
+      }
+    ],
+    "symbol": "SPY"
+  },
+  "currency": "USD",
+  "data_as_of": "2026-07-17T20:30:00Z",
+  "generated_at": "2026-07-25T04:28:00.155804Z",
+  "portfolios": {
+    "live": {
+      "cash": "39326",
+      "daily": [
+        {
+          "cash": "54119",
+          "cumulative_return": "0",
+          "daily_return": null,
+          "data_status": "OK",
+          "date": "2026-06-01",
+          "external_flow": "10000",
+          "missing_symbols": [],
+          "nav": "59969",
+          "pnl": "-31",
+          "segment_id": 1,
+          "segment_return": "0"
+        },
+        {
+          "cash": "54119",
+          "cumulative_return": "0.00150078",
+          "daily_return": "0.00150078",
+          "data_status": "OK",
+          "date": "2026-06-05",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "60059",
+          "pnl": "59",
+          "segment_id": 1,
+          "segment_return": "0.00150078"
+        },
+        {
+          "cash": "42178",
+          "cumulative_return": "0.00298488",
+          "daily_return": "0.00148188",
+          "data_status": "OK",
+          "date": "2026-06-10",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "60148",
+          "pnl": "148",
+          "segment_id": 1,
+          "segment_return": "0.00298488"
+        },
+        {
+          "cash": "42178",
+          "cumulative_return": "0.00631994",
+          "daily_return": "0.00332513",
+          "data_status": "OK",
+          "date": "2026-06-15",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "60348",
+          "pnl": "348",
+          "segment_id": 1,
+          "segment_return": "0.00631994"
+        },
+        {
+          "cash": "42178",
+          "cumulative_return": "0.00598644",
+          "daily_return": "-0.00033141",
+          "data_status": "OK",
+          "date": "2026-06-19",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "60328",
+          "pnl": "328",
+          "segment_id": 1,
+          "segment_return": "0.00598644"
+        },
+        {
+          "cash": "42178",
+          "cumulative_return": "0.00898799",
+          "daily_return": "0.00298369",
+          "data_status": "OK",
+          "date": "2026-06-25",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "60508",
+          "pnl": "508",
+          "segment_id": 1,
+          "segment_return": "0.00898799"
+        },
+        {
+          "cash": "42178",
+          "cumulative_return": "0.01098903",
+          "daily_return": "0.00198321",
+          "data_status": "OK",
+          "date": "2026-07-01",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "60628",
+          "pnl": "628",
+          "segment_id": 1,
+          "segment_return": "0.01098903"
+        },
+        {
+          "cash": "44257",
+          "cumulative_return": "0.00980508",
+          "daily_return": "-0.00117108",
+          "data_status": "OK",
+          "date": "2026-07-06",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "60557",
+          "pnl": "557",
+          "segment_id": 1,
+          "segment_return": "0.00980508"
+        },
+        {
+          "cash": "39326",
+          "cumulative_return": "0.01312346",
+          "daily_return": "0.00328616",
+          "data_status": "OK",
+          "date": "2026-07-10",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "60756",
+          "pnl": "756",
+          "segment_id": 1,
+          "segment_return": "0.01312346"
+        },
+        {
+          "cash": "39326",
+          "cumulative_return": "0.01612501",
+          "daily_return": "0.00296267",
+          "data_status": "OK",
+          "date": "2026-07-17",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "60936",
+          "pnl": "936",
+          "segment_id": 1,
+          "segment_return": "0.01612501"
+        }
+      ],
+      "data_status": "OK",
+      "holdings": [
+        {
+          "avg_cost": "196.033333",
+          "cost_basis": "3920.666667",
+          "current_price": "214",
+          "market_value": "4280",
+          "shares": "20",
+          "symbol": "AAPL",
+          "unrealized_pnl": "359.333333",
+          "unrealized_pnl_pct": "0.09165108"
+        },
+        {
+          "avg_cost": "493.1",
+          "cost_basis": "4931",
+          "current_price": "501",
+          "market_value": "5010",
+          "shares": "10",
+          "symbol": "MSFT",
+          "unrealized_pnl": "79",
+          "unrealized_pnl_pct": "0.01602109"
+        },
+        {
+          "avg_cost": "597.05",
+          "cost_basis": "11941",
+          "current_price": "616",
+          "market_value": "12320",
+          "shares": "20",
+          "symbol": "SPY",
+          "unrealized_pnl": "379",
+          "unrealized_pnl_pct": "0.03173939"
+        }
+      ],
+      "initial_cash": "50000",
+      "metrics": {
+        "closed_episodes": 0,
+        "data_status": "OK",
+        "max_drawdown": "-0.00117108",
+        "realized_pnl": "118.666667",
+        "sharpe_ratio": "17.49212989",
+        "total_return": "0.01612501",
+        "win_rate": null
+      },
+      "realized_pnl_per_trade": [
+        {
+          "cumulative_pnl": "118.666667",
+          "event_id": "live-sell-aapl-001",
+          "fee": "1",
+          "matches": [
+            {
+              "buy_event_id": "live-buy-aapl-001",
+              "buy_fee": "0.333333",
+              "buy_price": "196",
+              "cost": "1960.333333",
+              "pnl": "118.666667",
+              "proceeds": "2079",
+              "sell_fee": "1",
+              "sell_price": "208",
+              "shares": "10"
+            }
+          ],
+          "occurred_at": "2026-07-06T14:40:00Z",
+          "pnl": "118.666667",
+          "pnl_pct": "0.06053392",
+          "price": "208",
+          "shares": "10",
+          "symbol": "AAPL"
+        }
+      ],
+      "recent_trades": [
+        {
+          "action": "BUY",
+          "created_at": "2026-07-10T15:30:00Z",
+          "event_id": "live-buy-msft-001",
+          "fee": "1",
+          "ledger_seq": 6,
+          "note": "建立雲端軟件倉位",
+          "occurred_at": "2026-07-10T15:30:00Z",
+          "pnl": null,
+          "pnl_pct": null,
+          "portfolio": "live",
+          "price": "493",
+          "shares": "10",
+          "source": "demo-seed",
+          "symbol": "MSFT"
+        },
+        {
+          "action": "SELL",
+          "created_at": "2026-07-06T14:40:00Z",
+          "cumulative_pnl": "118.666667",
+          "event_id": "live-sell-aapl-001",
+          "fee": "1",
+          "ledger_seq": 5,
+          "note": "部分止盈",
+          "occurred_at": "2026-07-06T14:40:00Z",
+          "pnl": "118.666667",
+          "pnl_pct": "0.06053392",
+          "portfolio": "live",
+          "price": "208",
+          "shares": "10",
+          "source": "demo-seed",
+          "symbol": "AAPL"
+        },
+        {
+          "action": "BUY",
+          "created_at": "2026-06-10T15:00:00Z",
+          "event_id": "live-buy-spy-001",
+          "fee": "1",
+          "ledger_seq": 4,
+          "note": "核心指數倉位",
+          "occurred_at": "2026-06-10T15:00:00Z",
+          "pnl": null,
+          "pnl_pct": null,
+          "portfolio": "live",
+          "price": "597",
+          "shares": "20",
+          "source": "demo-seed",
+          "symbol": "SPY"
+        },
+        {
+          "action": "BUY",
+          "created_at": "2026-06-01T15:00:00Z",
+          "event_id": "live-buy-aapl-001",
+          "fee": "1",
+          "ledger_seq": 3,
+          "note": "示範真實交易",
+          "occurred_at": "2026-06-01T15:00:00Z",
+          "pnl": null,
+          "pnl_pct": null,
+          "portfolio": "live",
+          "price": "196",
+          "shares": "30",
+          "source": "demo-seed",
+          "symbol": "AAPL"
+        },
+        {
+          "action": "CASH_FLOW",
+          "amount": "10000",
+          "created_at": "2026-06-01T13:00:00Z",
+          "event_id": "live-cash-001",
+          "ledger_seq": 2,
+          "note": "示範入金",
+          "occurred_at": "2026-06-01T13:00:00Z",
+          "pnl": null,
+          "pnl_pct": null,
+          "portfolio": "live",
+          "source": "demo-seed"
+        }
+      ]
+    },
+    "paper": {
+      "cash": "68480",
+      "daily": [
+        {
+          "cash": "80500",
+          "cumulative_return": "0",
+          "daily_return": null,
+          "data_status": "OK",
+          "date": "2026-06-01",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "100000",
+          "pnl": "0",
+          "segment_id": 1,
+          "segment_return": "0"
+        },
+        {
+          "cash": "71980",
+          "cumulative_return": "0.003",
+          "daily_return": "0.003",
+          "data_status": "OK",
+          "date": "2026-06-05",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "100300",
+          "pnl": "300",
+          "segment_id": 1,
+          "segment_return": "0.003"
+        },
+        {
+          "cash": "71980",
+          "cumulative_return": "0.0078",
+          "daily_return": "0.00478564",
+          "data_status": "OK",
+          "date": "2026-06-10",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "100780",
+          "pnl": "780",
+          "segment_id": 1,
+          "segment_return": "0.0078"
+        },
+        {
+          "cash": "80180",
+          "cumulative_return": "0.0112",
+          "daily_return": "0.00337369",
+          "data_status": "OK",
+          "date": "2026-06-15",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "101120",
+          "pnl": "1120",
+          "segment_id": 1,
+          "segment_return": "0.0112"
+        },
+        {
+          "cash": "80180",
+          "cumulative_return": "0.0118",
+          "daily_return": "0.00059335",
+          "data_status": "OK",
+          "date": "2026-06-19",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "101180",
+          "pnl": "1180",
+          "segment_id": 1,
+          "segment_return": "0.0118"
+        },
+        {
+          "cash": "65480",
+          "cumulative_return": "0.0154",
+          "daily_return": "0.00355802",
+          "data_status": "OK",
+          "date": "2026-06-25",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "101540",
+          "pnl": "1540",
+          "segment_id": 1,
+          "segment_return": "0.0154"
+        },
+        {
+          "cash": "65480",
+          "cumulative_return": "0.0193",
+          "daily_return": "0.00384085",
+          "data_status": "OK",
+          "date": "2026-07-01",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "101930",
+          "pnl": "1930",
+          "segment_id": 1,
+          "segment_return": "0.0193"
+        },
+        {
+          "cash": "65480",
+          "cumulative_return": "0.0163",
+          "daily_return": "-0.0029432",
+          "data_status": "OK",
+          "date": "2026-07-06",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "101630",
+          "pnl": "1630",
+          "segment_id": 1,
+          "segment_return": "0.0163"
+        },
+        {
+          "cash": "68480",
+          "cumulative_return": "0.0205",
+          "daily_return": "0.00413264",
+          "data_status": "OK",
+          "date": "2026-07-10",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "102050",
+          "pnl": "2050",
+          "segment_id": 1,
+          "segment_return": "0.0205"
+        },
+        {
+          "cash": "68480",
+          "cumulative_return": "0.0247",
+          "daily_return": "0.00411563",
+          "data_status": "OK",
+          "date": "2026-07-17",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "102470",
+          "pnl": "2470",
+          "segment_id": 1,
+          "segment_return": "0.0247"
+        }
+      ],
+      "data_status": "OK",
+      "holdings": [
+        {
+          "avg_cost": "195",
+          "cost_basis": "11700",
+          "current_price": "214",
+          "market_value": "12840",
+          "shares": "60",
+          "symbol": "AAPL",
+          "unrealized_pnl": "1140",
+          "unrealized_pnl_pct": "0.0974359"
+        },
+        {
+          "avg_cost": "490",
+          "cost_basis": "14700",
+          "current_price": "501",
+          "market_value": "15030",
+          "shares": "30",
+          "symbol": "MSFT",
+          "unrealized_pnl": "330",
+          "unrealized_pnl_pct": "0.02244898"
+        },
+        {
+          "avg_cost": "142",
+          "cost_basis": "5680",
+          "current_price": "153",
+          "market_value": "6120",
+          "shares": "40",
+          "symbol": "NVDA",
+          "unrealized_pnl": "440",
+          "unrealized_pnl_pct": "0.07746479"
+        }
+      ],
+      "initial_cash": "100000",
+      "metrics": {
+        "closed_episodes": 0,
+        "data_status": "OK",
+        "max_drawdown": "-0.0029432",
+        "realized_pnl": "560",
+        "sharpe_ratio": "17.74644616",
+        "total_return": "0.0247",
+        "win_rate": null
+      },
+      "realized_pnl_per_trade": [
+        {
+          "cumulative_pnl": "400",
+          "event_id": "paper-sell-aapl-001",
+          "fee": "0",
+          "matches": [
+            {
+              "buy_event_id": "paper-buy-aapl-001",
+              "buy_fee": "0",
+              "buy_price": "195",
+              "cost": "7800",
+              "pnl": "400",
+              "proceeds": "8200",
+              "sell_fee": "0",
+              "sell_price": "205",
+              "shares": "40"
+            }
+          ],
+          "occurred_at": "2026-06-15T17:20:00Z",
+          "pnl": "400",
+          "pnl_pct": "0.05128205",
+          "price": "205",
+          "shares": "40",
+          "symbol": "AAPL"
+        },
+        {
+          "cumulative_pnl": "560",
+          "event_id": "paper-sell-nvda-001",
+          "fee": "0",
+          "matches": [
+            {
+              "buy_event_id": "paper-buy-nvda-001",
+              "buy_fee": "0",
+              "buy_price": "142",
+              "cost": "2840",
+              "pnl": "160",
+              "proceeds": "3000",
+              "sell_fee": "0",
+              "sell_price": "150",
+              "shares": "20"
+            }
+          ],
+          "occurred_at": "2026-07-10T16:00:00Z",
+          "pnl": "160",
+          "pnl_pct": "0.05633803",
+          "price": "150",
+          "shares": "20",
+          "symbol": "NVDA"
+        }
+      ],
+      "recent_trades": [
+        {
+          "action": "SELL",
+          "created_at": "2026-07-10T16:00:00Z",
+          "cumulative_pnl": "560",
+          "event_id": "paper-sell-nvda-001",
+          "fee": "0",
+          "ledger_seq": 6,
+          "note": "降低單一產業曝險",
+          "occurred_at": "2026-07-10T16:00:00Z",
+          "pnl": "160",
+          "pnl_pct": "0.05633803",
+          "portfolio": "paper",
+          "price": "150",
+          "reason": "倉位再平衡",
+          "shares": "20",
+          "source": "demo-seed",
+          "strategy": "momentum",
+          "symbol": "NVDA"
+        },
+        {
+          "action": "BUY",
+          "created_at": "2026-06-25T15:00:00Z",
+          "event_id": "paper-buy-msft-001",
+          "fee": "0",
+          "ledger_seq": 5,
+          "note": "雲端業務趨勢穩定",
+          "occurred_at": "2026-06-25T15:00:00Z",
+          "pnl": null,
+          "pnl_pct": null,
+          "portfolio": "paper",
+          "price": "490",
+          "reason": "回踩支持後轉強",
+          "shares": "30",
+          "source": "demo-seed",
+          "strategy": "swing",
+          "symbol": "MSFT"
+        },
+        {
+          "action": "SELL",
+          "created_at": "2026-06-15T17:20:00Z",
+          "cumulative_pnl": "400",
+          "event_id": "paper-sell-aapl-001",
+          "fee": "0",
+          "ledger_seq": 4,
+          "note": "分段鎖定利潤",
+          "occurred_at": "2026-06-15T17:20:00Z",
+          "pnl": "400",
+          "pnl_pct": "0.05128205",
+          "portfolio": "paper",
+          "price": "205",
+          "reason": "到達第一目標價",
+          "shares": "40",
+          "source": "demo-seed",
+          "strategy": "momentum",
+          "symbol": "AAPL"
+        },
+        {
+          "action": "BUY",
+          "created_at": "2026-06-05T15:10:00Z",
+          "event_id": "paper-buy-nvda-001",
+          "fee": "0",
+          "ledger_seq": 3,
+          "note": "AI 產業動能延續",
+          "occurred_at": "2026-06-05T15:10:00Z",
+          "pnl": null,
+          "pnl_pct": null,
+          "portfolio": "paper",
+          "price": "142",
+          "reason": "相對強度改善",
+          "shares": "60",
+          "source": "demo-seed",
+          "strategy": "momentum",
+          "symbol": "NVDA"
+        },
+        {
+          "action": "BUY",
+          "created_at": "2026-06-01T14:35:00Z",
+          "event_id": "paper-buy-aapl-001",
+          "fee": "0",
+          "ledger_seq": 2,
+          "note": "突破後分批建立倉位",
+          "occurred_at": "2026-06-01T14:35:00Z",
+          "pnl": null,
+          "pnl_pct": null,
+          "portfolio": "paper",
+          "price": "195",
+          "reason": "價格站上區間高位",
+          "shares": "100",
+          "source": "demo-seed",
+          "strategy": "momentum",
+          "symbol": "AAPL"
+        }
+      ]
+    }
+  },
+  "prices_as_of": "2026-07-17T20:30:00Z",
+  "revision": 62,
+  "schema_version": 3,
+  "source_head": {
+    "live": {
+      "count": 6,
+      "hash": "9fb6ff27a4cf84aaa3530f5702d564354753e4e92eb6d1dddd1318c2d377e052",
+      "last_event_id": "live-buy-msft-001"
+    },
+    "market": {
+      "count": 50,
+      "hash": "6754a9c85cf49aa0e5bb4e882e2040501184f0909e5dc3b18a48b8a108df6088",
+      "last_event_id": "market-spy-2026-07-17"
+    },
+    "paper": {
+      "count": 6,
+      "hash": "0e8015c4d5901d8e7cb3c6a3206df6baf34303fd137ba7d05d0f313ce0a27575",
+      "last_event_id": "paper-sell-nvda-001"
+    }
+  },
+  "warnings": []
+}
