@@ -47,7 +47,7 @@ class SnapshotTests(unittest.TestCase):
 
     def test_clean_start_builds_valid_empty_snapshot(self) -> None:
         snapshot = build_snapshot(self.root)
-        self.assertEqual(snapshot["schema_version"], 3)
+        self.assertEqual(snapshot["schema_version"], 4)
         self.assertEqual(snapshot["revision"], 0)
         self.assertEqual(snapshot["portfolios"]["paper"]["data_status"], "NO_DATA")
         self.assertEqual(snapshot["portfolios"]["live"]["holdings"], [])
@@ -573,6 +573,80 @@ class SnapshotTests(unittest.TestCase):
         paper = with_quote["portfolios"]["paper"]
         self.assertEqual(paper["daily"][0]["data_status"], "OK")
         self.assertEqual(paper["holdings"][0]["current_price"], "471")
+
+    def test_income_split_and_private_manual_quote_reach_snapshot(self) -> None:
+        self.append(
+            "PORTFOLIO_OPEN",
+            "paper-open-private",
+            "2024-01-02T14:00:00Z",
+            initial_cash="1000",
+        )
+        self.append(
+            "BUY",
+            "paper-buy-private",
+            "2024-01-02T15:00:00Z",
+            symbol="SPCX",
+            instrument_id="PRIVATE:SPACEX",
+            instrument_type="PRIVATE",
+            instrument_name="Space Exploration Technologies Corp.",
+            quote_symbol=None,
+            shares="2",
+            price="100",
+            fee="0",
+        )
+        self.append(
+            "INCOME_EXPENSE",
+            "paper-income-private",
+            "2024-01-02T16:00:00Z",
+            symbol="SPCX",
+            instrument_id="PRIVATE:SPACEX",
+            amount="10",
+            gross_amount="10",
+            withholding_tax="0",
+            income_type="DIVIDEND",
+        )
+        self.append(
+            "SPLIT",
+            "paper-split-private",
+            "2024-01-02T17:00:00Z",
+            symbol="SPCX",
+            instrument_id="PRIVATE:SPACEX",
+            instrument_type="PRIVATE",
+            quote_symbol=None,
+            numerator="2",
+            denominator="1",
+        )
+        self.append(
+            "QUOTE",
+            "market-private-quote",
+            "2024-01-02T21:00:00Z",
+            source="manual-quote",
+            symbol="SPCX",
+            instrument_id="PRIVATE:SPACEX",
+            close="60",
+            session_date="2024-01-02",
+        )
+        self.append(
+            "BENCHMARK_CLOSE",
+            "market-private-spy",
+            "2024-01-02T21:00:01Z",
+            symbol="SPY",
+            close="470",
+            session_date="2024-01-02",
+        )
+
+        snapshot = build_snapshot(self.root, write=False)
+        paper = snapshot["portfolios"]["paper"]
+        holding = paper["holdings"][0]
+
+        self.assertEqual(holding["shares"], "4")
+        self.assertEqual(holding["cost_basis"], "200")
+        self.assertEqual(holding["market_value"], "240")
+        self.assertEqual(holding["quote_status"], "MANUAL")
+        self.assertEqual(paper["cash"], "810")
+        self.assertEqual(paper["metrics"]["income_expense"], "10")
+        self.assertEqual(paper["daily"][0]["nav"], "1050")
+        self.assertEqual(paper["daily"][0]["external_flow"], "0")
 
     def test_start_of_day_cash_flow_is_removed_from_daily_return(self) -> None:
         self.append(

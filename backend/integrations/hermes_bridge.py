@@ -74,6 +74,7 @@ def quote_batch_events(payload: Any) -> list[dict[str, Any]]:
         "created_at",
         "session_date",
         "symbol",
+        "instrument_id",
         "close",
         "benchmark",
     }
@@ -113,7 +114,8 @@ def quote_batch_events(payload: Any) -> list[dict[str, Any]]:
         if not isinstance(symbol, str):
             raise ValueError(f"quote batch item {index} symbol must be a string")
         symbol = symbol.upper()
-        quote_key = (action, symbol)
+        instrument_id = item.get("instrument_id")
+        quote_key = (action, instrument_id or symbol)
         if quote_key in quote_keys:
             raise ValueError(
                 f"quote batch contains duplicate {action} for {symbol}"
@@ -128,8 +130,7 @@ def quote_batch_events(payload: Any) -> list[dict[str, Any]]:
         if is_benchmark:
             benchmark_count += 1
 
-        events.append(
-            {
+        event = {
                 "event_id": item["event_id"],
                 "portfolio": "market",
                 "occurred_at": item["occurred_at"],
@@ -144,7 +145,9 @@ def quote_batch_events(payload: Any) -> list[dict[str, Any]]:
                 "close": item["close"],
                 "session_date": session_date,
             }
-        )
+        if instrument_id is not None:
+            event["instrument_id"] = instrument_id
+        events.append(event)
 
     if len(sessions) != 1:
         raise ValueError("quote batch must contain exactly one session_date")
@@ -236,6 +239,14 @@ def parser() -> argparse.ArgumentParser:
     trade.add_argument("--shares", required=True)
     trade.add_argument("--price", required=True)
     trade.add_argument("--fee", default="0")
+    trade.add_argument("--instrument-id")
+    trade.add_argument(
+        "--instrument-type",
+        choices=("EQUITY", "ETF", "OPTION", "PRIVATE"),
+    )
+    trade.add_argument("--instrument-name")
+    trade.add_argument("--quote-symbol")
+    trade.add_argument("--contract-multiplier", default="1")
     trade.add_argument("--note")
     trade.add_argument("--reason")
     trade.add_argument("--strategy")
@@ -264,6 +275,50 @@ def parser() -> argparse.ArgumentParser:
     cash.add_argument(
         "--source",
         choices=("manual-import", "telegram"),
+        default="manual-import",
+    )
+
+    income = actions.add_parser("income-expense")
+    income.add_argument("--portfolio", choices=("paper", "live"), required=True)
+    income.add_argument("--event-id", required=True)
+    income.add_argument("--occurred-at", required=True)
+    income.add_argument("--symbol", required=True)
+    income.add_argument("--instrument-id")
+    income.add_argument("--instrument-name")
+    income.add_argument("--amount", required=True)
+    income.add_argument("--gross-amount")
+    income.add_argument("--withholding-tax", default="0")
+    income.add_argument(
+        "--income-type",
+        choices=("DIVIDEND", "INTEREST", "FEE", "CASH_IN_LIEU", "OTHER"),
+        required=True,
+    )
+    income.add_argument("--note")
+    income.add_argument(
+        "--source",
+        choices=("manual-import", "telegram"),
+        default="manual-import",
+    )
+
+    split = actions.add_parser("split")
+    split.add_argument("--portfolio", choices=("paper", "live"), required=True)
+    split.add_argument("--event-id", required=True)
+    split.add_argument("--occurred-at", required=True)
+    split.add_argument("--symbol", required=True)
+    split.add_argument("--instrument-id", required=True)
+    split.add_argument(
+        "--instrument-type",
+        choices=("EQUITY", "ETF", "PRIVATE"),
+        default="EQUITY",
+    )
+    split.add_argument("--instrument-name")
+    split.add_argument("--quote-symbol")
+    split.add_argument("--numerator", required=True)
+    split.add_argument("--denominator", required=True)
+    split.add_argument("--note")
+    split.add_argument(
+        "--source",
+        choices=("manual-import",),
         default="manual-import",
     )
 
@@ -301,8 +356,14 @@ def parser() -> argparse.ArgumentParser:
     quote.add_argument("--occurred-at", required=True)
     quote.add_argument("--session-date", required=True)
     quote.add_argument("--symbol", required=True)
+    quote.add_argument("--instrument-id")
     quote.add_argument("--close", required=True)
     quote.add_argument("--benchmark", action="store_true")
+    quote.add_argument(
+        "--source",
+        choices=("cron-quote", "manual-quote"),
+        default="manual-quote",
+    )
 
     quote_batch = actions.add_parser("quote-batch")
     quote_batch.add_argument(
@@ -316,6 +377,8 @@ def parser() -> argparse.ArgumentParser:
         trade,
         telegram_trade,
         cash,
+        income,
+        split,
         amend,
         void,
         quote,
@@ -393,6 +456,17 @@ def main(argv: list[str] | None = None) -> int:
                     value = getattr(args, field)
                     if value:
                         event[field] = value
+                for field in (
+                    "instrument_id",
+                    "instrument_type",
+                    "instrument_name",
+                    "quote_symbol",
+                ):
+                    value = getattr(args, field)
+                    if value:
+                        event[field] = value
+                if args.contract_multiplier != "1":
+                    event["contract_multiplier"] = args.contract_multiplier
             elif args.command == "telegram-trade":
                 parsed_trade = parse_trade_command(args.text)
                 event = base_event(
@@ -407,6 +481,40 @@ def main(argv: list[str] | None = None) -> int:
                 event["symbol"] = "USD"
                 if args.note:
                     event["note"] = args.note
+            elif args.command == "income-expense":
+                event = base_event(args, "INCOME_EXPENSE")
+                event.update(
+                    {
+                        "symbol": args.symbol.upper(),
+                        "amount": args.amount,
+                        "withholding_tax": args.withholding_tax,
+                        "income_type": args.income_type,
+                    }
+                )
+                for field in (
+                    "instrument_id",
+                    "instrument_name",
+                    "gross_amount",
+                    "note",
+                ):
+                    value = getattr(args, field)
+                    if value is not None:
+                        event[field] = value
+            elif args.command == "split":
+                event = base_event(args, "SPLIT")
+                event.update(
+                    {
+                        "symbol": args.symbol.upper(),
+                        "instrument_id": args.instrument_id,
+                        "instrument_type": args.instrument_type,
+                        "numerator": args.numerator,
+                        "denominator": args.denominator,
+                    }
+                )
+                for field in ("instrument_name", "quote_symbol", "note"):
+                    value = getattr(args, field)
+                    if value:
+                        event[field] = value
             elif args.command == "amend":
                 event = base_event(args, "AMEND")
                 changes = {
@@ -431,7 +539,7 @@ def main(argv: list[str] | None = None) -> int:
                 event = base_event(
                     args,
                     "BENCHMARK_CLOSE" if args.benchmark else "QUOTE",
-                    source="cron-benchmark" if args.benchmark else "cron-quote",
+                    source="cron-benchmark" if args.benchmark else args.source,
                 )
                 event.update(
                     {
@@ -440,6 +548,8 @@ def main(argv: list[str] | None = None) -> int:
                         "session_date": args.session_date,
                     }
                 )
+                if args.instrument_id:
+                    event["instrument_id"] = args.instrument_id
             else:
                 raise ValueError(f"unsupported command: {args.command}")
             result = append_and_rebuild(root, event)

@@ -772,6 +772,21 @@ td small {
   color: var(--paper);
 }
 
+.action-income_expense {
+  background: rgb(77 208 225 / 12%);
+  color: #4dd0e1;
+}
+
+.action-split {
+  background: rgb(180 140 255 / 14%);
+  color: #b48cff;
+}
+
+.action-cash_flow {
+  background: rgb(255 193 7 / 12%);
+  color: #ffd166;
+}
+
 .empty-row:hover {
   background: transparent;
 }

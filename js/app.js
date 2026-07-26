@@ -1,5 +1,6 @@
 import { renderSeriesChart } from "./charts.js";
 import {
+  buildRealizedActivityPnlSeries,
   buildCommonComparison,
   currentPortfolioNav,
   currentPortfolioTotalPnl,
@@ -50,7 +51,7 @@ function renderPortfolioMetrics(name) {
     metricCard(
       "總損益",
       formatCurrency(pnl, { sign: true }),
-      `已實現 ${formatCurrency(portfolio.metrics?.realized_pnl, { sign: true })}`,
+      `已實現 ${formatCurrency(portfolio.metrics?.realized_pnl, { sign: true })} · 收入／支出 ${formatCurrency(portfolio.metrics?.income_expense, { sign: true })}`,
       valueClass(pnl),
     ),
     metricCard(
@@ -78,7 +79,12 @@ function renderHoldings(name) {
   body.innerHTML = holdings
     .map(
       (holding) => `<tr>
-        <td><span class="symbol">${escapeHtml(holding.symbol)}</span></td>
+        <td>
+          <span class="symbol">${escapeHtml(holding.symbol)}</span>
+          <small>${escapeHtml(holding.instrument_name || holding.instrument_type || "")}</small>
+          ${holding.quote_status === "MANUAL" ? "<small>人工報價</small>" : ""}
+          ${holding.quote_status === "MISSING" ? "<small>待補報價</small>" : ""}
+        </td>
         <td class="numeric">${formatNumber(holding.shares, 6)}</td>
         <td class="numeric">${formatCurrency(holding.avg_cost)}</td>
         <td class="numeric">${formatCurrency(holding.current_price)}</td>
@@ -96,7 +102,11 @@ function visibleTrades(name) {
   const trades = state.data.portfolios[name].recent_trades || [];
   return filterByRange(trades, state.range, (trade) =>
     dateOnly(trade.occurred_at || trade.date),
-  ).filter((trade) => ["BUY", "SELL"].includes(trade.action));
+  ).filter((trade) =>
+    ["BUY", "SELL", "CASH_FLOW", "INCOME_EXPENSE", "SPLIT"].includes(
+      trade.action,
+    ),
+  );
 }
 
 function actionBadge(action) {
@@ -117,22 +127,35 @@ function renderTrades(name) {
       const note = [trade.strategy, trade.reason, trade.note]
         .filter(Boolean)
         .join(" · ");
+      const symbol = trade.symbol || "USD";
+      const shares =
+        trade.action === "SPLIT"
+          ? `${formatNumber(trade.numerator)}:${formatNumber(trade.denominator)}`
+          : ["BUY", "SELL"].includes(trade.action)
+            ? formatNumber(trade.shares, 6)
+            : "—";
+      const price = ["BUY", "SELL"].includes(trade.action)
+        ? formatCurrency(trade.price)
+        : trade.action === "INCOME_EXPENSE"
+          ? formatCurrency(trade.amount, { sign: true })
+          : "—";
+      const activityNote = [trade.income_type, note].filter(Boolean).join(" · ");
       const common = `
         <td>${formatDate(date)}</td>
-        <td><span class="symbol">${escapeHtml(trade.symbol)}</span></td>
+        <td><span class="symbol">${escapeHtml(symbol)}</span></td>
         <td>${actionBadge(trade.action)}</td>
-        <td class="numeric">${formatNumber(trade.shares, 6)}</td>
-        <td class="numeric">${formatCurrency(trade.price)}</td>`;
+        <td class="numeric">${shares}</td>
+        <td class="numeric">${price}</td>`;
       if (name === "live") {
         return `<tr>${common}
-          <td class="numeric">${formatCurrency(trade.fee)}</td>
+          <td class="numeric">${formatCurrency(trade.fee ?? trade.withholding_tax)}</td>
           <td class="numeric ${valueClass(trade.pnl)}">${formatCurrency(trade.pnl, { sign: true })}</td>
-          <td class="notes">${escapeHtml(note || "—")}</td>
+          <td class="notes">${escapeHtml(activityNote || "—")}</td>
         </tr>`;
       }
       return `<tr>${common}
         <td class="numeric ${valueClass(trade.pnl)}">${formatCurrency(trade.pnl, { sign: true })}</td>
-        <td class="notes">${escapeHtml(note || "—")}</td>
+        <td class="notes">${escapeHtml(activityNote || "—")}</td>
       </tr>`;
     })
     .join("");
@@ -143,10 +166,18 @@ function filteredDaily(name) {
 }
 
 function renderPortfolioChart(name) {
-  const values = filteredDaily(name).map((point) => ({
+  let values = filteredDaily(name).map((point) => ({
     date: point.date,
     value: point.pnl,
   }));
+  if (values.filter((point) => numeric(point.value) !== null).length < 2) {
+    values = filterByRange(
+      buildRealizedActivityPnlSeries(
+        state.data.portfolios[name].recent_trades || [],
+      ),
+      state.range,
+    );
+  }
   renderSeriesChart(`#${name}-chart`, [
     {
       key: name,

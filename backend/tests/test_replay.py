@@ -40,6 +40,128 @@ class ReplayTests(unittest.TestCase):
         )
         self.assertEqual(result.cash, expected)
 
+    def test_income_expense_changes_cash_without_external_flow(self) -> None:
+        result = replay_portfolio(
+            [
+                event(1, "PORTFOLIO_OPEN", initial_cash="1000"),
+                event(
+                    2,
+                    "INCOME_EXPENSE",
+                    symbol="VOO",
+                    instrument_id="ETF:VOO",
+                    amount="4.58",
+                    gross_amount="6.54",
+                    withholding_tax="1.96",
+                    income_type="DIVIDEND",
+                ),
+            ]
+        )
+        self.assertEqual(result.cash, Decimal("1004.58"))
+        self.assertEqual(result.cash_flow_total, Decimal("0"))
+        self.assertEqual(result.income_expense_total, Decimal("4.58"))
+        self.assertEqual(result.trade_history[0]["pnl"], Decimal("4.58"))
+
+    def test_split_preserves_cost_basis_and_adjusts_fifo_lots(self) -> None:
+        result = replay_portfolio(
+            [
+                event(1, "PORTFOLIO_OPEN", initial_cash="10000"),
+                event(
+                    2,
+                    "BUY",
+                    symbol="TSLA",
+                    instrument_id="EQUITY:TSLA",
+                    shares="4",
+                    price="900",
+                    fee="0",
+                ),
+                event(
+                    3,
+                    "SPLIT",
+                    symbol="TSLA",
+                    instrument_id="EQUITY:TSLA",
+                    numerator="3",
+                    denominator="1",
+                ),
+                event(
+                    4,
+                    "SELL",
+                    symbol="TSLA",
+                    instrument_id="EQUITY:TSLA",
+                    shares="2",
+                    price="300",
+                    fee="0",
+                ),
+            ]
+        )
+        self.assertEqual(result.realized_pnl_total, Decimal("0"))
+        self.assertEqual(result.holdings[0]["shares"], Decimal("10"))
+        self.assertEqual(result.holdings[0]["cost_basis"], Decimal("3000"))
+        self.assertEqual(result.holdings[0]["avg_cost"], Decimal("300"))
+
+    def test_option_contract_multiplier_drives_cash_and_pnl(self) -> None:
+        result = replay_portfolio(
+            [
+                event(1, "PORTFOLIO_OPEN", initial_cash="10000"),
+                event(
+                    2,
+                    "BUY",
+                    symbol="AMD",
+                    instrument_id="OPTION:AMD:2022-03-18:C:165",
+                    instrument_type="OPTION",
+                    contract_multiplier="100",
+                    shares="1",
+                    price="15.4",
+                    fee="0.02",
+                ),
+                event(
+                    3,
+                    "SELL",
+                    symbol="AMD",
+                    instrument_id="OPTION:AMD:2022-03-18:C:165",
+                    instrument_type="OPTION",
+                    contract_multiplier="100",
+                    shares="1",
+                    price="16",
+                    fee="0.03",
+                ),
+            ]
+        )
+        self.assertEqual(result.cash, Decimal("10059.95"))
+        self.assertEqual(result.realized_pnl_total, Decimal("59.95"))
+        self.assertEqual(result.holdings, [])
+
+    def test_open_lots_reject_reused_instrument_id_with_new_identity(self) -> None:
+        events = [
+            event(1, "PORTFOLIO_OPEN", initial_cash="10000"),
+            event(
+                2,
+                "BUY",
+                symbol="AMD",
+                instrument_id="OPTION:AMD:2022-03-18:C:165",
+                instrument_type="OPTION",
+                contract_multiplier="100",
+                shares="1",
+                price="15",
+                fee="0",
+            ),
+            event(
+                3,
+                "BUY",
+                symbol="AMD",
+                instrument_id="OPTION:AMD:2022-03-18:C:165",
+                instrument_type="OPTION",
+                contract_multiplier="1",
+                shares="1",
+                price="15",
+                fee="0",
+            ),
+        ]
+        with self.assertRaisesRegex(
+            BusinessInvariantError,
+            "instrument identity mismatch",
+        ):
+            replay_portfolio(events)
+
     def test_closed_episode_win_rate(self) -> None:
         events = self.fixture() + [
             event(5, "SELL", symbol="AAPL", shares="3", price="15", fee="0")
@@ -64,6 +186,27 @@ class ReplayTests(unittest.TestCase):
         ]
         with self.assertRaisesRegex(BusinessInvariantError, "cash negative"):
             replay_portfolio(events)
+
+    def test_live_margin_portfolio_allows_negative_cash(self) -> None:
+        events = [
+            event(
+                1,
+                "PORTFOLIO_OPEN",
+                portfolio="live",
+                initial_cash="0",
+            ),
+            event(
+                2,
+                "BUY",
+                portfolio="live",
+                symbol="AAPL",
+                shares="2",
+                price="10",
+                fee="0",
+            ),
+        ]
+        result = replay_portfolio(events, portfolio="live")
+        self.assertEqual(result.cash, Decimal("-20"))
 
     def test_cash_flow_cannot_make_cash_negative(self) -> None:
         events = [

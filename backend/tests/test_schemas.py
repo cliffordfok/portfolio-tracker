@@ -180,7 +180,7 @@ class SchemaTests(unittest.TestCase):
                     session_date="2024-01-02",
                 ),
                 "manual-import",
-                "QUOTE source must be cron-quote",
+                "QUOTE source must be cron-quote or manual-quote",
             ),
             (
                 candidate(
@@ -201,6 +201,76 @@ class SchemaTests(unittest.TestCase):
                 value["source"] = invalid_source
                 with self.assertRaisesRegex(ValidationError, message):
                     validate_event(value)
+
+    def test_option_trade_accepts_stable_instrument_identity(self) -> None:
+        value = candidate(
+            "BUY",
+            portfolio="live",
+            event_id="live-option-amd",
+            occurred_at="2024-01-02T15:00:00Z",
+            symbol="AMD",
+            instrument_id="OPTION:AMD:2024-03-15:C:165",
+            instrument_type="OPTION",
+            instrument_name="AMD 2024-03-15 CALL 165",
+            quote_symbol="AMD",
+            contract_multiplier="100",
+            shares="1",
+            price="15.4",
+            fee="0.02",
+        )
+        validate_event(value)
+        missing_identity = dict(value)
+        del missing_identity["instrument_id"]
+        with self.assertRaisesRegex(ValidationError, "stable instrument_id"):
+            validate_event(missing_identity)
+
+    def test_income_amount_must_be_net_of_withholding(self) -> None:
+        valid = candidate(
+            "INCOME_EXPENSE",
+            portfolio="live",
+            event_id="live-dividend-voo",
+            occurred_at="2024-01-02T15:00:00Z",
+            symbol="VOO",
+            instrument_id="ETF:VOO",
+            amount="4.58",
+            gross_amount="6.54",
+            withholding_tax="1.96",
+            income_type="DIVIDEND",
+        )
+        validate_event(valid)
+        invalid = dict(valid, amount="6.54")
+        with self.assertRaisesRegex(ValidationError, "gross_amount minus"):
+            validate_event(invalid)
+
+    def test_split_requires_real_ratio_and_instrument(self) -> None:
+        valid = candidate(
+            "SPLIT",
+            portfolio="live",
+            event_id="live-split-tsla",
+            occurred_at="2024-01-02T15:00:00Z",
+            symbol="TSLA",
+            instrument_id="EQUITY:TSLA",
+            numerator="3",
+            denominator="1",
+        )
+        validate_event(valid)
+        invalid = dict(valid, numerator="1")
+        with self.assertRaisesRegex(ValidationError, "must change"):
+            validate_event(invalid)
+
+    def test_private_manual_quote_uses_instrument_id(self) -> None:
+        value = candidate(
+            "QUOTE",
+            portfolio="market",
+            event_id="market-spacex-manual",
+            occurred_at="2024-01-02T21:00:00Z",
+            source="manual-quote",
+            symbol="SPCX",
+            instrument_id="PRIVATE:SPACEX",
+            close="210",
+            session_date="2024-01-02",
+        )
+        validate_event(value)
 
     def test_corrections_require_a_non_empty_audit_reason(self) -> None:
         amend = candidate(

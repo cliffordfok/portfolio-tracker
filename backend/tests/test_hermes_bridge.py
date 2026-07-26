@@ -176,6 +176,108 @@ class HermesBridgeTests(unittest.TestCase):
         self.assertEqual(amend.amend_reason, "broker fee correction")
         self.assertEqual(void.void_reason, "duplicate fill")
 
+    def test_live_income_and_split_commands_rebuild_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            commands = [
+                [
+                    "--root",
+                    temp,
+                    "open",
+                    "--portfolio",
+                    "live",
+                    "--event-id",
+                    "live-open",
+                    "--occurred-at",
+                    "2024-01-01T14:00:00Z",
+                    "--initial-cash",
+                    "1000",
+                ],
+                [
+                    "--root",
+                    temp,
+                    "trade",
+                    "--portfolio",
+                    "live",
+                    "--event-id",
+                    "live-buy-tsla",
+                    "--occurred-at",
+                    "2024-01-02T15:00:00Z",
+                    "--action",
+                    "BUY",
+                    "--symbol",
+                    "TSLA",
+                    "--instrument-id",
+                    "EQUITY:TSLA",
+                    "--instrument-type",
+                    "EQUITY",
+                    "--quote-symbol",
+                    "TSLA",
+                    "--shares",
+                    "2",
+                    "--price",
+                    "100",
+                ],
+                [
+                    "--root",
+                    temp,
+                    "income-expense",
+                    "--portfolio",
+                    "live",
+                    "--event-id",
+                    "live-dividend-tsla",
+                    "--occurred-at",
+                    "2024-01-02T16:00:00Z",
+                    "--symbol",
+                    "TSLA",
+                    "--instrument-id",
+                    "EQUITY:TSLA",
+                    "--amount",
+                    "7",
+                    "--gross-amount",
+                    "10",
+                    "--withholding-tax",
+                    "3",
+                    "--income-type",
+                    "DIVIDEND",
+                ],
+                [
+                    "--root",
+                    temp,
+                    "split",
+                    "--portfolio",
+                    "live",
+                    "--event-id",
+                    "live-split-tsla",
+                    "--occurred-at",
+                    "2024-01-02T17:00:00Z",
+                    "--symbol",
+                    "TSLA",
+                    "--instrument-id",
+                    "EQUITY:TSLA",
+                    "--quote-symbol",
+                    "TSLA",
+                    "--numerator",
+                    "3",
+                    "--denominator",
+                    "1",
+                ],
+            ]
+            for command in commands:
+                with redirect_stdout(StringIO()):
+                    self.assertEqual(main(command), 0)
+
+            snapshot = json.loads(
+                (
+                    Path(temp)
+                    / "snapshots"
+                    / "portfolio-snapshot.json"
+                ).read_text(encoding="utf-8")
+            )
+            live = snapshot["portfolios"]["live"]
+            self.assertEqual(live["cash"], "807")
+            self.assertEqual(live["holdings"][0]["shares"], "6")
+            self.assertEqual(live["metrics"]["income_expense"], "7")
+
     def test_append_reports_recorded_when_snapshot_rebuild_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -518,7 +620,7 @@ class HermesBridgeTests(unittest.TestCase):
             self.assertEqual(publish_result["status"], "published")
             self.assertIsNotNone(client.remote)
             published = json.loads(client.remote.content)
-            self.assertEqual(published["schema_version"], 3)
+            self.assertEqual(published["schema_version"], 4)
             self.assertEqual(published["revision"], 7)
             self.assertEqual(
                 published["portfolios"]["paper"]["holdings"][0]["symbol"],

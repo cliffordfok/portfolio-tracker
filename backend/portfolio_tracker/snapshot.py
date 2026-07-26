@@ -16,7 +16,12 @@ from .decimal_utils import ZERO, amount_for, json_safe, money, percent, price, s
 from .errors import BusinessInvariantError, ValidationError
 from .ledger import FileLock, LedgerStore, atomic_write_json, durable_unlink
 from .replay import ReplayResult, replay_portfolio
-from .schemas import SYMBOL_RE, parse_timestamp
+from .schemas import (
+    INSTRUMENT_ID_RE,
+    INSTRUMENT_TYPES,
+    SYMBOL_RE,
+    parse_timestamp,
+)
 
 try:
     NEW_YORK: ZoneInfo | None = ZoneInfo("America/New_York")
@@ -72,8 +77,8 @@ def validate_snapshot(snapshot: Any) -> None:
 
     if not isinstance(snapshot, dict):
         raise ValidationError("portfolio snapshot must be a JSON object")
-    if snapshot.get("schema_version") != 3:
-        raise ValidationError("portfolio snapshot schema_version must be 3")
+    if snapshot.get("schema_version") != 4:
+        raise ValidationError("portfolio snapshot schema_version must be 4")
     revision = snapshot.get("revision")
     if (
         isinstance(revision, bool)
@@ -187,10 +192,46 @@ def validate_snapshot(snapshot: Any) -> None:
                 or not SYMBOL_RE.fullmatch(holding["symbol"])
             ):
                 raise ValidationError(f"{name}.holdings symbol is invalid")
+            if (
+                not isinstance(holding.get("instrument_id"), str)
+                or not INSTRUMENT_ID_RE.fullmatch(holding["instrument_id"])
+            ):
+                raise ValidationError(
+                    f"{name}.holdings instrument_id is invalid"
+                )
+            if holding.get("instrument_type") not in INSTRUMENT_TYPES:
+                raise ValidationError(
+                    f"{name}.holdings instrument_type is invalid"
+                )
+            instrument_name = holding.get("instrument_name")
+            if instrument_name is not None and not isinstance(
+                instrument_name,
+                str,
+            ):
+                raise ValidationError(
+                    f"{name}.holdings instrument_name is invalid"
+                )
+            quote_symbol = holding.get("quote_symbol")
+            if quote_symbol is not None and (
+                not isinstance(quote_symbol, str)
+                or not SYMBOL_RE.fullmatch(quote_symbol)
+            ):
+                raise ValidationError(
+                    f"{name}.holdings quote_symbol is invalid"
+                )
+            if holding.get("quote_status") not in {
+                "OK",
+                "MANUAL",
+                "MISSING",
+            }:
+                raise ValidationError(
+                    f"{name}.holdings quote_status is invalid"
+                )
             for field in (
                 "shares",
                 "avg_cost",
                 "cost_basis",
+                "contract_multiplier",
                 "current_price",
                 "market_value",
                 "unrealized_pnl",
@@ -218,6 +259,8 @@ def validate_snapshot(snapshot: Any) -> None:
                 "BUY",
                 "SELL",
                 "CASH_FLOW",
+                "INCOME_EXPENSE",
+                "SPLIT",
             }:
                 raise ValidationError(
                     f"{name}.recent_trades entry is invalid"
@@ -261,7 +304,13 @@ def validate_snapshot(snapshot: Any) -> None:
                     raise ValidationError(
                         f"{name}.recent_trades symbol is invalid"
                     )
-                for field in ("shares", "price", "fee", "pnl", "pnl_pct"):
+                for field in (
+                    "shares",
+                    "price",
+                    "fee",
+                    "pnl",
+                    "pnl_pct",
+                ):
                     if field not in trade:
                         raise ValidationError(
                             f"{name}.recent_trades is missing {field}"
@@ -270,11 +319,11 @@ def validate_snapshot(snapshot: Any) -> None:
                         trade[field],
                         label=f"{name}.recent_trades.{field}",
                     )
-            elif trade.get("symbol") != "USD":
+            elif trade["action"] == "CASH_FLOW" and trade.get("symbol") != "USD":
                 raise ValidationError(
                     "CASH_FLOW snapshot symbol must be USD"
                 )
-            else:
+            elif trade["action"] == "CASH_FLOW":
                 if "amount" not in trade:
                     raise ValidationError(
                         f"{name}.recent_trades is missing amount"
@@ -283,6 +332,49 @@ def validate_snapshot(snapshot: Any) -> None:
                     trade["amount"],
                     label=f"{name}.recent_trades.amount",
                 )
+            elif trade["action"] == "INCOME_EXPENSE":
+                if trade.get("income_type") not in {
+                    "DIVIDEND",
+                    "INTEREST",
+                    "FEE",
+                    "CASH_IN_LIEU",
+                    "OTHER",
+                }:
+                    raise ValidationError(
+                        f"{name}.recent_trades income_type is invalid"
+                    )
+                for field in (
+                    "amount",
+                    "gross_amount",
+                    "withholding_tax",
+                    "pnl",
+                    "pnl_pct",
+                ):
+                    if field not in trade:
+                        raise ValidationError(
+                            f"{name}.recent_trades is missing {field}"
+                        )
+                    _snapshot_decimal_or_none(
+                        trade[field],
+                        label=f"{name}.recent_trades.{field}",
+                    )
+            elif trade["action"] == "SPLIT":
+                for field in (
+                    "numerator",
+                    "denominator",
+                    "shares_before",
+                    "shares_after",
+                    "pnl",
+                    "pnl_pct",
+                ):
+                    if field not in trade:
+                        raise ValidationError(
+                            f"{name}.recent_trades is missing {field}"
+                        )
+                    _snapshot_decimal_or_none(
+                        trade[field],
+                        label=f"{name}.recent_trades.{field}",
+                    )
 
         for point in portfolio["daily"]:
             if not isinstance(point, dict):
@@ -344,6 +436,7 @@ def validate_snapshot(snapshot: Any) -> None:
         for field in (
             "total_return",
             "realized_pnl",
+            "income_expense",
             "win_rate",
             "max_drawdown",
             "sharpe_ratio",
@@ -553,9 +646,11 @@ def _market_data(
         record = {
             "close": price(event["close"], field="close"),
             "market_price_as_of": event["occurred_at"],
+            "source": event["source"],
         }
         if event["action"] == "QUOTE":
-            quotes[event["symbol"]][session] = record
+            quote_key = event.get("instrument_id") or event["symbol"]
+            quotes[quote_key][session] = record
         elif event["action"] == "BENCHMARK_CLOSE":
             benchmark[session] = record
     recorded_sessions = sorted(
@@ -658,14 +753,22 @@ def _enrich_holdings(
     enriched: list[dict[str, Any]] = []
     for holding in result.holdings:
         symbol = holding["symbol"]
+        quote_key = holding.get("quote_symbol") or holding["instrument_id"]
         current_quote = (
-            _quote_for_day(quotes.get(symbol, {}), last_day, trading_sessions)
+            _quote_for_day(
+                quotes.get(quote_key, {}),
+                last_day,
+                trading_sessions,
+            )
             if last_day
             else None
         )
         current_price = current_quote["close"] if current_quote else None
         market_value = (
-            amount_for(holding["shares"], current_price)
+            amount_for(
+                holding["shares"] * holding["contract_multiplier"],
+                current_price,
+            )
             if current_price is not None
             else None
         )
@@ -680,6 +783,14 @@ def _enrich_holdings(
                 "current_price": current_price,
                 "market_price_as_of": (
                     current_quote["market_price_as_of"] if current_quote else None
+                ),
+                "quote_status": (
+                    "MANUAL"
+                    if current_quote
+                    and current_quote["source"] == "manual-quote"
+                    else "OK"
+                    if current_quote
+                    else "MISSING"
                 ),
                 "market_value": market_value,
                 "unrealized_pnl": unrealized,
@@ -735,6 +846,7 @@ def _metrics(
         "data_status": "INSUFFICIENT_DATA" if has_gap else "OK",
         "total_return": None if has_gap else total_return,
         "realized_pnl": result.realized_pnl_total,
+        "income_expense": getattr(result, "income_expense_total", ZERO),
         "win_rate": result.win_rate,
         "closed_episodes": len(result.closed_episodes),
         "max_drawdown": None if has_gap else max_drawdown,
@@ -760,6 +872,7 @@ def _daily_series(
 
     cash = ZERO
     positions: dict[str, Decimal] = defaultdict(lambda: ZERO)
+    position_meta: dict[str, dict[str, Any]] = {}
     cumulative_external_flow = ZERO
     previous_nav: Decimal | None = None
     previous_segment_return: Decimal | None = None
@@ -787,28 +900,80 @@ def _daily_series(
                 cash = money(cash + flow)
                 external_flow = money(external_flow + flow)
                 cumulative_external_flow = money(cumulative_external_flow + flow)
+            elif action == "INCOME_EXPENSE":
+                cash = money(cash + money(event["amount"]))
             elif action == "BUY":
                 quantity = shares(event["shares"])
                 unit_price = price(event["price"])
                 fee = money(event.get("fee", 0), field="fee")
-                positions[event["symbol"]] = shares(
-                    positions[event["symbol"]] + quantity
+                instrument_id = event.get("instrument_id") or event["symbol"]
+                multiplier = shares(
+                    event.get("contract_multiplier", "1"),
+                    field="contract_multiplier",
                 )
-                cash = money(cash - amount_for(quantity, unit_price) - fee)
+                position_meta[instrument_id] = {
+                    "symbol": event["symbol"],
+                    "quote_key": event.get("quote_symbol") or instrument_id,
+                    "contract_multiplier": multiplier,
+                }
+                positions[instrument_id] = shares(
+                    positions[instrument_id] + quantity
+                )
+                cash = money(
+                    cash
+                    - amount_for(quantity * multiplier, unit_price)
+                    - fee
+                )
             elif action == "SELL":
                 quantity = shares(event["shares"])
                 unit_price = price(event["price"])
                 fee = money(event.get("fee", 0), field="fee")
-                positions[event["symbol"]] = shares(
-                    positions[event["symbol"]] - quantity
+                instrument_id = event.get("instrument_id") or event["symbol"]
+                multiplier = shares(
+                    event.get("contract_multiplier", "1"),
+                    field="contract_multiplier",
                 )
-                cash = money(cash + amount_for(quantity, unit_price) - fee)
+                position_meta.setdefault(
+                    instrument_id,
+                    {
+                        "symbol": event["symbol"],
+                        "quote_key": event.get("quote_symbol") or instrument_id,
+                        "contract_multiplier": multiplier,
+                    },
+                )
+                positions[instrument_id] = shares(
+                    positions[instrument_id] - quantity
+                )
+                cash = money(
+                    cash
+                    + amount_for(quantity * multiplier, unit_price)
+                    - fee
+                )
+            elif action == "SPLIT":
+                instrument_id = event["instrument_id"]
+                ratio = (
+                    shares(event["numerator"], field="numerator")
+                    / shares(event["denominator"], field="denominator")
+                )
+                positions[instrument_id] = shares(
+                    positions[instrument_id] * ratio
+                )
 
         missing_symbols = sorted(
-            symbol
-            for symbol, quantity in positions.items()
-            if quantity > 0
-            and _quote_for_day(quotes.get(symbol, {}), session, session_set) is None
+            {
+                position_meta[instrument_id]["symbol"]
+                for instrument_id, quantity in positions.items()
+                if quantity > 0
+                and _quote_for_day(
+                    quotes.get(
+                        position_meta[instrument_id]["quote_key"],
+                        {},
+                    ),
+                    session,
+                    session_set,
+                )
+                is None
+            }
         )
         if missing_symbols:
             daily.append(
@@ -835,12 +1000,15 @@ def _daily_series(
             sum(
                 (
                     amount_for(
-                        quantity,
+                        quantity
+                        * position_meta[instrument_id]["contract_multiplier"],
                         _quote_for_day(
-                            quotes[symbol], session, session_set
+                            quotes[position_meta[instrument_id]["quote_key"]],
+                            session,
+                            session_set,
                         )["close"],
                     )
-                    for symbol, quantity in positions.items()
+                    for instrument_id, quantity in positions.items()
                     if quantity > 0
                 ),
                 ZERO,
@@ -1043,6 +1211,7 @@ def _build_snapshot_locked(
                     "data_status": "NO_DATA",
                     "total_return": None,
                     "realized_pnl": "0",
+                    "income_expense": "0",
                     "win_rate": None,
                     "closed_episodes": 0,
                     "max_drawdown": None,
@@ -1114,7 +1283,7 @@ def _build_snapshot_locked(
     revision = sum(head["count"] for head in source_head.values())
     snapshot = json_safe(
         {
-            "schema_version": 3,
+            "schema_version": 4,
             "revision": revision,
             "generated_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
             "data_as_of": latest_event_time,

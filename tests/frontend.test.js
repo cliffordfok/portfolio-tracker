@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
+  buildRealizedActivityPnlSeries,
   buildCommonComparison,
   calculateFallbackPortfolio,
   currentPortfolioNav,
@@ -19,6 +20,41 @@ import {
   formatPercent,
   numeric,
 } from "../js/utils.js";
+
+test("realized activity chart falls back to FIFO and income P&L", () => {
+  assert.deepEqual(
+    buildRealizedActivityPnlSeries([
+      {
+        ledger_seq: 4,
+        occurred_at: "2026-01-04T14:00:00Z",
+        action: "INCOME_EXPENSE",
+        pnl: "7.5",
+      },
+      {
+        ledger_seq: 3,
+        occurred_at: "2026-01-03T15:00:00Z",
+        action: "CASH_FLOW",
+        pnl: null,
+      },
+      {
+        ledger_seq: 2,
+        occurred_at: "2026-01-02T15:00:00Z",
+        action: "SELL",
+        pnl: "-2",
+      },
+      {
+        ledger_seq: 1,
+        occurred_at: "2026-01-01T15:00:00Z",
+        action: "BUY",
+        pnl: null,
+      },
+    ]),
+    [
+      { date: "2026-01-02", value: -2 },
+      { date: "2026-01-04", value: 5.5 },
+    ],
+  );
+});
 
 test("fallback FIFO calculation keeps live and paper state independent", () => {
   const trades = [
@@ -403,7 +439,8 @@ test("Hermes contract uses the real Docker paths and never reads credentials", a
     "/data/portfolio",
     "telegram-trade",
     "live-telegram-TELEGRAM_UPDATE_ID",
-    "Live has no `PORTFOLIO_OPEN` yet",
+    "Live opening is approved as USD `0` at `2021-09-27T00:00:00Z`",
+    "scripts/import_live_staging.py",
     "Only `portfolio_cron.py publish|maintain`",
     "`bootstrap-publish` action may do the same only when an operator explicitly",
     "portfolio_cron.py doctor-paper-active",
@@ -445,6 +482,7 @@ function validSnapshot(revision = 1) {
       data_status: "NO_DATA",
       total_return: null,
       realized_pnl: "0",
+      income_expense: "0",
       win_rate: null,
       max_drawdown: null,
       sharpe_ratio: null,
@@ -457,7 +495,7 @@ function validSnapshot(revision = 1) {
     hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   });
   return {
-    schema_version: 3,
+    schema_version: 4,
     revision,
     generated_at: "2026-07-25T00:00:00Z",
     data_as_of: null,
@@ -520,6 +558,104 @@ test("snapshot validation accepts an intentional return-base gap", async () => {
       result.portfolios.paper.daily[0].data_status,
       "INSUFFICIENT_DATA",
     );
+  } finally {
+    globalThis.window = previousWindow;
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test("snapshot validation accepts instrument, income, and split fields", async () => {
+  const previousWindow = globalThis.window;
+  const previousFetch = globalThis.fetch;
+  globalThis.window = {
+    location: { href: "https://cliffordfok.github.io/portfolio-tracker/" },
+    localStorage: new MemoryStorage(),
+  };
+  const payload = validSnapshot(4);
+  payload.portfolios.live = {
+    ...payload.portfolios.live,
+    data_status: "INSUFFICIENT_DATA",
+    cash: "810",
+    initial_cash: "1000",
+    holdings: [
+      {
+        instrument_id: "PRIVATE:SPACEX",
+        instrument_type: "PRIVATE",
+        instrument_name: "Space Exploration Technologies Corp.",
+        quote_symbol: null,
+        quote_status: "MISSING",
+        symbol: "SPCX",
+        shares: "4",
+        avg_cost: "50",
+        cost_basis: "200",
+        contract_multiplier: "1",
+        current_price: null,
+        market_price_as_of: null,
+        market_value: null,
+        unrealized_pnl: null,
+        unrealized_pnl_pct: null,
+      },
+    ],
+    recent_trades: [
+      {
+        event_id: "live-income-1",
+        portfolio: "live",
+        occurred_at: "2024-01-02T16:00:00Z",
+        created_at: "2024-01-02T16:00:00Z",
+        source: "manual-import",
+        ledger_seq: 3,
+        action: "INCOME_EXPENSE",
+        symbol: "SPCX",
+        amount: "7",
+        gross_amount: "10",
+        withholding_tax: "3",
+        income_type: "DIVIDEND",
+        pnl: "7",
+        pnl_pct: null,
+      },
+      {
+        event_id: "live-split-1",
+        portfolio: "live",
+        occurred_at: "2024-01-02T17:00:00Z",
+        created_at: "2024-01-02T17:00:00Z",
+        source: "manual-import",
+        ledger_seq: 4,
+        action: "SPLIT",
+        symbol: "SPCX",
+        instrument_id: "PRIVATE:SPACEX",
+        numerator: "2",
+        denominator: "1",
+        shares_before: "2",
+        shares_after: "4",
+        pnl: null,
+        pnl_pct: null,
+      },
+    ],
+    daily: [],
+    metrics: {
+      ...payload.portfolios.live.metrics,
+      data_status: "INSUFFICIENT_DATA",
+      income_expense: "7",
+    },
+  };
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => payload,
+  });
+  try {
+    const result = await loadDashboardData(
+      {
+        snapshotUrls: ["https://example.test/snapshot-v4.json"],
+        storagePrefix: "schema-v4-instruments-test",
+        staleAfterMinutes: 999999,
+      },
+      { now: 1000 },
+    );
+    assert.equal(
+      result.portfolios.live.holdings[0].instrument_id,
+      "PRIVATE:SPACEX",
+    );
+    assert.equal(result.portfolios.live.recent_trades[0].amount, "7");
   } finally {
     globalThis.window = previousWindow;
     globalThis.fetch = previousFetch;

@@ -6,7 +6,12 @@ from copy import deepcopy
 from typing import Any, Iterable
 
 from .errors import BusinessInvariantError, ConflictError
-from .schemas import CORRECTABLE_ACTIONS, parse_timestamp, validate_event
+from .schemas import (
+    ACTION_FIELDS,
+    CORRECTABLE_ACTIONS,
+    parse_timestamp,
+    validate_event,
+)
 
 
 def _sort_key(event: dict[str, Any]) -> tuple[Any, int, Any]:
@@ -20,8 +25,9 @@ def _sort_key(event: dict[str, Any]) -> tuple[Any, int, Any]:
 def resolve_effective_events(events: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     """Resolve AMEND/VOID metadata, then return sorted economic events.
 
-    AMEND targets BUY, SELL, or CASH_FLOW. VOID targets an economic event or
-    an AMEND; when it targets an AMEND, the underlying economic event is
+    AMEND targets a correctable economic event, but may only change fields
+    that the target action actually supports. VOID targets an economic event
+    or an AMEND; when it targets an AMEND, the underlying economic event is
     voided. Corrections always target a prior event in the same append-only
     ledger. AMEND is per-field last-write-wins and VOID overrides all
     amendments.
@@ -61,9 +67,19 @@ def resolve_effective_events(events: Iterable[dict[str, Any]]) -> list[dict[str,
             if target["portfolio"] != event["portfolio"]:
                 raise BusinessInvariantError("cross-portfolio AMEND is forbidden")
             if target["action"] not in CORRECTABLE_ACTIONS:
-                raise BusinessInvariantError("AMEND may target BUY/SELL/CASH_FLOW only")
+                raise BusinessInvariantError(
+                    "AMEND may target a correctable economic event only"
+                )
             if target_id in voided:
                 raise BusinessInvariantError(f"AMEND after VOID: {target_id}")
+            unsupported = sorted(
+                set(event["changes"]) - ACTION_FIELDS[target["action"]]
+            )
+            if unsupported:
+                raise BusinessInvariantError(
+                    f"AMEND fields are unsupported by {target['action']}: "
+                    + ", ".join(unsupported)
+                )
             amendments.setdefault(target_id, {}).update(deepcopy(event["changes"]))
 
         elif action == "VOID":
@@ -81,7 +97,7 @@ def resolve_effective_events(events: Iterable[dict[str, Any]]) -> list[dict[str,
                 economic_target_id = target_id
             else:
                 raise BusinessInvariantError(
-                    "VOID may target BUY/SELL/CASH_FLOW/AMEND only"
+                    "VOID may target a correctable economic event or AMEND only"
                 )
             if economic_target_id in voided:
                 raise BusinessInvariantError(f"duplicate VOID: {economic_target_id}")

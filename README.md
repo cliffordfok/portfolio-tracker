@@ -7,7 +7,8 @@
 ## 功能
 
 - 模擬倉、真實倉、對比分析三個頁籤
-- FIFO lot matching、買賣費用分攤、逐筆及累計已實現損益
+- FIFO lot matching、期權 contract multiplier、買賣費用分攤、逐筆及累計已實現損益
+- 股息／利息／費用、預扣稅、拆股與公開／私募 instrument identity
 - 目前持倉、平均成本、市值、未實現損益
 - NAV、TWR、最大回撤、Sharpe ratio、closed-episode 勝率
 - 模擬倉／真實倉／SPY 百分比回報比較
@@ -71,6 +72,7 @@ Master JSONL、locks、publication state 和 PAT 全部只存在 VPS。GitHub re
 ├── config/
 ├── scripts/
 │   ├── import_paper_log.py
+│   ├── import_live_staging.py
 │   ├── portfolio_cron.py
 │   ├── verify_outbox_artifact.py
 │   ├── install-vps.sh
@@ -176,19 +178,21 @@ sudo -u portfolio /usr/bin/python3 integrations/hermes_bridge.py \
   --initial-cash 100000
 ```
 
-真實倉 initial cash 及 effective UTC 尚未確認，**不要**以 `0` 或任何
-placeholder 建立 opening event。Live tab 會保持 `NO_DATA`；等兩個真實值
-一齊確認後，先用另一個 stable ID 建立：
+真實倉已批准由首筆外部入金前開始：effective UTC 為
+`2021-09-27T00:00:00Z`，initial cash 為 `0`。正式 production ledger
+必須經已核對 staging plan 一次過匯入，不要另行手動建立 opening event：
 
 ```bash
-python3 integrations/hermes_bridge.py \
+python3 scripts/import_live_staging.py \
   --root /var/lib/portfolio-tracker \
-  open \
-  --portfolio live \
-  --event-id live-open-LIVE_EFFECTIVE_DATE \
-  --occurred-at LIVE_EFFECTIVE_UTC \
-  --initial-cash LIVE_INITIAL_CASH
+  --plan /secure/path/live-import-plan.json \
+  --source-workbook /secure/path/整理後交易紀錄.xlsx \
+  --check-only
 ```
+
+只有 `status=valid`、source SHA-256 相符、expected cash／holdings／FIFO
+invariants 全部相符先可將 `--check-only` 改為 `--apply`。Plan、workbook
+及真實 master ledger 都係私人資料，不可 commit。
 
 ### 寫入交易
 
@@ -201,6 +205,9 @@ python3 integrations/hermes_bridge.py \
   --occurred-at 2026-07-24T15:30:00Z \
   --action BUY \
   --symbol AAPL \
+  --instrument-id EQUITY:AAPL \
+  --instrument-type EQUITY \
+  --quote-symbol AAPL \
   --shares 10 \
   --price 215.25 \
   --fee 0 \
@@ -251,10 +258,47 @@ python3 integrations/hermes_bridge.py \
   --note "deposit"
 ```
 
+### 收入、支出及拆股
+
+`INCOME_EXPENSE.amount` 係實際 cash movement；如有預扣稅，必須滿足
+`amount = gross_amount - withholding_tax`。呢類事件會計入投資回報，但
+唔會當作外部注資：
+
+```bash
+python3 integrations/hermes_bridge.py \
+  --root /var/lib/portfolio-tracker \
+  income-expense \
+  --portfolio live \
+  --event-id live-dividend-IMPORT_ID \
+  --occurred-at 2026-07-24T14:00:00Z \
+  --symbol VOO \
+  --instrument-id ETF:VOO \
+  --amount 70 \
+  --gross-amount 100 \
+  --withholding-tax 30 \
+  --income-type DIVIDEND
+```
+
+拆股只調整 lot shares／unit cost，總成本及現金不變：
+
+```bash
+python3 integrations/hermes_bridge.py \
+  --root /var/lib/portfolio-tracker \
+  split \
+  --portfolio live \
+  --event-id live-split-IMPORT_ID \
+  --occurred-at 2026-07-24T15:00:00Z \
+  --symbol TSLA \
+  --instrument-id EQUITY:TSLA \
+  --quote-symbol TSLA \
+  --numerator 3 \
+  --denominator 1
+```
+
 ### 修訂及取消
 
-AMEND 只可改 `note`、`fee`、`reason`、`strategy`，並只可指向原始
-BUY、SELL 或 CASH_FLOW。VOID 最好直接指向原始 economic event；亦可指向
+AMEND 只可改目標 action 本身支援的 `note`、`fee`、`reason`、`strategy`。
+VOID 最好直接指向原始 economic event；亦可指向
 AMEND，效果係取消該 AMEND 所屬嘅原始 economic event。VOID 永遠不可指向
 另一個 VOID。
 
@@ -325,7 +369,7 @@ JSON
 ```
 
 `quote-batch` 會先驗證整批資料必須屬於同一個 session、每個
-`(action, symbol)` 唯一，而且剛好有一個 SPY benchmark。全部通過後才會
+`(action, instrument_id 或 symbol)` 唯一，而且剛好有一個 SPY benchmark。全部通過後才會
 在同一把 global ledger lock 下寫入，最後只 rebuild／request publish 一次。
 同一批資料 retry 會按 stable event ID 成為 no-op。如果程序在 batch 中途
 終止，`rebuild.pending` 會保留完整 event ID 清單；systemd 會拒絕由部分
@@ -341,8 +385,19 @@ python3 integrations/hermes_bridge.py \
   --occurred-at 2026-07-24T20:30:00Z \
   --session-date 2026-07-24 \
   --symbol AAPL \
+  --source manual-quote \
   --close 218.40
 ```
+
+私募或其他無 public ticker 的 instrument，人工報價用同一個 stable
+`instrument_id`：
+
+```text
+--symbol SPCX --instrument-id PRIVATE:SPACEX --source manual-quote
+```
+
+快照會把報價標記為 `MANUAL`；未提供報價就標記 `MISSING`，不會以交易價、
+零或另一個同名 ticker 冒充現價。
 
 同一個 session 必須為所有未平倉 symbol 提供 close。任何一個缺失，該日整個
 portfolio NAV 會標記為 `INSUFFICIENT_MARKET_DATA`。如果 SPY 本身亦是持倉，

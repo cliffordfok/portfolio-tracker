@@ -85,6 +85,9 @@ function validateSnapshot(snapshot) {
   };
   const symbol = (value) =>
     typeof value === "string" && /^[A-Z]{1,5}(?:\.[A-Z])?$/.test(value);
+  const instrumentId = (value) =>
+    typeof value === "string" &&
+    /^[A-Z0-9][A-Z0-9:._/-]{0,95}$/.test(value);
   const validatePortfolio = (portfolio) => {
     if (
       !object(portfolio) ||
@@ -107,9 +110,20 @@ function validateSnapshot(snapshot) {
       if (
         !object(holding) ||
         !symbol(holding.symbol) ||
+        !instrumentId(holding.instrument_id) ||
+        !["EQUITY", "ETF", "OPTION", "PRIVATE"].includes(
+          holding.instrument_type,
+        ) ||
+        !(
+          holding.instrument_name === null ||
+          typeof holding.instrument_name === "string"
+        ) ||
+        !(holding.quote_symbol === null || symbol(holding.quote_symbol)) ||
+        !["OK", "MANUAL", "MISSING"].includes(holding.quote_status) ||
         !decimalString(holding.shares) ||
         !decimalString(holding.avg_cost) ||
         !decimalString(holding.cost_basis) ||
+        !decimalString(holding.contract_multiplier) ||
         !hasDecimal(holding, "current_price") ||
         !hasDecimal(holding, "market_value") ||
         !hasDecimal(holding, "unrealized_pnl") ||
@@ -122,7 +136,13 @@ function validateSnapshot(snapshot) {
     for (const trade of portfolio.recent_trades) {
       if (
         !object(trade) ||
-        !["BUY", "SELL", "CASH_FLOW"].includes(trade.action) ||
+        ![
+          "BUY",
+          "SELL",
+          "CASH_FLOW",
+          "INCOME_EXPENSE",
+          "SPLIT",
+        ].includes(trade.action) ||
         typeof trade.event_id !== "string" ||
         !utcTimestampOrNull(trade.occurred_at) ||
         !utcTimestampOrNull(trade.created_at) ||
@@ -147,6 +167,32 @@ function validateSnapshot(snapshot) {
         trade.action === "CASH_FLOW" &&
         (trade.symbol !== "USD" ||
           !decimalString(trade.amount) ||
+          !hasDecimal(trade, "pnl") ||
+          !hasDecimal(trade, "pnl_pct"))
+      ) {
+        fail();
+      }
+      if (
+        trade.action === "INCOME_EXPENSE" &&
+        (!["DIVIDEND", "INTEREST", "FEE", "CASH_IN_LIEU", "OTHER"].includes(
+          trade.income_type,
+        ) ||
+          !decimalString(trade.amount) ||
+          !hasDecimal(trade, "gross_amount") ||
+          !decimalString(trade.withholding_tax) ||
+          !hasDecimal(trade, "pnl") ||
+          !hasDecimal(trade, "pnl_pct"))
+      ) {
+        fail();
+      }
+      if (
+        trade.action === "SPLIT" &&
+        (!symbol(trade.symbol) ||
+          !instrumentId(trade.instrument_id) ||
+          !decimalString(trade.numerator) ||
+          !decimalString(trade.denominator) ||
+          !decimalString(trade.shares_before) ||
+          !decimalString(trade.shares_after) ||
           !hasDecimal(trade, "pnl") ||
           !hasDecimal(trade, "pnl_pct"))
       ) {
@@ -218,6 +264,7 @@ function validateSnapshot(snapshot) {
       ) ||
       !hasDecimal(portfolio.metrics, "total_return") ||
       !hasDecimal(portfolio.metrics, "realized_pnl") ||
+      !hasDecimal(portfolio.metrics, "income_expense") ||
       !hasDecimal(portfolio.metrics, "win_rate") ||
       !hasDecimal(portfolio.metrics, "max_drawdown") ||
       !hasDecimal(portfolio.metrics, "sharpe_ratio") ||
@@ -230,7 +277,7 @@ function validateSnapshot(snapshot) {
 
   if (
     !object(snapshot) ||
-    snapshot.schema_version !== 3 ||
+    snapshot.schema_version !== 4 ||
     !Number.isInteger(snapshot.revision) ||
     snapshot.revision < 0 ||
     !utcTimestampOrNull(snapshot.generated_at) ||
@@ -311,6 +358,30 @@ export function currentPortfolioTotalPnl(portfolio) {
     0,
   );
   return nav - initial - flows;
+}
+
+export function buildRealizedActivityPnlSeries(trades) {
+  let cumulative = 0;
+  return [...(trades || [])]
+    .filter((trade) => ["SELL", "INCOME_EXPENSE"].includes(trade.action))
+    .sort((left, right) => {
+      const timestampOrder = String(
+        left.occurred_at || left.date || "",
+      ).localeCompare(String(right.occurred_at || right.date || ""));
+      if (timestampOrder) return timestampOrder;
+      return Number(left.ledger_seq || 0) - Number(right.ledger_seq || 0);
+    })
+    .flatMap((trade) => {
+      const pnl = numeric(trade.pnl);
+      if (pnl === null) return [];
+      cumulative += pnl;
+      return [
+        {
+          date: dateOnly(trade.occurred_at || trade.date),
+          value: cumulative,
+        },
+      ];
+    });
 }
 
 function cachedSnapshot(config) {
@@ -511,10 +582,16 @@ export function calculateFallbackPortfolio(trades, initialCash) {
     const currentPrice = latestPrice.get(symbol);
     const marketValue = currentPrice == null ? null : quantity * currentPrice;
     holdings.push({
+      instrument_id: symbol,
+      instrument_type: "EQUITY",
+      instrument_name: null,
+      quote_symbol: symbol,
+      quote_status: currentPrice == null ? "MISSING" : "OK",
       symbol,
       shares: quantity,
       avg_cost: costBasis / quantity,
       cost_basis: costBasis,
+      contract_multiplier: 1,
       current_price: currentPrice,
       market_value: marketValue,
       unrealized_pnl: marketValue == null ? null : marketValue - costBasis,
@@ -553,6 +630,7 @@ export function calculateFallbackPortfolio(trades, initialCash) {
     metrics: {
       data_status: "FALLBACK",
       realized_pnl: realized,
+      income_expense: 0,
       total_return: totalPnl / initialCash,
       win_rate: null,
       max_drawdown: null,
@@ -648,7 +726,7 @@ async function loadFallback(config) {
     fetchJson(config.fallbackUrls.benchmark),
   ]);
   return {
-    schema_version: 3,
+    schema_version: 4,
     revision: "fallback",
     generated_at: new Date().toISOString(),
     data_as_of: [

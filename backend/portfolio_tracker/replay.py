@@ -26,10 +26,15 @@ from .resolver import resolve_effective_events
 @dataclass
 class Lot:
     event_id: str
+    instrument_id: str
+    instrument_type: str
+    instrument_name: str | None
+    quote_symbol: str | None
     symbol: str
     original_shares: Decimal
     remaining_shares: Decimal
     unit_price: Decimal
+    contract_multiplier: Decimal
     fee_total: Decimal
     fee_allocated: Decimal = ZERO
 
@@ -40,7 +45,11 @@ class Lot:
     @property
     def remaining_cost(self) -> Decimal:
         return money(
-            amount_for(self.remaining_shares, self.unit_price) + self.remaining_fee
+            amount_for(
+                self.remaining_shares * self.contract_multiplier,
+                self.unit_price,
+            )
+            + self.remaining_fee
         )
 
 
@@ -50,6 +59,7 @@ class ReplayResult:
     initial_cash: Decimal
     cash: Decimal
     cash_flow_total: Decimal
+    income_expense_total: Decimal
     buy_outflow: Decimal
     sell_inflow: Decimal
     realized_pnl_total: Decimal
@@ -75,6 +85,7 @@ class ReplayResult:
                 "initial_cash": self.initial_cash,
                 "cash": self.cash,
                 "cash_flow_total": self.cash_flow_total,
+                "income_expense_total": self.income_expense_total,
                 "buy_outflow": self.buy_outflow,
                 "sell_inflow": self.sell_inflow,
                 "realized_pnl_total": self.realized_pnl_total,
@@ -109,7 +120,7 @@ def replay_portfolio(
     events: list[dict[str, Any]],
     *,
     portfolio: str | None = None,
-    allow_negative_cash: bool = False,
+    allow_negative_cash: bool | None = None,
 ) -> ReplayResult:
     """Rebuild all derived state from zero using exact Decimal arithmetic."""
 
@@ -118,6 +129,8 @@ def replay_portfolio(
     expected_portfolio = portfolio or events[0]["portfolio"]
     if expected_portfolio not in {"paper", "live"}:
         raise BusinessInvariantError("economic replay supports paper/live only")
+    if allow_negative_cash is None:
+        allow_negative_cash = expected_portfolio == "live"
 
     effective = resolve_effective_events(events)
     opens = [event for event in effective if event["action"] == "PORTFOLIO_OPEN"]
@@ -129,6 +142,7 @@ def replay_portfolio(
     initial_cash = money(opens[0]["initial_cash"], field="initial_cash")
     cash = initial_cash
     cash_flow_total = ZERO
+    income_expense_total = ZERO
     buy_outflow = ZERO
     sell_inflow = ZERO
     realized_total = ZERO
@@ -164,32 +178,141 @@ def replay_portfolio(
             )
             continue
 
+        if action == "INCOME_EXPENSE":
+            amount = money(event["amount"])
+            cash = money(cash + amount)
+            if not allow_negative_cash and cash < 0:
+                raise BusinessInvariantError(
+                    f"INCOME_EXPENSE {event['event_id']} would make cash negative"
+                )
+            income_expense_total = money(income_expense_total + amount)
+            history.append(
+                {
+                    **deepcopy(event),
+                    "amount": amount,
+                    "gross_amount": (
+                        money(event["gross_amount"], field="gross_amount")
+                        if "gross_amount" in event
+                        else None
+                    ),
+                    "withholding_tax": money(
+                        event["withholding_tax"],
+                        field="withholding_tax",
+                    ),
+                    "pnl": amount,
+                    "pnl_pct": None,
+                }
+            )
+            continue
+
         symbol = event["symbol"]
+        instrument_id = event.get("instrument_id") or symbol
+
+        if action == "SPLIT":
+            ratio = (
+                shares(event["numerator"], field="numerator")
+                / shares(event["denominator"], field="denominator")
+            )
+            open_lots = [
+                lot for lot in lots[instrument_id] if lot.remaining_shares > 0
+            ]
+            if not open_lots:
+                raise BusinessInvariantError(
+                    f"SPLIT {event['event_id']} has no open position"
+                )
+            if any(lot.symbol != symbol for lot in open_lots) or (
+                "instrument_type" in event
+                and any(
+                    lot.instrument_type != event["instrument_type"]
+                    for lot in open_lots
+                )
+            ):
+                raise BusinessInvariantError(
+                    f"SPLIT {event['event_id']} instrument identity mismatch"
+                )
+            before = sum((lot.remaining_shares for lot in open_lots), ZERO)
+            for lot in open_lots:
+                lot.original_shares = shares(lot.original_shares * ratio)
+                lot.remaining_shares = shares(lot.remaining_shares * ratio)
+                lot.unit_price = price(lot.unit_price / ratio)
+            after = sum((lot.remaining_shares for lot in open_lots), ZERO)
+            history.append(
+                {
+                    **deepcopy(event),
+                    "shares_before": before,
+                    "shares_after": after,
+                    "pnl": None,
+                    "pnl_pct": None,
+                }
+            )
+            continue
+
         quantity = shares(event["shares"])
         unit_price = price(event["price"])
         fee = money(event.get("fee", 0), field="fee")
+        contract_multiplier = shares(
+            event.get("contract_multiplier", "1"),
+            field="contract_multiplier",
+        )
 
         if action == "BUY":
-            cost = money(amount_for(quantity, unit_price) + fee)
+            cost = money(
+                amount_for(quantity * contract_multiplier, unit_price) + fee
+            )
             cash = money(cash - cost)
             if not allow_negative_cash and cash < 0:
                 raise BusinessInvariantError(
                     f"BUY {event['event_id']} would make cash negative"
                 )
-            if sum((lot.remaining_shares for lot in lots[symbol]), ZERO) == 0:
-                episode_state[symbol] = {
+            existing_open_lots = [
+                lot
+                for lot in lots[instrument_id]
+                if lot.remaining_shares > 0
+            ]
+            instrument_type = event.get("instrument_type", "EQUITY")
+            quote_symbol = event.get("quote_symbol", symbol)
+            if any(
+                lot.symbol != symbol
+                or lot.instrument_type != instrument_type
+                or lot.quote_symbol != quote_symbol
+                or lot.contract_multiplier != contract_multiplier
+                for lot in existing_open_lots
+            ):
+                raise BusinessInvariantError(
+                    f"BUY {event['event_id']} instrument identity mismatch"
+                )
+            if (
+                sum(
+                    (
+                        lot.remaining_shares
+                        for lot in lots[instrument_id]
+                    ),
+                    ZERO,
+                )
+                == 0
+            ):
+                episode_state[instrument_id] = {
+                    "instrument_id": instrument_id,
+                    "instrument_type": event.get("instrument_type", "EQUITY"),
+                    "instrument_name": event.get("instrument_name"),
+                    "quote_symbol": event.get("quote_symbol", symbol),
                     "symbol": symbol,
                     "opened_at": event["occurred_at"],
                     "opened_event_id": event["event_id"],
                     "pnl": ZERO,
                 }
-            lots[symbol].append(
+            lots[instrument_id].append(
                 Lot(
                     event_id=event["event_id"],
+                    instrument_id=instrument_id,
+                    instrument_type=instrument_type,
+                    instrument_name=event.get("instrument_name"),
+                    quote_symbol=quote_symbol,
                     symbol=symbol,
                     original_shares=quantity,
                     remaining_shares=quantity,
                     unit_price=unit_price,
+                    contract_multiplier=contract_multiplier,
                     fee_total=fee,
                 )
             )
@@ -209,14 +332,33 @@ def replay_portfolio(
         if action != "SELL":
             raise BusinessInvariantError(f"unexpected economic action: {action}")
 
-        available = sum((lot.remaining_shares for lot in lots[symbol]), ZERO)
+        open_lots = [
+            lot for lot in lots[instrument_id] if lot.remaining_shares > 0
+        ]
+        if any(
+            lot.symbol != symbol
+            or lot.contract_multiplier != contract_multiplier
+            or (
+                "instrument_type" in event
+                and lot.instrument_type != event["instrument_type"]
+            )
+            or (
+                "quote_symbol" in event
+                and lot.quote_symbol != event["quote_symbol"]
+            )
+            for lot in open_lots
+        ):
+            raise BusinessInvariantError(
+                f"SELL {event['event_id']} instrument identity mismatch"
+            )
+        available = sum((lot.remaining_shares for lot in open_lots), ZERO)
         if quantity > available:
             raise BusinessInvariantError(
                 f"SELL {event['event_id']} oversells {symbol}: "
                 f"{quantity} requested, {available} available"
             )
 
-        gross = amount_for(quantity, unit_price)
+        gross = amount_for(quantity * contract_multiplier, unit_price)
         net = money(gross - fee)
         cash = money(cash + net)
         sell_inflow = money(sell_inflow + net)
@@ -226,7 +368,7 @@ def replay_portfolio(
         trade_cost = ZERO
         matches: list[dict[str, Any]] = []
 
-        for lot in lots[symbol]:
+        for lot in lots[instrument_id]:
             if remaining_to_sell <= 0:
                 break
             if lot.remaining_shares <= 0:
@@ -248,8 +390,16 @@ def replay_portfolio(
                 is_last=is_last_match,
                 round_to_cents=True,
             )
-            matched_cost = money(amount_for(matched, lot.unit_price) + buy_fee)
-            matched_proceeds = money(amount_for(matched, unit_price) - sell_fee)
+            matched_cost = money(
+                amount_for(
+                    matched * lot.contract_multiplier,
+                    lot.unit_price,
+                )
+                + buy_fee
+            )
+            matched_proceeds = money(
+                amount_for(matched * contract_multiplier, unit_price) - sell_fee
+            )
             matched_pnl = money(matched_proceeds - matched_cost)
 
             lot.remaining_shares = shares(lot.remaining_shares - matched)
@@ -261,9 +411,11 @@ def replay_portfolio(
             matches.append(
                 {
                     "buy_event_id": lot.event_id,
+                    "instrument_id": instrument_id,
                     "shares": matched,
                     "buy_price": lot.unit_price,
                     "sell_price": unit_price,
+                    "contract_multiplier": contract_multiplier,
                     "buy_fee": buy_fee,
                     "sell_fee": sell_fee,
                     "cost": matched_cost,
@@ -277,11 +429,15 @@ def replay_portfolio(
         pnl_pct = percent(trade_pnl / trade_cost) if trade_cost != 0 else None
         realized_entry = {
             "event_id": event["event_id"],
+            "instrument_id": instrument_id,
+            "instrument_type": event.get("instrument_type", "EQUITY"),
+            "instrument_name": event.get("instrument_name"),
             "symbol": symbol,
             "occurred_at": event["occurred_at"],
             "shares": quantity,
             "price": unit_price,
             "fee": fee,
+            "contract_multiplier": contract_multiplier,
             "pnl": trade_pnl,
             "pnl_pct": pnl_pct,
             "cumulative_pnl": running_realized,
@@ -300,11 +456,17 @@ def replay_portfolio(
             }
         )
 
-        episode = episode_state.get(symbol)
+        episode = episode_state.get(instrument_id)
         if episode is None:
             raise BusinessInvariantError(f"SELL {event['event_id']} has no open episode")
         episode["pnl"] = money(episode["pnl"] + trade_pnl)
-        position_after = sum((lot.remaining_shares for lot in lots[symbol]), ZERO)
+        position_after = sum(
+            (
+                lot.remaining_shares
+                for lot in lots[instrument_id]
+            ),
+            ZERO,
+        )
         if position_after == 0:
             episodes.append(
                 {
@@ -313,22 +475,34 @@ def replay_portfolio(
                     "closed_event_id": event["event_id"],
                 }
             )
-            del episode_state[symbol]
+            del episode_state[instrument_id]
 
     holdings: list[dict[str, Any]] = []
-    for symbol in sorted(lots):
-        open_lots = [lot for lot in lots[symbol] if lot.remaining_shares > 0]
+    for instrument_id in sorted(lots):
+        open_lots = [
+            lot for lot in lots[instrument_id] if lot.remaining_shares > 0
+        ]
         total_shares = sum((lot.remaining_shares for lot in open_lots), ZERO)
         if total_shares == 0:
             continue
         cost_basis = money(sum((lot.remaining_cost for lot in open_lots), ZERO))
-        avg_cost = price(cost_basis / total_shares, field="avg_cost")
+        first_lot = open_lots[0]
+        multiplier = first_lot.contract_multiplier
+        avg_cost = price(
+            cost_basis / total_shares / multiplier,
+            field="avg_cost",
+        )
         holdings.append(
             {
-                "symbol": symbol,
+                "instrument_id": instrument_id,
+                "instrument_type": first_lot.instrument_type,
+                "instrument_name": first_lot.instrument_name,
+                "quote_symbol": first_lot.quote_symbol,
+                "symbol": first_lot.symbol,
                 "shares": total_shares,
                 "avg_cost": avg_cost,
                 "cost_basis": cost_basis,
+                "contract_multiplier": multiplier,
             }
         )
 
@@ -337,6 +511,7 @@ def replay_portfolio(
         initial_cash=initial_cash,
         cash=cash,
         cash_flow_total=cash_flow_total,
+        income_expense_total=income_expense_total,
         buy_outflow=buy_outflow,
         sell_inflow=sell_inflow,
         realized_pnl_total=realized_total,
