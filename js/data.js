@@ -295,6 +295,14 @@ function validateSnapshot(snapshot) {
         fail();
       }
     }
+    const hasEffectiveDate = hasOwn(
+      portfolio.metrics,
+      "performance_effective_date",
+    );
+    const hasPerformanceScope = hasOwn(
+      portfolio.metrics,
+      "performance_scope",
+    );
     if (
       !["OK", "INSUFFICIENT_DATA", "NO_DATA", "FALLBACK"].includes(
         portfolio.metrics.data_status,
@@ -306,9 +314,26 @@ function validateSnapshot(snapshot) {
       !hasDecimal(portfolio.metrics, "max_drawdown") ||
       !hasDecimal(portfolio.metrics, "sharpe_ratio") ||
       !Number.isInteger(portfolio.metrics.closed_episodes) ||
-      portfolio.metrics.closed_episodes < 0
+      portfolio.metrics.closed_episodes < 0 ||
+      hasEffectiveDate !== hasPerformanceScope
     ) {
       fail();
+    }
+    if (hasEffectiveDate) {
+      const effectiveDate = portfolio.metrics.performance_effective_date;
+      const performanceScope = portfolio.metrics.performance_scope;
+      if (
+        !(effectiveDate === null || dateString(effectiveDate)) ||
+        ![
+          null,
+          "FULL_HISTORY",
+          "LATEST_COMPLETE_SEGMENT",
+        ].includes(performanceScope) ||
+        (effectiveDate === null) !== (performanceScope === null) ||
+        (portfolio.metrics.data_status === "OK" && effectiveDate === null)
+      ) {
+        fail();
+      }
     }
   };
 
@@ -681,6 +706,8 @@ export function calculateFallbackPortfolio(trades, initialCash) {
     daily: realizedTimeline,
     metrics: {
       data_status: "FALLBACK",
+      performance_effective_date: null,
+      performance_scope: null,
       realized_pnl: realized,
       income_expense: 0,
       total_return: totalPnl / initialCash,
@@ -750,7 +777,14 @@ export function buildCommonComparison(
     }
   }
   if (current.length) latest = current;
-  if (!latest.length) return { paper: [], live: [], benchmark: [] };
+  if (!latest.length) {
+    return {
+      paper: [],
+      live: [],
+      benchmark: [],
+      performance_effective_date: null,
+    };
+  }
   latest = filterByRange(
     latest.map((date) => ({ date })),
     range,
@@ -768,6 +802,7 @@ export function buildCommonComparison(
     paper: rebase(paperMap),
     live: rebase(liveMap),
     benchmark: rebase(benchmarkMap),
+    performance_effective_date: latest[0],
   };
 }
 

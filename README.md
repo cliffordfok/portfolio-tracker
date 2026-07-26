@@ -10,7 +10,7 @@
 - FIFO lot matching、期權 contract multiplier、買賣費用分攤、逐筆及累計已實現損益
 - 股息／利息／費用、預扣稅、拆股與公開／私募 instrument identity
 - 目前持倉、平均成本、市值、未實現損益
-- NAV、TWR、最大回撤、Sharpe ratio、closed-episode 勝率
+- NAV、分段 TWR、績效生效日、最大回撤、Sharpe ratio、closed-episode 勝率
 - 模擬倉／真實倉／SPY 百分比回報比較
 - 1M、3M、6M、1Y、ALL 全域時間篩選
 - 所有表格可匯出 CSV
@@ -19,7 +19,8 @@
 - 快照失敗時先使用 last-good cache；完全沒有有效 cache 時才使用三個
   sample JSON，並明確標示為「虛構示範資料」，不會冒充正式快照
 - Responsive、keyboard tabs、focus state、semantic tables
-- 缺少報價時 NAV 及跨 gap 指標為空，不會假設零回報
+- 缺少報價時 NAV 及跨 gap 指標為空；其後連續完整報價會建立新績效生效日，
+  不會假設跨 gap 零回報
 - GitHub Contents API crash recovery、manual-edit fail-closed、最多三次 retry
 
 ## 資料流
@@ -413,6 +414,13 @@ python3 integrations/hermes_bridge.py \
 同一個 session 必須為所有未平倉 symbol 提供 close。任何一個缺失，該日整個
 portfolio NAV 會標記為 `INSUFFICIENT_MARKET_DATA`。如果 SPY 本身亦是持倉，
 batch 要同時包含 SPY `QUOTE` 及 `BENCHMARK_CLOSE`，兩者用途不同。
+
+交易 ledger 仍由開倉日起完整重播，用作 FIFO、現金、持倉及已實現損益核算。
+回報、最大回撤及 Sharpe 只使用延伸至快照最新日期的完整估值 segment：
+如果歷史曾有報價缺口，首個其後連續完整估值日會成為
+`performance_effective_date`，`performance_scope` 會標記為
+`LATEST_COMPLETE_SEGMENT`。系統不會把缺口前後兩段回報串接；Dashboard 及
+SPY 對比亦會顯示最新共同有效起點。
 
 ### Hermes 讀取
 

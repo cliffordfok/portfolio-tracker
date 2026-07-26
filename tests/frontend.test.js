@@ -81,6 +81,8 @@ test("fallback FIFO calculation keeps live and paper state independent", () => {
   assert.equal(result.holdings[0].shares, 6);
   assert.ok(Math.abs(result.metrics.realized_pnl - 38.6) < 1e-9);
   assert.ok(Math.abs(result.cash - 4438) < 1e-9);
+  assert.equal(result.metrics.performance_effective_date, null);
+  assert.equal(result.metrics.performance_scope, null);
 });
 
 test("fallback calculation rejects an oversell instead of fabricating P&L", () => {
@@ -222,6 +224,7 @@ test("compare uses and rebases the latest common contiguous segment", () => {
   assert.equal(result.paper[0].value, 0);
   assert.ok(Math.abs(result.paper[1].value - 0.05) < 1e-12);
   assert.equal(result.live[0].value, 0);
+  assert.equal(result.performance_effective_date, "2026-01-03");
 });
 
 test("compare range is anchored to the latest common date", () => {
@@ -378,6 +381,8 @@ test("static page contains all required tabs, tables, and D3 v7", async () => {
     /item\.setAttribute\("aria-pressed", String\(active\)\)/,
     "range buttons must expose their active state to assistive technology",
   );
+  assert.match(app, /最新完整估值區間/);
+  assert.match(html, /最新共同完整估值區間/);
   const rawDataUrl =
     "https://raw.githubusercontent.com/cliffordfok/portfolio-tracker/portfolio-data/portfolio-snapshot.json";
   const contentsApiUrl =
@@ -507,6 +512,8 @@ function validSnapshot(revision = 1) {
     daily: [],
     metrics: {
       data_status: "NO_DATA",
+      performance_effective_date: null,
+      performance_scope: null,
       total_return: null,
       realized_pnl: "0",
       income_expense: "0",
@@ -552,6 +559,8 @@ test("schema 3 public snapshot is upgraded in memory during rollout", async () =
   const payload = validSnapshot(3);
   payload.schema_version = 3;
   delete payload.portfolios.paper.metrics.income_expense;
+  delete payload.portfolios.paper.metrics.performance_effective_date;
+  delete payload.portfolios.paper.metrics.performance_scope;
   payload.portfolios.paper.data_status = "INSUFFICIENT_DATA";
   payload.portfolios.paper.metrics.data_status = "INSUFFICIENT_DATA";
   payload.portfolios.paper.holdings = [
@@ -639,6 +648,82 @@ test("snapshot validation accepts an intentional return-base gap", async () => {
     assert.equal(
       result.portfolios.paper.daily[0].data_status,
       "INSUFFICIENT_DATA",
+    );
+  } finally {
+    globalThis.window = previousWindow;
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test("snapshot validation accepts latest-segment performance metadata", async () => {
+  const previousWindow = globalThis.window;
+  const previousFetch = globalThis.fetch;
+  globalThis.window = {
+    location: { href: "https://cliffordfok.github.io/portfolio-tracker/" },
+    localStorage: new MemoryStorage(),
+  };
+  const payload = validSnapshot(32);
+  const paper = payload.portfolios.paper;
+  paper.data_status = "OK";
+  paper.cash = "1050";
+  paper.initial_cash = "1000";
+  paper.metrics = {
+    ...paper.metrics,
+    data_status: "OK",
+    performance_effective_date: "2026-01-03",
+    performance_scope: "LATEST_COMPLETE_SEGMENT",
+    total_return: "0.05",
+    max_drawdown: "0",
+  };
+  paper.daily = [
+    {
+      date: "2026-01-03",
+      nav: "1000",
+      cash: "1000",
+      external_flow: "0",
+      daily_return: null,
+      cumulative_return: null,
+      segment_id: 2,
+      segment_return: "0",
+      pnl: "0",
+      data_status: "OK",
+      missing_symbols: [],
+    },
+    {
+      date: "2026-01-04",
+      nav: "1050",
+      cash: "1050",
+      external_flow: "0",
+      daily_return: "0.05",
+      cumulative_return: null,
+      segment_id: 2,
+      segment_return: "0.05",
+      pnl: "50",
+      data_status: "OK",
+      missing_symbols: [],
+    },
+  ];
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => payload,
+  });
+  try {
+    const result = await loadDashboardData(
+      {
+        snapshotUrls: ["https://example.test/snapshot.json"],
+        storagePrefix: "performance-segment-test",
+        staleAfterMinutes: 999999,
+      },
+      { now: 1000 },
+    );
+    assert.equal(result.source, "snapshot");
+    assert.equal(
+      result.portfolios.paper.metrics.performance_effective_date,
+      "2026-01-03",
+    );
+    assert.equal(
+      result.portfolios.paper.metrics.performance_scope,
+      "LATEST_COMPLETE_SEGMENT",
     );
   } finally {
     globalThis.window = previousWindow;
@@ -914,6 +999,16 @@ test("invalid refreshed schema never replaces the last-good cache", async () => 
     });
     assert.equal(failedDecimal.source, "stale-cache");
     assert.equal(failedDecimal.revision, 11);
+    payload = validSnapshot(14);
+    payload.portfolios.paper.metrics.performance_effective_date =
+      "2026-01-01";
+    delete payload.portfolios.paper.metrics.performance_scope;
+    const failedPerformanceMetadata = await loadDashboardData(config, {
+      force: true,
+      now: 2750,
+    });
+    assert.equal(failedPerformanceMetadata.source, "stale-cache");
+    assert.equal(failedPerformanceMetadata.revision, 11);
     const cached = await loadDashboardData(config, { now: 3000 });
     assert.equal(cached.source, "cache");
     assert.equal(cached.revision, 11);

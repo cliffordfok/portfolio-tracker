@@ -466,6 +466,36 @@ def validate_snapshot(snapshot: Any) -> None:
             raise ValidationError(
                 f"{name}.metrics.closed_episodes is invalid"
             )
+        has_effective_date = "performance_effective_date" in metrics
+        has_performance_scope = "performance_scope" in metrics
+        if has_effective_date != has_performance_scope:
+            raise ValidationError(
+                f"{name}.metrics performance metadata is incomplete"
+            )
+        if has_effective_date:
+            effective_date = metrics["performance_effective_date"]
+            performance_scope = metrics["performance_scope"]
+            if effective_date is not None:
+                _snapshot_date(
+                    effective_date,
+                    label=f"{name}.metrics.performance_effective_date",
+                )
+            if performance_scope not in {
+                None,
+                "FULL_HISTORY",
+                "LATEST_COMPLETE_SEGMENT",
+            }:
+                raise ValidationError(
+                    f"{name}.metrics.performance_scope is invalid"
+                )
+            if (effective_date is None) != (performance_scope is None):
+                raise ValidationError(
+                    f"{name}.metrics performance metadata is inconsistent"
+                )
+            if metrics["data_status"] == "OK" and effective_date is None:
+                raise ValidationError(
+                    f"{name}.metrics OK status requires an effective date"
+                )
 
     benchmark = snapshot.get("benchmark")
     if not isinstance(benchmark, dict) or benchmark.get("symbol") != "SPY":
@@ -815,24 +845,67 @@ def _enrich_holdings(
 def _metrics(
     daily: list[dict[str, Any]], result: ReplayResult
 ) -> dict[str, Any]:
-    has_gap = not daily or any(item["data_status"] != "OK" for item in daily)
+    performance_daily: list[dict[str, Any]] = []
+    performance_scope: str | None = None
+    performance_effective_date: str | None = None
+
+    if daily and daily[-1]["data_status"] == "OK":
+        latest_segment_id = daily[-1].get("segment_id")
+        if (
+            not isinstance(latest_segment_id, bool)
+            and isinstance(latest_segment_id, int)
+            and latest_segment_id > 0
+        ):
+            for item in reversed(daily):
+                if (
+                    item["data_status"] != "OK"
+                    or item.get("segment_id") != latest_segment_id
+                ):
+                    break
+                performance_daily.append(item)
+            performance_daily.reverse()
+        elif all(
+            item["data_status"] == "OK"
+            and item.get("cumulative_return") is not None
+            for item in daily
+        ):
+            # Compatibility for callers that provide the pre-segmentation
+            # in-memory shape. Generated snapshots always contain segment_id.
+            performance_daily = list(daily)
+
+    if performance_daily:
+        performance_effective_date = performance_daily[0]["date"]
+        performance_scope = (
+            "FULL_HISTORY"
+            if len(performance_daily) == len(daily)
+            else "LATEST_COMPLETE_SEGMENT"
+        )
+
     valid_returns = [
         item["daily_return"]
-        for item in daily
+        for item in performance_daily
         if (
             item["daily_return"] is not None
             and is_nyse_session(date.fromisoformat(item["date"]))
         )
     ]
-    total_return = daily[-1]["cumulative_return"] if daily else None
+    total_return = (
+        performance_daily[-1].get("segment_return")
+        if performance_daily
+        else None
+    )
+    if total_return is None and performance_daily:
+        total_return = performance_daily[-1].get("cumulative_return")
     max_drawdown: Decimal | None = None
     sharpe: Decimal | None = None
 
-    if not has_gap and daily:
+    if performance_daily:
         peak = Decimal("-1")
         drawdowns: list[Decimal] = []
-        for item in daily:
-            cumulative = item["cumulative_return"]
+        for item in performance_daily:
+            cumulative = item.get("segment_return")
+            if cumulative is None:
+                cumulative = item.get("cumulative_return")
             if cumulative is None:
                 continue
             peak = max(peak, cumulative)
@@ -850,15 +923,18 @@ def _metrics(
                 annualized = mean / deviation * Decimal(252).sqrt()
                 sharpe = percent(annualized)
 
+    has_performance = bool(performance_daily)
     return {
-        "data_status": "INSUFFICIENT_DATA" if has_gap else "OK",
-        "total_return": None if has_gap else total_return,
+        "data_status": "OK" if has_performance else "INSUFFICIENT_DATA",
+        "performance_effective_date": performance_effective_date,
+        "performance_scope": performance_scope,
+        "total_return": total_return if has_performance else None,
         "realized_pnl": result.realized_pnl_total,
         "income_expense": getattr(result, "income_expense_total", ZERO),
         "win_rate": result.win_rate,
         "closed_episodes": len(result.closed_episodes),
-        "max_drawdown": None if has_gap else max_drawdown,
-        "sharpe_ratio": None if has_gap else sharpe,
+        "max_drawdown": max_drawdown if has_performance else None,
+        "sharpe_ratio": sharpe if has_performance else None,
     }
 
 
@@ -1227,6 +1303,8 @@ def _build_snapshot_locked(
                 "daily": [],
                 "metrics": {
                     "data_status": "NO_DATA",
+                    "performance_effective_date": None,
+                    "performance_scope": None,
                     "total_return": None,
                     "realized_pnl": "0",
                     "income_expense": "0",
@@ -1245,6 +1323,12 @@ def _build_snapshot_locked(
         metrics = _metrics(daily, result)
         if metrics["data_status"] != "OK":
             warnings.append(f"{name} performance contains incomplete market data")
+        elif metrics["performance_scope"] == "LATEST_COMPLETE_SEGMENT":
+            warnings.append(
+                f"{name} performance starts at "
+                f"{metrics['performance_effective_date']} after incomplete "
+                "market data"
+            )
         portfolios[name] = {
             "data_status": metrics["data_status"],
             "cash": result.cash,

@@ -38,6 +38,18 @@ function metricCard(label, value, detail, className = "") {
   </article>`;
 }
 
+function performanceDetail(metrics) {
+  if (metrics?.data_status !== "OK") return "等待完整每日報價";
+  const effectiveDate = formatDate(metrics.performance_effective_date);
+  if (metrics.performance_scope === "LATEST_COMPLETE_SEGMENT") {
+    return `由 ${effectiveDate} 起 · 最新完整估值區間`;
+  }
+  if (metrics.performance_scope === "FULL_HISTORY") {
+    return `由 ${effectiveDate} 起 · 完整歷史`;
+  }
+  return "完整有效區間";
+}
+
 function renderPortfolioMetrics(name) {
   const portfolio = state.data.portfolios[name];
   const nav = currentPortfolioNav(portfolio);
@@ -57,7 +69,7 @@ function renderPortfolioMetrics(name) {
     metricCard(
       "總回報",
       formatPercent(totalReturn, { sign: true }),
-      portfolio.metrics?.data_status === "OK" ? "完整有效區間" : "資料不完整",
+      performanceDetail(portfolio.metrics),
       valueClass(totalReturn),
     ),
     metricCard("可用現金", formatCurrency(cash), `初始資金 ${formatCurrency(portfolio.initial_cash)}`),
@@ -203,12 +215,16 @@ function renderCompare() {
   const paperReturn = comparisonReturn(comparison.paper);
   const liveReturn = comparisonReturn(comparison.live);
   const spyReturn = comparisonReturn(comparison.benchmark);
+  const commonEffectiveDate = formatDate(
+    comparison.performance_effective_date,
+  );
   document.querySelector("#compare-metrics").innerHTML = `
     <article class="compare-card paper-card">
       <div><span>模擬倉</span><strong class="${valueClass(paperReturn)}">${formatPercent(paperReturn, { sign: true })}</strong></div>
       <dl>
         <div><dt>勝率</dt><dd>${formatPercent(paperMetrics.win_rate)}</dd></div>
         <div><dt>最大回撤</dt><dd>${formatPercent(paperMetrics.max_drawdown)}</dd></div>
+        <div><dt>績效起點</dt><dd>${formatDate(paperMetrics.performance_effective_date)}</dd></div>
       </dl>
     </article>
     <article class="compare-card live-card">
@@ -216,6 +232,7 @@ function renderCompare() {
       <dl>
         <div><dt>勝率</dt><dd>${formatPercent(liveMetrics.win_rate)}</dd></div>
         <div><dt>最大回撤</dt><dd>${formatPercent(liveMetrics.max_drawdown)}</dd></div>
+        <div><dt>績效起點</dt><dd>${formatDate(liveMetrics.performance_effective_date)}</dd></div>
       </dl>
     </article>
     <article class="compare-card benchmark-card">
@@ -223,6 +240,7 @@ function renderCompare() {
       <dl>
         <div><dt>區間</dt><dd>${state.range}</dd></div>
         <div><dt>有效數據</dt><dd>${comparison.benchmark.length} 日</dd></div>
+        <div><dt>共同起點</dt><dd>${commonEffectiveDate}</dd></div>
       </dl>
     </article>`;
 

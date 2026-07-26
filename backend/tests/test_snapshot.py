@@ -12,6 +12,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from portfolio_tracker.cli import main as cli_main
+from portfolio_tracker.errors import ValidationError
 from portfolio_tracker.ledger import LedgerStore, atomic_write_json
 from portfolio_tracker.snapshot import (
     _metrics,
@@ -19,6 +20,7 @@ from portfolio_tracker.snapshot import (
     build_snapshot,
     build_snapshot_if_needed,
     is_nyse_session,
+    validate_snapshot,
 )
 
 from .helpers import candidate
@@ -52,6 +54,14 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(snapshot["portfolios"]["paper"]["data_status"], "NO_DATA")
         self.assertEqual(snapshot["portfolios"]["live"]["holdings"], [])
         self.assertEqual(snapshot["benchmark"]["daily"], [])
+        self.assertIsNone(
+            snapshot["portfolios"]["paper"]["metrics"][
+                "performance_effective_date"
+            ]
+        )
+        self.assertIsNone(
+            snapshot["portfolios"]["paper"]["metrics"]["performance_scope"]
+        )
         self.assertTrue(
             (self.root / "snapshots" / "portfolio-snapshot.json").exists()
         )
@@ -159,9 +169,26 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(daily[2]["segment_return"], "0")
         self.assertIsNotNone(daily[3]["daily_return"])
         self.assertIsNone(daily[3]["cumulative_return"])
+        metrics = snapshot["portfolios"]["paper"]["metrics"]
         self.assertEqual(
-            snapshot["portfolios"]["paper"]["metrics"]["data_status"],
-            "INSUFFICIENT_DATA",
+            metrics["data_status"],
+            "OK",
+        )
+        self.assertEqual(
+            metrics["performance_effective_date"],
+            "2024-01-04",
+        )
+        self.assertEqual(
+            metrics["performance_scope"],
+            "LATEST_COMPLETE_SEGMENT",
+        )
+        self.assertEqual(metrics["total_return"], daily[3]["segment_return"])
+        self.assertTrue(
+            any(
+                "paper performance starts at 2024-01-04"
+                in warning
+                for warning in snapshot["warnings"]
+            )
         )
 
     def test_voided_event_does_not_extend_the_performance_calendar(self) -> None:
@@ -434,6 +461,11 @@ class SnapshotTests(unittest.TestCase):
             by_day["2024-01-03"]["missing_symbols"],
             ["AAPL", "MSFT"],
         )
+        metrics = snapshot["portfolios"]["paper"]["metrics"]
+        self.assertEqual(metrics["data_status"], "INSUFFICIENT_DATA")
+        self.assertIsNone(metrics["performance_effective_date"])
+        self.assertIsNone(metrics["performance_scope"])
+        self.assertIsNone(metrics["total_return"])
 
     def test_if_needed_rebuild_skips_unchanged_source_heads(self) -> None:
         self.append(
@@ -759,10 +791,20 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(daily[2]["data_status"], "OK")
         self.assertEqual(daily[2]["segment_id"], 2)
         self.assertIsNone(daily[2]["daily_return"])
+        metrics = snapshot["portfolios"]["paper"]["metrics"]
         self.assertEqual(
-            snapshot["portfolios"]["paper"]["metrics"]["data_status"],
-            "INSUFFICIENT_DATA",
+            metrics["data_status"],
+            "OK",
         )
+        self.assertEqual(
+            metrics["performance_effective_date"],
+            "2024-01-04",
+        )
+        self.assertEqual(
+            metrics["performance_scope"],
+            "LATEST_COMPLETE_SEGMENT",
+        )
+        self.assertEqual(metrics["total_return"], "0")
 
     def test_max_drawdown_uses_standard_peak_to_trough_ratio(self) -> None:
         self.append(
@@ -806,6 +848,24 @@ class SnapshotTests(unittest.TestCase):
             snapshot["portfolios"]["paper"]["metrics"]["max_drawdown"],
             "-0.02941176",
         )
+        self.assertEqual(
+            snapshot["portfolios"]["paper"]["metrics"][
+                "performance_effective_date"
+            ],
+            "2024-01-02",
+        )
+        self.assertEqual(
+            snapshot["portfolios"]["paper"]["metrics"]["performance_scope"],
+            "FULL_HISTORY",
+        )
+
+    def test_snapshot_validator_rejects_incomplete_performance_metadata(
+        self,
+    ) -> None:
+        snapshot = build_snapshot(self.root, write=False)
+        del snapshot["portfolios"]["paper"]["metrics"]["performance_scope"]
+        with self.assertRaises(ValidationError):
+            validate_snapshot(snapshot)
 
     def test_sharpe_uses_trading_session_returns_not_weekend_zeros(self) -> None:
         trading_daily: list[dict[str, object]] = []
