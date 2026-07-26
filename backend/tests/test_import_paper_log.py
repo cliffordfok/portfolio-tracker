@@ -304,6 +304,8 @@ class PaperLogImporterTests(unittest.TestCase):
                     str(source),
                     "--bridge",
                     str(Path(temp) / "missing.py"),
+                    "--runtime-root",
+                    str(temp),
                     "--check-only",
                 ],
                 check=False,
