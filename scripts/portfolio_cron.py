@@ -139,8 +139,8 @@ def portfolio_command(config: CronConfig, action: str) -> list[str]:
     ]
     if action == "rebuild":
         return [*command, "rebuild", "--if-needed"]
-    if action == "publish":
-        return [
+    if action in {"publish", "bootstrap-publish"}:
+        publish = [
             *command,
             "publish",
             "--repository",
@@ -150,6 +150,9 @@ def portfolio_command(config: CronConfig, action: str) -> list[str]:
             "--path",
             config.snapshot_path,
         ]
+        if action == "bootstrap-publish":
+            publish.append("--bootstrap")
+        return publish
     if action == "backup":
         return [*command, "backup"]
     if action == "doctor":
@@ -203,7 +206,7 @@ def run_action(
     environment = scrubbed_environment(source_environment)
     environment["PYTHONPATH"] = str(config.project_root / "backend")
     token: str | None = None
-    if action == "publish":
+    if action in {"publish", "bootstrap-publish"}:
         token = read_publisher_token(config.token_file)
         environment["PORTFOLIO_GITHUB_TOKEN"] = token
     command = portfolio_command(config, action)
@@ -232,7 +235,12 @@ def execute(
     runner: Runner = default_runner,
     source_environment: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
-    steps = ["rebuild", "publish"] if action == "maintain" else [action]
+    if action == "maintain":
+        steps = ["rebuild", "publish"]
+    elif action == "bootstrap-publish":
+        steps = ["rebuild", "bootstrap-publish"]
+    else:
+        steps = [action]
     results = [
         {
             "action": step,
@@ -262,6 +270,7 @@ def parser() -> argparse.ArgumentParser:
             "maintain",
             "rebuild",
             "publish",
+            "bootstrap-publish",
             "backup",
             "doctor",
             "doctor-active",

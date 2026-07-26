@@ -126,6 +126,51 @@ class PortfolioCronTests(unittest.TestCase):
         self.assertNotIn("test-token-value", json.dumps(result))
         self.assertNotIn("--bootstrap", runner.calls[0]["command"])
 
+    def test_bootstrap_publish_is_explicit_and_token_scoped(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            config = self.config(directory)
+            runner = RecordingRunner()
+            result = CRON.execute(
+                config,
+                "bootstrap-publish",
+                runner=runner,
+                source_environment={
+                    "GITHUB_TOKEN": "ambient",
+                    "GH_TOKEN": "ambient-gh",
+                },
+            )
+        self.assertEqual(result["action"], "bootstrap-publish")
+        self.assertEqual(len(runner.calls), 2)
+        self.assertEqual(
+            [call["action"] for call in runner.calls],
+            ["rebuild", "publish"],
+        )
+        self.assertTrue(
+            CRON.SECRET_ENVIRONMENT_NAMES.isdisjoint(
+                runner.calls[0]["environment"]
+            )
+        )
+        command = runner.calls[1]["command"]
+        self.assertEqual(command.count("--bootstrap"), 1)
+        self.assertIn("publish", command)
+        environment = runner.calls[1]["environment"]
+        self.assertEqual(
+            environment["PORTFOLIO_GITHUB_TOKEN"],
+            "test-token-value",
+        )
+        self.assertNotIn("GITHUB_TOKEN", environment)
+        self.assertNotIn("GH_TOKEN", environment)
+
+    def test_failed_bootstrap_rebuild_never_reads_token(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            config = self.config(directory)
+            config.token_file.unlink()
+            runner = RecordingRunner(fail_action="rebuild")
+            with self.assertRaisesRegex(CRON.CronError, "rebuild failed"):
+                CRON.execute(config, "bootstrap-publish", runner=runner)
+        self.assertEqual(len(runner.calls), 1)
+        self.assertEqual(runner.calls[0]["action"], "rebuild")
+
     def test_success_output_cannot_echo_publisher_token(self) -> None:
         result = subprocess.CompletedProcess(
             ["publisher"],

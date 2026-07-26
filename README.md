@@ -500,16 +500,26 @@ crontab：
 ```
 
 所有 child process 都會先移除 ambient `GITHUB_TOKEN`、`GH_TOKEN` 及
-`PORTFOLIO_GITHUB_TOKEN`。只有 `publish` child 會由一個非 symlink、
-owner-only `0600`、單行 ASCII token file 取得 PAT；cron mode 永遠不會傳
-`--bootstrap`。預設 token path：
+`PORTFOLIO_GITHUB_TOKEN`。只有 publisher child 會由一個非 symlink、
+owner-only `0600`、單行 ASCII token file 取得 PAT。普通 `publish`／定時
+`maintain` 永遠不會傳 `--bootstrap`。預設 token path：
 
 ```text
 /data/portfolio/secrets/github-token
 ```
 
 PAT 尚未建立時，只可安排 `rebuild`／`backup`，不可安排 `publish` 或
-`maintain`。完成一次人工 bootstrap 並驗證 publication state 後，建議 cron：
+`maintain`。PAT 安裝完成後，首次發布使用明確的一次性命令：
+
+```bash
+/usr/local/bin/python3 \
+  /data/portfolio-tracker/scripts/portfolio_cron.py bootstrap-publish
+```
+
+`bootstrap-publish` 是唯一會傳 `--bootstrap` 的 wrapper action，只可由
+operator 人工執行，不能放入 crontab。它會先在完全沒有 PAT 的環境重建
+snapshot；只有 rebuild 成功後才讀取 token 及啟動 bootstrap publisher。
+成功並驗證 publication state 後，建議 cron：
 
 ```cron
 */5 * * * * /usr/local/bin/python3 /data/portfolio-tracker/scripts/portfolio_cron.py maintain

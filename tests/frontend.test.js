@@ -405,6 +405,7 @@ test("Hermes contract uses the real Docker paths and never reads credentials", a
     "live-telegram-TELEGRAM_UPDATE_ID",
     "Live has no `PORTFOLIO_OPEN` yet",
     "Only `portfolio_cron.py publish|maintain`",
+    "`bootstrap-publish` action may do the same only when an operator explicitly",
     "Do not read `/data/.hermes/.env`",
     "`/data/portfolio/secrets/github-token`",
   ]) {
