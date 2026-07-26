@@ -12,6 +12,13 @@ locks/
 # Credentials
 .env
 *.token
+*.pem
+*.key
+id_ed25519
+id_ed25519.*
+id_rsa
+id_rsa.*
+known_hosts
 config/portfolio.env
 
 # Python / editor artifacts

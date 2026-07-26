@@ -477,7 +477,7 @@ function validSnapshot(revision = 1) {
   };
 }
 
-test("snapshot validation accepts an invalid return-base gap", async () => {
+test("snapshot validation accepts an intentional return-base gap", async () => {
   const previousWindow = globalThis.window;
   const previousFetch = globalThis.fetch;
   globalThis.window = {
@@ -822,4 +822,30 @@ test("production config never treats the bundled demo snapshot as authoritative"
     /snapshotUrls:[\s\S]*?\.\/data\/portfolio-snapshot\.json/,
   );
   assert.match(appSource, /虛構示範資料（非實際倉位）/);
+});
+
+test("gitignore blocks common private credential artifacts", async () => {
+  const ignoreSource = await readFile(
+    new URL("../.gitignore", import.meta.url),
+    "utf8",
+  );
+  const rules = new Set(
+    ignoreSource
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith("#")),
+  );
+  for (const rule of [
+    ".env",
+    "*.token",
+    "*.pem",
+    "*.key",
+    "id_ed25519",
+    "id_ed25519.*",
+    "id_rsa",
+    "id_rsa.*",
+    "known_hosts",
+  ]) {
+    assert.ok(rules.has(rule), `missing credential ignore rule: ${rule}`);
+  }
 });
