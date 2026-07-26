@@ -69,6 +69,9 @@ Master JSONL、locks、publication state 和 PAT 全部只存在 VPS。GitHub re
 │   └── tests/
 ├── config/
 ├── scripts/
+│   ├── import_paper_log.py
+│   ├── portfolio_cron.py
+│   ├── verify_outbox_artifact.py
 │   ├── install-vps.sh
 │   └── verify-vps.sh
 └── systemd/
@@ -483,6 +486,47 @@ python3 -m portfolio_tracker.cli \
 ```
 
 部署時一併安裝及啟用 `portfolio-backup.timer.example`。
+
+### Docker／Hermes cron（目前 VPS）
+
+目前 VPS repository 及 runtime 實際位於 `/data/portfolio-tracker` 和
+`/data/portfolio`，container 內沒有 systemd。`scripts/portfolio_cron.py`
+提供相同嘅 one-shot rebuild、publish、backup、doctor 操作，唔會安裝或修改
+crontab：
+
+```bash
+/usr/local/bin/python3 \
+  /data/portfolio-tracker/scripts/portfolio_cron.py rebuild
+```
+
+所有 child process 都會先移除 ambient `GITHUB_TOKEN`、`GH_TOKEN` 及
+`PORTFOLIO_GITHUB_TOKEN`。只有 `publish` child 會由一個非 symlink、
+owner-only `0600`、單行 ASCII token file 取得 PAT；cron mode 永遠不會傳
+`--bootstrap`。預設 token path：
+
+```text
+/data/portfolio/secrets/github-token
+```
+
+PAT 尚未建立時，只可安排 `rebuild`／`backup`，不可安排 `publish` 或
+`maintain`。完成一次人工 bootstrap 並驗證 publication state 後，建議 cron：
+
+```cron
+*/5 * * * * /usr/local/bin/python3 /data/portfolio-tracker/scripts/portfolio_cron.py maintain
+17 3 * * * /usr/local/bin/python3 /data/portfolio-tracker/scripts/portfolio_cron.py backup
+```
+
+`maintain` 會先以完全冇 PAT 嘅環境執行 `rebuild --if-needed`；成功後先讀取
+token file，並只注入 publisher child。如果 rebuild 失敗，佢唔會讀 PAT 或
+啟動 publisher。
+
+單一 Unix user container 無法提供 systemd credential／獨立 service user
+級別嘅檔案隔離；以上 wrapper 提供 process environment 最小權限。需要嚴格
+OS-level PAT 隔離時，publisher 必須改由另一個 one-shot container/user 執行。
+
+目前 Live initial cash/effective UTC 尚未提供，所以只可執行普通 `doctor`；
+`doctor-active` 會要求 Paper、Live、publication 及 backup 全部已正式上線，
+留待 Live 初始化後使用。
 
 ## 重新生成示範數據
 
