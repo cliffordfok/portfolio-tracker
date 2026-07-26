@@ -340,7 +340,9 @@ function bindEvents() {
     button.addEventListener("click", () => {
       state.range = button.dataset.range;
       document.querySelectorAll("[data-range]").forEach((item) => {
-        item.classList.toggle("is-active", item === button);
+        const active = item === button;
+        item.classList.toggle("is-active", active);
+        item.setAttribute("aria-pressed", String(active));
       });
       renderActiveTab();
     });

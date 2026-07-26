@@ -12,6 +12,7 @@ import {
 } from "../js/data.js";
 import {
   csvEscape,
+  exportTableToCsv,
   filterByRange,
   escapeHtml,
   formatCurrency,
@@ -259,6 +260,63 @@ test("CSV export neutralizes spreadsheet formulas", () => {
   assert.equal(csvEscape("ordinary note"), "ordinary note");
 });
 
+test("CSV table export downloads visible rows and excludes empty placeholders", async () => {
+  const makeRow = (values, { empty = false } = {}) => ({
+    classList: { contains: (name) => name === "empty-row" && empty },
+    querySelectorAll: () => values.map((textContent) => ({ textContent })),
+  });
+  const table = {
+    querySelectorAll: () => [
+      makeRow(["Symbol", "Note"]),
+      makeRow(["AAPL", "=SUM(1,1)"]),
+      makeRow(["No data yet"], { empty: true }),
+    ],
+  };
+  let capturedBlob;
+  let clicked = false;
+  let removed = false;
+  let revokedUrl;
+  const originalDocument = globalThis.document;
+  const originalCreateObjectUrl = URL.createObjectURL;
+  const originalRevokeObjectUrl = URL.revokeObjectURL;
+  globalThis.document = {
+    body: { append() {} },
+    createElement: () => ({
+      click() {
+        clicked = true;
+      },
+      remove() {
+        removed = true;
+      },
+    }),
+  };
+  URL.createObjectURL = (blob) => {
+    capturedBlob = blob;
+    return "blob:portfolio-csv";
+  };
+  URL.revokeObjectURL = (url) => {
+    revokedUrl = url;
+  };
+
+  try {
+    assert.equal(exportTableToCsv(table, "portfolio.csv"), true);
+    const bytes = new Uint8Array(await capturedBlob.arrayBuffer());
+    assert.deepEqual([...bytes.slice(0, 3)], [0xef, 0xbb, 0xbf]);
+    assert.equal(
+      await capturedBlob.text(),
+      'Symbol,Note\nAAPL,"\'=SUM(1,1)"',
+    );
+    assert.equal(clicked, true);
+    assert.equal(removed, true);
+    assert.equal(revokedUrl, "blob:portfolio-csv");
+  } finally {
+    if (originalDocument === undefined) delete globalThis.document;
+    else globalThis.document = originalDocument;
+    URL.createObjectURL = originalCreateObjectUrl;
+    URL.revokeObjectURL = originalRevokeObjectUrl;
+  }
+});
+
 test("static page contains all required tabs, tables, and D3 v7", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const config = await readFile(new URL("../js/config.js", import.meta.url), "utf8");
@@ -270,12 +328,20 @@ test("static page contains all required tabs, tables, and D3 v7", async () => {
     'id="live-trades"',
     'id="compare-chart"',
     'id="snapshot-generated-at"',
+    'data-range="1M" aria-pressed="false"',
+    'data-range="ALL" aria-pressed="true"',
     "d3@7.9.0",
     'integrity="sha384-',
     'crossorigin="anonymous"',
   ]) {
     assert.ok(html.includes(required), `missing ${required}`);
   }
+  const app = await readFile(new URL("../js/app.js", import.meta.url), "utf8");
+  assert.match(
+    app,
+    /item\.setAttribute\("aria-pressed", String\(active\)\)/,
+    "range buttons must expose their active state to assistive technology",
+  );
   const rawDataUrl =
     "https://raw.githubusercontent.com/cliffordfok/portfolio-tracker/portfolio-data/portfolio-snapshot.json";
   const contentsApiUrl =
