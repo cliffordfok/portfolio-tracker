@@ -730,3 +730,96 @@ test("an active cross-tab fetch lease prevents a duplicate network request", asy
     globalThis.fetch = previousFetch;
   }
 });
+
+test("sample JSON is an explicit demo fallback and never a primary snapshot", async () => {
+  const previousWindow = globalThis.window;
+  const previousFetch = globalThis.fetch;
+  const localStorage = new MemoryStorage();
+  globalThis.window = {
+    location: { href: "https://cliffordfok.github.io/portfolio-tracker/" },
+    localStorage,
+  };
+  const requests = [];
+  globalThis.fetch = async (requestUrl) => {
+    const url = String(requestUrl);
+    requests.push(url);
+    if (url.includes("remote.test")) {
+      return { ok: false, status: 503, statusText: "Unavailable" };
+    }
+    if (url.includes("paper.json")) {
+      return {
+        ok: true,
+        json: async () => [
+          {
+            date: "2026-01-01",
+            symbol: "AAPL",
+            action: "BUY",
+            shares: 1,
+            price: 100,
+            fee: 0,
+          },
+        ],
+      };
+    }
+    if (url.includes("live.json")) {
+      return { ok: true, json: async () => [] };
+    }
+    if (url.includes("benchmark.json")) {
+      return {
+        ok: true,
+        json: async () => [{ date: "2026-01-01", close: 500 }],
+      };
+    }
+    throw new Error(`unexpected request: ${url}`);
+  };
+  const config = {
+    snapshotUrls: ["https://remote.test/portfolio-snapshot.json"],
+    fallbackUrls: {
+      paper: "./data/paper.json",
+      live: "./data/live.json",
+      benchmark: "./data/benchmark.json",
+    },
+    fallbackInitialCash: { paper: 100000, live: 50000 },
+    maxFetchesPerHour: 60,
+    storagePrefix: "explicit-demo-fallback-test",
+    staleAfterMinutes: 999999,
+  };
+  try {
+    const result = await loadDashboardData(config, { now: 1000 });
+    assert.equal(result.source, "fallback");
+    assert.equal(result.revision, "fallback");
+    assert.ok(
+      result.warnings.some(
+        (warning) =>
+          warning.includes("虛構示範數據") &&
+          warning.includes("並非你的實際投資組合"),
+      ),
+    );
+    assert.ok(
+      requests.every(
+        (url) =>
+          !url.includes("portfolio-snapshot.json") ||
+          url.includes("remote.test"),
+      ),
+    );
+  } finally {
+    globalThis.window = previousWindow;
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test("production config never treats the bundled demo snapshot as authoritative", async () => {
+  const configSource = await readFile(
+    new URL("../js/config.js", import.meta.url),
+    "utf8",
+  );
+  const appSource = await readFile(
+    new URL("../js/app.js", import.meta.url),
+    "utf8",
+  );
+  assert.doesNotMatch(
+    configSource,
+    /snapshotUrls:[\s\S]*?\.\/data\/portfolio-snapshot\.json/,
+  );
+  assert.match(appSource, /虛構示範資料（非實際倉位）/);
+});

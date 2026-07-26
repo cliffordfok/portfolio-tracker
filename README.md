@@ -15,7 +15,8 @@
 - 所有表格可匯出 CSV
 - 2 分鐘 last-good snapshot cache；Tab 切換共用 cache，手動 refresh
   有 30 秒 cooldown，跨瀏覽器分頁共用每小時 60 次 request budget
-- 快照失敗時先使用 last-good cache，再使用三個 sample JSON 作後備
+- 快照失敗時先使用 last-good cache；完全沒有有效 cache 時才使用三個
+  sample JSON，並明確標示為「虛構示範資料」，不會冒充正式快照
 - Responsive、keyboard tabs、focus state、semantic tables
 - 缺少報價時 NAV 及跨 gap 指標為空，不會假設零回報
 - GitHub Contents API crash recovery、manual-edit fail-closed、最多三次 retry

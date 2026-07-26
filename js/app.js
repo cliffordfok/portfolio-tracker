@@ -248,7 +248,7 @@ function renderMeta() {
         ? "快照快取有效"
         : state.data.source === "stale-cache"
           ? "正使用上次有效快照"
-          : "後備資料模式";
+          : "虛構示範資料（非實際倉位）";
   status.closest(".market-status").classList.toggle(
     "is-warning",
     !["snapshot", "cache"].includes(state.data.source),

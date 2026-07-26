@@ -664,7 +664,10 @@ async function loadFallback(config) {
       live: calculateFallbackPortfolio(live, config.fallbackInitialCash.live),
     },
     benchmark: { symbol: "SPY", daily: normalizeBenchmark(benchmark) },
-    warnings: ["未能讀取生成快照；現正使用瀏覽器 FIFO 後備計算。"],
+    warnings: [
+      "未能讀取正式快照；以下是虛構示範數據，並非你的實際投資組合。",
+      "現正使用瀏覽器 FIFO 後備計算。",
+    ],
   };
 }
 
