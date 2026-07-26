@@ -304,7 +304,8 @@ def _json_object(path: Path, *, label: str) -> dict[str, Any]:
 def _audit_ledgers(
     store: LedgerStore,
     *,
-    require_initialized: bool,
+    required_initialized: set[str],
+    required_uninitialized: set[str],
 ) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
     events_by_portfolio: dict[str, list[dict[str, Any]]] = {}
     report: dict[str, Any] = {}
@@ -333,16 +334,57 @@ def _audit_ledgers(
         entry: dict[str, Any] = {"events": len(events)}
         if portfolio in {"paper", "live"}:
             if not events:
-                if require_initialized:
+                if portfolio in required_initialized:
                     raise PortfolioError(
                         f"{portfolio} portfolio has no PORTFOLIO_OPEN"
                     )
                 entry["initialized"] = False
             else:
+                if portfolio in required_uninitialized:
+                    raise PortfolioError(
+                        f"{portfolio} portfolio must remain uninitialized"
+                    )
                 replay_portfolio(events)
                 entry["initialized"] = True
         report[portfolio] = entry
     return events_by_portfolio, report
+
+
+def _audit_stage_snapshot(
+    snapshot: dict[str, Any] | None,
+    *,
+    require_paper_initialized: bool,
+    require_live_uninitialized: bool,
+) -> None:
+    if snapshot is None:
+        return
+    portfolios = snapshot["portfolios"]
+    if require_paper_initialized:
+        paper = portfolios["paper"]
+        if (
+            paper.get("data_status") == "NO_DATA"
+            or "initial_cash" not in paper
+            or "cash" not in paper
+        ):
+            raise PortfolioError(
+                "paper snapshot does not represent an initialized portfolio"
+            )
+    if require_live_uninitialized:
+        live = portfolios["live"]
+        metrics = live.get("metrics", {})
+        if (
+            live.get("data_status") != "NO_DATA"
+            or live.get("holdings") != []
+            or live.get("recent_trades") != []
+            or live.get("daily") != []
+            or "initial_cash" in live
+            or "cash" in live
+            or metrics.get("data_status") != "NO_DATA"
+            or metrics.get("realized_pnl") != "0"
+        ):
+            raise PortfolioError(
+                "live snapshot must remain in the canonical NO_DATA state"
+            )
 
 
 def _audit_snapshot(
@@ -494,6 +536,8 @@ def audit_runtime(
     root: str | Path,
     *,
     require_initialized: bool = False,
+    require_paper_initialized: bool = False,
+    require_live_uninitialized: bool = False,
     require_current: bool = False,
     require_published: bool = False,
     require_backup: bool = False,
@@ -501,6 +545,18 @@ def audit_runtime(
     """Verify ledger, snapshot, publication, and backup invariants without writes."""
 
     root_path = Path(root)
+    if require_initialized and require_live_uninitialized:
+        raise PortfolioError(
+            "live portfolio cannot be required initialized and uninitialized"
+        )
+    required_initialized = (
+        {"paper", "live"} if require_initialized else set()
+    )
+    if require_paper_initialized:
+        required_initialized.add("paper")
+    required_uninitialized = (
+        {"live"} if require_live_uninitialized else set()
+    )
     store = LedgerStore(root_path)
     warnings: list[str] = []
     lock = (
@@ -511,7 +567,8 @@ def audit_runtime(
     with lock:
         events_by_portfolio, ledgers = _audit_ledgers(
             store,
-            require_initialized=require_initialized,
+            required_initialized=required_initialized,
+            required_uninitialized=required_uninitialized,
         )
         snapshot, snapshot_bytes, snapshot_report = _audit_snapshot(
             root_path,
@@ -519,6 +576,11 @@ def audit_runtime(
             events_by_portfolio,
             require_current=require_current,
             warnings=warnings,
+        )
+        _audit_stage_snapshot(
+            snapshot,
+            require_paper_initialized=require_paper_initialized,
+            require_live_uninitialized=require_live_uninitialized,
         )
 
     publication = _audit_publication(

@@ -166,6 +166,16 @@ def portfolio_command(config: CronConfig, action: str) -> list[str]:
             "--require-published",
             "--require-backup",
         ]
+    if action == "doctor-paper-active":
+        return [
+            *command,
+            "doctor",
+            "--require-paper-initialized",
+            "--require-live-uninitialized",
+            "--require-current",
+            "--require-published",
+            "--require-backup",
+        ]
     raise CronError(f"unsupported cron action: {action}")
 
 
@@ -274,6 +284,7 @@ def parser() -> argparse.ArgumentParser:
             "backup",
             "doctor",
             "doctor-active",
+            "doctor-paper-active",
         ),
     )
     command.add_argument(

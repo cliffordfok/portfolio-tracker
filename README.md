@@ -519,7 +519,17 @@ PAT 尚未建立時，只可安排 `rebuild`／`backup`，不可安排 `publish`
 `bootstrap-publish` 是唯一會傳 `--bootstrap` 的 wrapper action，只可由
 operator 人工執行，不能放入 crontab。它會先在完全沒有 PAT 的環境重建
 snapshot；只有 rebuild 成功後才讀取 token 及啟動 bootstrap publisher。
-成功並驗證 publication state 後，建議 cron：
+首次發布後先執行 backup，再以目前 Live deferred 專用 gate 驗收：
+
+```bash
+/usr/local/bin/python3 /data/portfolio-tracker/scripts/portfolio_cron.py backup
+/usr/local/bin/python3 \
+  /data/portfolio-tracker/scripts/portfolio_cron.py doctor-paper-active
+```
+
+`doctor-paper-active` 要求 Paper 已初始化、Live 仍完全未初始化且 snapshot
+保持 canonical `NO_DATA`，並同時驗證 current snapshot、publication state
+及 ledger backup。成功後，建議 cron：
 
 ```cron
 */5 * * * * /usr/local/bin/python3 /data/portfolio-tracker/scripts/portfolio_cron.py maintain
@@ -534,9 +544,9 @@ token file，並只注入 publisher child。如果 rebuild 失敗，佢唔會讀
 級別嘅檔案隔離；以上 wrapper 提供 process environment 最小權限。需要嚴格
 OS-level PAT 隔離時，publisher 必須改由另一個 one-shot container/user 執行。
 
-目前 Live initial cash/effective UTC 尚未提供，所以只可執行普通 `doctor`；
-`doctor-active` 會要求 Paper、Live、publication 及 backup 全部已正式上線，
-留待 Live 初始化後使用。
+目前 Live initial cash/effective UTC 尚未提供，所以正式 stage acceptance
+使用 `doctor-paper-active`；`doctor-active` 會要求 Paper、Live、publication
+及 backup 全部已正式上線，留待 Live 初始化後使用。
 
 ## 重新生成示範數據
 

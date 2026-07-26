@@ -48,6 +48,108 @@ class DoctorTests(unittest.TestCase):
         with self.assertRaisesRegex(PortfolioError, "paper portfolio"):
             audit_runtime(self.root, require_initialized=True)
 
+    def test_paper_active_live_deferred_acceptance_is_explicit(self) -> None:
+        self.store.append(
+            candidate(
+                "PORTFOLIO_OPEN",
+                portfolio="paper",
+                event_id="paper-open",
+                occurred_at="2024-01-02T14:00:00Z",
+                initial_cash="100000",
+            )
+        )
+        snapshot = build_snapshot(self.root)
+        snapshot_path = self.root / "snapshots" / "portfolio-snapshot.json"
+        atomic_write_json(
+            self.root / "state" / "published-state.json",
+            {
+                "local_snapshot_hash": hashlib.sha256(
+                    snapshot_path.read_bytes()
+                ).hexdigest(),
+                "remote_blob_sha": "remote-blob-sha",
+                "remote_commit_sha": "remote-commit-sha",
+                "published_revision": snapshot["revision"],
+                "published_at": "2024-01-02T21:00:00Z",
+            },
+        )
+        backup_ledgers(self.root)
+
+        report = audit_runtime(
+            self.root,
+            require_paper_initialized=True,
+            require_live_uninitialized=True,
+            require_current=True,
+            require_published=True,
+            require_backup=True,
+        )
+
+        self.assertTrue(report["ledgers"]["paper"]["initialized"])
+        self.assertFalse(report["ledgers"]["live"]["initialized"])
+        self.assertTrue(report["snapshot"]["current"])
+        self.assertTrue(report["publication"]["published"])
+        self.assertTrue(report["backup"]["verified"])
+
+    def test_paper_active_gate_rejects_missing_paper_open(self) -> None:
+        with self.assertRaisesRegex(PortfolioError, "paper portfolio"):
+            audit_runtime(
+                self.root,
+                require_paper_initialized=True,
+                require_live_uninitialized=True,
+            )
+
+    def test_live_deferred_gate_rejects_any_live_event(self) -> None:
+        self.initialize()
+        with self.assertRaisesRegex(
+            PortfolioError,
+            "live portfolio must remain uninitialized",
+        ):
+            audit_runtime(
+                self.root,
+                require_paper_initialized=True,
+                require_live_uninitialized=True,
+            )
+
+    def test_live_deferred_gate_rejects_noncanonical_snapshot(self) -> None:
+        self.store.append(
+            candidate(
+                "PORTFOLIO_OPEN",
+                portfolio="paper",
+                event_id="paper-open",
+                occurred_at="2024-01-02T14:00:00Z",
+                initial_cash="100000",
+            )
+        )
+        build_snapshot(self.root)
+        path = self.root / "snapshots" / "portfolio-snapshot.json"
+        snapshot = json.loads(path.read_text(encoding="utf-8"))
+        snapshot["portfolios"]["live"]["data_status"] = "INSUFFICIENT_DATA"
+        snapshot["portfolios"]["live"]["metrics"][
+            "data_status"
+        ] = "INSUFFICIENT_DATA"
+        atomic_write_json(path, snapshot)
+
+        with self.assertRaisesRegex(
+            PortfolioError,
+            "canonical NO_DATA",
+        ):
+            audit_runtime(
+                self.root,
+                require_paper_initialized=True,
+                require_live_uninitialized=True,
+                require_current=True,
+            )
+
+    def test_conflicting_live_requirements_fail_closed(self) -> None:
+        with self.assertRaisesRegex(
+            PortfolioError,
+            "cannot be required initialized and uninitialized",
+        ):
+            audit_runtime(
+                self.root,
+                require_initialized=True,
+                require_live_uninitialized=True,
+            )
+
     def test_require_current_detects_a_stale_snapshot(self) -> None:
         self.initialize()
         build_snapshot(self.root)

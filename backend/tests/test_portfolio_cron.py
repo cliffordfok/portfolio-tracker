@@ -305,6 +305,22 @@ class PortfolioCronTests(unittest.TestCase):
         ):
             self.assertIn(flag, command)
 
+    def test_doctor_paper_active_preserves_live_deferred_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            config = self.config(directory)
+            runner = RecordingRunner()
+            CRON.execute(config, "doctor-paper-active", runner=runner)
+        command = runner.calls[0]["command"]
+        for flag in (
+            "--require-paper-initialized",
+            "--require-live-uninitialized",
+            "--require-current",
+            "--require-published",
+            "--require-backup",
+        ):
+            self.assertIn(flag, command)
+        self.assertNotIn("--require-initialized", command)
+
     def test_snapshot_path_cannot_escape_repository(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             config = self.config(directory)

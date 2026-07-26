@@ -91,6 +91,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="run read-only production acceptance checks",
     )
     doctor.add_argument("--require-initialized", action="store_true")
+    doctor.add_argument("--require-paper-initialized", action="store_true")
+    doctor.add_argument("--require-live-uninitialized", action="store_true")
     doctor.add_argument("--require-current", action="store_true")
     doctor.add_argument("--require-published", action="store_true")
     doctor.add_argument("--require-backup", action="store_true")
@@ -165,6 +167,8 @@ def main(argv: list[str] | None = None) -> int:
             result = audit_runtime(
                 root,
                 require_initialized=args.require_initialized,
+                require_paper_initialized=args.require_paper_initialized,
+                require_live_uninitialized=args.require_live_uninitialized,
                 require_current=args.require_current,
                 require_published=args.require_published,
                 require_backup=args.require_backup,
