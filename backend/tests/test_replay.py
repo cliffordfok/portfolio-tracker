@@ -247,6 +247,52 @@ class ReplayTests(unittest.TestCase):
             Decimal("1000") - quantity * unit_price - fee,
         )
 
+    def test_settlement_adjustment_reconciles_broker_cash_and_fifo(self) -> None:
+        result = replay_portfolio(
+            [
+                event(
+                    1,
+                    "PORTFOLIO_OPEN",
+                    portfolio="live",
+                    initial_cash="5000",
+                ),
+                event(
+                    2,
+                    "BUY",
+                    portfolio="live",
+                    symbol="ONDS",
+                    instrument_id="EQUITY:ONDS",
+                    shares="150",
+                    price="10",
+                    fee="0",
+                ),
+                event(
+                    3,
+                    "SELL",
+                    portfolio="live",
+                    symbol="ONDS",
+                    instrument_id="EQUITY:ONDS",
+                    shares="150",
+                    price="11.0001",
+                    fee="0.03",
+                    settlement_adjustment="-0.005",
+                ),
+            ]
+        )
+
+        self.assertEqual(result.cash, Decimal("5149.9800"))
+        self.assertEqual(result.sell_inflow, Decimal("1649.9800"))
+        self.assertEqual(result.realized_pnl_total, Decimal("149.9800"))
+        realized = result.realized_pnl_per_trade[0]
+        self.assertEqual(
+            realized["settlement_adjustment"],
+            Decimal("-0.005"),
+        )
+        self.assertEqual(
+            realized["matches"][0]["proceeds"],
+            Decimal("1649.9800"),
+        )
+
     def test_backdated_buy_changes_fifo_order_deterministically(self) -> None:
         events = [
             event(1, "PORTFOLIO_OPEN", initial_cash="1000"),

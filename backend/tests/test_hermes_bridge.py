@@ -128,6 +128,8 @@ class HermesBridgeTests(unittest.TestCase):
                 "1",
                 "--price",
                 "100",
+                "--settlement-adjustment",
+                "0.004",
                 "--source",
                 "swing-trader",
             ]
@@ -135,6 +137,7 @@ class HermesBridgeTests(unittest.TestCase):
         event = base_event(args, "BUY")
         self.assertEqual(event["source"], "swing-trader")
         self.assertEqual(event["created_at"], "2024-01-02T15:01:00Z")
+        self.assertEqual(args.settlement_adjustment, "0.004")
 
     def test_correction_commands_require_explicit_audit_reasons(self) -> None:
         amend = parser().parse_args(
@@ -152,6 +155,8 @@ class HermesBridgeTests(unittest.TestCase):
                 "live-buy-1",
                 "--fee",
                 "1",
+                "--settlement-adjustment",
+                "-0.005",
                 "--amend-reason",
                 "broker fee correction",
             ]
@@ -174,6 +179,7 @@ class HermesBridgeTests(unittest.TestCase):
             ]
         )
         self.assertEqual(amend.amend_reason, "broker fee correction")
+        self.assertEqual(amend.settlement_adjustment, "-0.005")
         self.assertEqual(void.void_reason, "duplicate fill")
 
     def test_live_income_and_split_commands_rebuild_snapshot(self) -> None:
@@ -216,6 +222,8 @@ class HermesBridgeTests(unittest.TestCase):
                     "2",
                     "--price",
                     "100",
+                    "--settlement-adjustment",
+                    "0.004",
                 ],
                 [
                     "--root",
@@ -274,9 +282,13 @@ class HermesBridgeTests(unittest.TestCase):
                 ).read_text(encoding="utf-8")
             )
             live = snapshot["portfolios"]["live"]
-            self.assertEqual(live["cash"], "807")
+            self.assertEqual(live["cash"], "807.004")
             self.assertEqual(live["holdings"][0]["shares"], "6")
             self.assertEqual(live["metrics"]["income_expense"], "7")
+            self.assertEqual(
+                live["recent_trades"][2]["settlement_adjustment"],
+                "0.004",
+            )
 
     def test_append_reports_recorded_when_snapshot_rebuild_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

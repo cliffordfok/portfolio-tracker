@@ -429,6 +429,33 @@ test("only the publisher service receives the GitHub token environment", async (
   );
 });
 
+test("fallback FIFO honors exact broker settlement adjustments", () => {
+  const result = calculateFallbackPortfolio(
+    [
+      {
+        date: "2026-01-01",
+        symbol: "ONDS",
+        action: "BUY",
+        shares: 150,
+        price: 10,
+        fee: 0,
+      },
+      {
+        date: "2026-01-02",
+        symbol: "ONDS",
+        action: "SELL",
+        shares: 150,
+        price: 11.0001,
+        fee: 0.03,
+        settlement_adjustment: -0.005,
+      },
+    ],
+    5000,
+  );
+  assert.ok(Math.abs(result.cash - 5149.98) < 1e-9);
+  assert.ok(Math.abs(result.metrics.realized_pnl - 149.98) < 1e-9);
+});
+
 test("Hermes contract uses the real Docker paths and never reads credentials", async () => {
   const contract = await readFile(
     new URL("../.hermes.md", import.meta.url),
@@ -685,6 +712,22 @@ test("snapshot validation accepts instrument, income, and split fields", async (
         pnl: null,
         pnl_pct: null,
       },
+      {
+        event_id: "live-sell-1",
+        portfolio: "live",
+        occurred_at: "2024-01-02T18:00:00Z",
+        created_at: "2024-01-02T18:00:00Z",
+        source: "manual-import",
+        ledger_seq: 5,
+        action: "SELL",
+        symbol: "ONDS",
+        shares: "150",
+        price: "11.0001",
+        fee: "0.03",
+        settlement_adjustment: "-0.005",
+        pnl: "149.98",
+        pnl_pct: "0.09998667",
+      },
     ],
     daily: [],
     metrics: {
@@ -711,6 +754,10 @@ test("snapshot validation accepts instrument, income, and split fields", async (
       "PRIVATE:SPACEX",
     );
     assert.equal(result.portfolios.live.recent_trades[0].amount, "7");
+    assert.equal(
+      result.portfolios.live.recent_trades[2].settlement_adjustment,
+      "-0.005",
+    );
   } finally {
     globalThis.window = previousWindow;
     globalThis.fetch = previousFetch;

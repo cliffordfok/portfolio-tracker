@@ -56,6 +56,53 @@ class SnapshotTests(unittest.TestCase):
             (self.root / "snapshots" / "portfolio-snapshot.json").exists()
         )
 
+    def test_settlement_adjustment_reaches_snapshot_cash_and_pnl(self) -> None:
+        self.store.append(
+            candidate(
+                "PORTFOLIO_OPEN",
+                portfolio="live",
+                event_id="live-open",
+                occurred_at="2024-01-01T14:00:00Z",
+                initial_cash="5000",
+            )
+        )
+        self.store.append(
+            candidate(
+                "BUY",
+                portfolio="live",
+                event_id="live-buy-onds",
+                occurred_at="2024-01-02T15:00:00Z",
+                symbol="ONDS",
+                instrument_id="EQUITY:ONDS",
+                shares="150",
+                price="10",
+                fee="0",
+            )
+        )
+        self.store.append(
+            candidate(
+                "SELL",
+                portfolio="live",
+                event_id="live-sell-onds",
+                occurred_at="2024-01-03T15:00:00Z",
+                symbol="ONDS",
+                instrument_id="EQUITY:ONDS",
+                shares="150",
+                price="11.0001",
+                fee="0.03",
+                settlement_adjustment="-0.005",
+            )
+        )
+
+        snapshot = build_snapshot(self.root, write=False)
+        live = snapshot["portfolios"]["live"]
+        self.assertEqual(live["cash"], "5149.98")
+        self.assertEqual(live["metrics"]["realized_pnl"], "149.98")
+        self.assertEqual(
+            live["recent_trades"][0]["settlement_adjustment"],
+            "-0.005",
+        )
+
     def test_missing_quote_breaks_global_return_chain(self) -> None:
         self.append(
             "PORTFOLIO_OPEN",

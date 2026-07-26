@@ -319,6 +319,14 @@ def validate_snapshot(snapshot: Any) -> None:
                         trade[field],
                         label=f"{name}.recent_trades.{field}",
                     )
+                if "settlement_adjustment" in trade:
+                    _snapshot_decimal_or_none(
+                        trade["settlement_adjustment"],
+                        label=(
+                            f"{name}.recent_trades."
+                            "settlement_adjustment"
+                        ),
+                    )
             elif trade["action"] == "CASH_FLOW" and trade.get("symbol") != "USD":
                 raise ValidationError(
                     "CASH_FLOW snapshot symbol must be USD"
@@ -906,6 +914,10 @@ def _daily_series(
                 quantity = shares(event["shares"])
                 unit_price = price(event["price"])
                 fee = money(event.get("fee", 0), field="fee")
+                settlement_adjustment = money(
+                    event.get("settlement_adjustment", 0),
+                    field="settlement_adjustment",
+                )
                 instrument_id = event.get("instrument_id") or event["symbol"]
                 multiplier = shares(
                     event.get("contract_multiplier", "1"),
@@ -923,11 +935,16 @@ def _daily_series(
                     cash
                     - amount_for(quantity * multiplier, unit_price)
                     - fee
+                    + settlement_adjustment
                 )
             elif action == "SELL":
                 quantity = shares(event["shares"])
                 unit_price = price(event["price"])
                 fee = money(event.get("fee", 0), field="fee")
+                settlement_adjustment = money(
+                    event.get("settlement_adjustment", 0),
+                    field="settlement_adjustment",
+                )
                 instrument_id = event.get("instrument_id") or event["symbol"]
                 multiplier = shares(
                     event.get("contract_multiplier", "1"),
@@ -948,6 +965,7 @@ def _daily_series(
                     cash
                     + amount_for(quantity * multiplier, unit_price)
                     - fee
+                    + settlement_adjustment
                 )
             elif action == "SPLIT":
                 instrument_id = event["instrument_id"]

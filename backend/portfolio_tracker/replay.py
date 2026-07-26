@@ -36,11 +36,20 @@ class Lot:
     unit_price: Decimal
     contract_multiplier: Decimal
     fee_total: Decimal
+    settlement_adjustment_total: Decimal = ZERO
     fee_allocated: Decimal = ZERO
+    settlement_adjustment_allocated: Decimal = ZERO
 
     @property
     def remaining_fee(self) -> Decimal:
         return money(self.fee_total - self.fee_allocated)
+
+    @property
+    def remaining_settlement_adjustment(self) -> Decimal:
+        return money(
+            self.settlement_adjustment_total
+            - self.settlement_adjustment_allocated
+        )
 
     @property
     def remaining_cost(self) -> Decimal:
@@ -50,6 +59,7 @@ class Lot:
                 self.unit_price,
             )
             + self.remaining_fee
+            - self.remaining_settlement_adjustment
         )
 
 
@@ -250,6 +260,10 @@ def replay_portfolio(
         quantity = shares(event["shares"])
         unit_price = price(event["price"])
         fee = money(event.get("fee", 0), field="fee")
+        settlement_adjustment = money(
+            event.get("settlement_adjustment", 0),
+            field="settlement_adjustment",
+        )
         contract_multiplier = shares(
             event.get("contract_multiplier", "1"),
             field="contract_multiplier",
@@ -258,6 +272,7 @@ def replay_portfolio(
         if action == "BUY":
             cost = money(
                 amount_for(quantity * contract_multiplier, unit_price) + fee
+                - settlement_adjustment
             )
             cash = money(cash - cost)
             if not allow_negative_cash and cash < 0:
@@ -314,6 +329,7 @@ def replay_portfolio(
                     unit_price=unit_price,
                     contract_multiplier=contract_multiplier,
                     fee_total=fee,
+                    settlement_adjustment_total=settlement_adjustment,
                 )
             )
             buy_outflow = money(buy_outflow + cost)
@@ -323,6 +339,11 @@ def replay_portfolio(
                     "shares": quantity,
                     "price": unit_price,
                     "fee": fee,
+                    **(
+                        {"settlement_adjustment": settlement_adjustment}
+                        if "settlement_adjustment" in event
+                        else {}
+                    ),
                     "pnl": None,
                     "pnl_pct": None,
                 }
@@ -359,11 +380,12 @@ def replay_portfolio(
             )
 
         gross = amount_for(quantity * contract_multiplier, unit_price)
-        net = money(gross - fee)
+        net = money(gross - fee + settlement_adjustment)
         cash = money(cash + net)
         sell_inflow = money(sell_inflow + net)
         remaining_to_sell = quantity
         sell_fee_allocated = ZERO
+        sell_settlement_adjustment_allocated = ZERO
         trade_pnl = ZERO
         trade_cost = ZERO
         matches: list[dict[str, Any]] = []
@@ -390,22 +412,47 @@ def replay_portfolio(
                 is_last=is_last_match,
                 round_to_cents=True,
             )
+            buy_settlement_adjustment = _allocate_fee(
+                fee_total=lot.settlement_adjustment_total,
+                quantity=matched,
+                original_quantity=lot.original_shares,
+                allocated_so_far=lot.settlement_adjustment_allocated,
+                is_last=matched == lot.remaining_shares,
+            )
+            sell_settlement_adjustment = _allocate_fee(
+                fee_total=settlement_adjustment,
+                quantity=matched,
+                original_quantity=quantity,
+                allocated_so_far=sell_settlement_adjustment_allocated,
+                is_last=is_last_match,
+            )
             matched_cost = money(
                 amount_for(
                     matched * lot.contract_multiplier,
                     lot.unit_price,
                 )
                 + buy_fee
+                - buy_settlement_adjustment
             )
             matched_proceeds = money(
-                amount_for(matched * contract_multiplier, unit_price) - sell_fee
+                amount_for(matched * contract_multiplier, unit_price)
+                - sell_fee
+                + sell_settlement_adjustment
             )
             matched_pnl = money(matched_proceeds - matched_cost)
 
             lot.remaining_shares = shares(lot.remaining_shares - matched)
             lot.fee_allocated = money(lot.fee_allocated + buy_fee)
+            lot.settlement_adjustment_allocated = money(
+                lot.settlement_adjustment_allocated
+                + buy_settlement_adjustment
+            )
             remaining_to_sell = shares(remaining_to_sell - matched)
             sell_fee_allocated = money(sell_fee_allocated + sell_fee)
+            sell_settlement_adjustment_allocated = money(
+                sell_settlement_adjustment_allocated
+                + sell_settlement_adjustment
+            )
             trade_cost = money(trade_cost + matched_cost)
             trade_pnl = money(trade_pnl + matched_pnl)
             matches.append(
@@ -418,6 +465,8 @@ def replay_portfolio(
                     "contract_multiplier": contract_multiplier,
                     "buy_fee": buy_fee,
                     "sell_fee": sell_fee,
+                    "buy_settlement_adjustment": buy_settlement_adjustment,
+                    "sell_settlement_adjustment": sell_settlement_adjustment,
                     "cost": matched_cost,
                     "proceeds": matched_proceeds,
                     "pnl": matched_pnl,
@@ -437,6 +486,11 @@ def replay_portfolio(
             "shares": quantity,
             "price": unit_price,
             "fee": fee,
+            **(
+                {"settlement_adjustment": settlement_adjustment}
+                if "settlement_adjustment" in event
+                else {}
+            ),
             "contract_multiplier": contract_multiplier,
             "pnl": trade_pnl,
             "pnl_pct": pnl_pct,
@@ -450,6 +504,11 @@ def replay_portfolio(
                 "shares": quantity,
                 "price": unit_price,
                 "fee": fee,
+                **(
+                    {"settlement_adjustment": settlement_adjustment}
+                    if "settlement_adjustment" in event
+                    else {}
+                ),
                 "pnl": trade_pnl,
                 "pnl_pct": pnl_pct,
                 "cumulative_pnl": running_realized,

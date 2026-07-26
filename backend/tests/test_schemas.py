@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 
 from seed_demo import market_events, portfolio_events
 from portfolio_tracker.errors import ValidationError
-from portfolio_tracker.schemas import validate_event
+from portfolio_tracker.schemas import normalize_event, validate_event
 
 from .helpers import candidate
 
@@ -105,6 +105,31 @@ class SchemaTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValidationError, "fee"):
             validate_event(value)
+
+    def test_trade_settlement_adjustment_is_small_and_normalized(self) -> None:
+        value = candidate(
+            "SELL",
+            portfolio="live",
+            event_id="live-sell-rounding",
+            occurred_at="2024-01-02T15:00:00Z",
+            symbol="ONDS",
+            shares="150",
+            price="11.0001",
+            fee="0.03",
+            settlement_adjustment=("-0.005"),
+        )
+        validate_event(value)
+        self.assertEqual(
+            normalize_event(value)["settlement_adjustment"],
+            "-0.005",
+        )
+
+        invalid = dict(value, settlement_adjustment="-0.010001")
+        with self.assertRaisesRegex(
+            ValidationError,
+            "settlement_adjustment must be between",
+        ):
+            validate_event(invalid)
 
     def test_portfolio_open_requires_usd_currency(self) -> None:
         value = candidate(

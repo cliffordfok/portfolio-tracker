@@ -191,6 +191,8 @@ function validateSnapshot(snapshot) {
           !decimalString(trade.shares) ||
           !decimalString(trade.price) ||
           !decimalString(trade.fee) ||
+          (hasOwn(trade, "settlement_adjustment") &&
+            !decimalString(trade.settlement_adjustment)) ||
           !hasDecimal(trade, "pnl") ||
           !hasDecimal(trade, "pnl_pct"))
       ) {
@@ -241,6 +243,8 @@ function validateSnapshot(snapshot) {
         !decimalString(realized.shares) ||
         !decimalString(realized.price) ||
         !decimalString(realized.fee) ||
+        (hasOwn(realized, "settlement_adjustment") &&
+          !decimalString(realized.settlement_adjustment)) ||
         !decimalString(realized.pnl) ||
         !decimalString(realized.pnl_pct) ||
         !decimalString(realized.cumulative_pnl) ||
@@ -552,16 +556,19 @@ export function calculateFallbackPortfolio(trades, initialCash) {
     const quantity = numeric(trade.shares) || 0;
     const price = numeric(trade.price) || 0;
     const fee = numeric(trade.fee) || 0;
+    const settlementAdjustment =
+      numeric(trade.settlement_adjustment) || 0;
     latestPrice.set(symbol, numeric(trade.current_price) ?? price);
     if (!lots.has(symbol)) lots.set(symbol, []);
 
     if (action === "BUY") {
-      cash -= quantity * price + fee;
+      cash -= quantity * price + fee - settlementAdjustment;
       lots.get(symbol).push({
         remaining: quantity,
         original: quantity,
         price,
         feeRemaining: fee,
+        settlementAdjustmentRemaining: settlementAdjustment,
       });
       history.push({ ...trade, symbol, action, pnl: null, pnl_pct: null });
       continue;
@@ -580,18 +587,26 @@ export function calculateFallbackPortfolio(trades, initialCash) {
         ? lot.feeRemaining
         : (lot.feeRemaining * matched) / lot.remaining;
       const sellFee = (fee * matched) / quantity;
-      const cost = matched * lot.price + buyFee;
-      const proceeds = matched * price - sellFee;
+      const buySettlementAdjustment = finalLotPiece
+        ? lot.settlementAdjustmentRemaining
+        : (lot.settlementAdjustmentRemaining * matched) / lot.remaining;
+      const sellSettlementAdjustment =
+        (settlementAdjustment * matched) / quantity;
+      const cost =
+        matched * lot.price + buyFee - buySettlementAdjustment;
+      const proceeds =
+        matched * price - sellFee + sellSettlementAdjustment;
       tradePnl += proceeds - cost;
       matchedCost += cost;
       lot.remaining -= matched;
       lot.feeRemaining -= buyFee;
+      lot.settlementAdjustmentRemaining -= buySettlementAdjustment;
       remaining -= matched;
     }
     if (remaining > 1e-10) {
       throw new Error(`SELL oversells ${symbol} by ${remaining} shares`);
     }
-    cash += quantity * price - fee;
+    cash += quantity * price - fee + settlementAdjustment;
     realized += tradePnl;
     history.push({
       ...trade,
@@ -609,7 +624,11 @@ export function calculateFallbackPortfolio(trades, initialCash) {
     const quantity = openLots.reduce((sum, lot) => sum + lot.remaining, 0);
     if (!quantity) continue;
     const costBasis = openLots.reduce(
-      (sum, lot) => sum + lot.remaining * lot.price + lot.feeRemaining,
+      (sum, lot) =>
+        sum +
+        lot.remaining * lot.price +
+        lot.feeRemaining -
+        lot.settlementAdjustmentRemaining,
       0,
     );
     const currentPrice = latestPrice.get(symbol);

@@ -29,7 +29,11 @@ class ResolverTests(unittest.TestCase):
                 3,
                 "AMEND",
                 amend_target="paper-2",
-                changes={"fee": "2", "note": "corrected"},
+                changes={
+                    "fee": "2",
+                    "settlement_adjustment": "0.004",
+                    "note": "corrected",
+                },
             ),
             event(
                 4,
@@ -41,6 +45,10 @@ class ResolverTests(unittest.TestCase):
         effective = resolve_effective_events(events)
         resolved_buy = effective[1]
         self.assertEqual(resolved_buy["fee"], "2")
+        self.assertEqual(
+            resolved_buy["settlement_adjustment"],
+            "0.004",
+        )
         self.assertEqual(resolved_buy["note"], "final")
 
     def test_void_after_amend_removes_original_event(self) -> None:

@@ -215,6 +215,16 @@ python3 integrations/hermes_bridge.py \
   --note "manual /trade"
 ```
 
+券商淨交收金額如果因 fractional shares、顯示價格截位或 sub-cent
+rounding 而無法由 `shares × price ± fee` 精確重建，可以加入可選的
+`--settlement-adjustment`。這個 signed cash adjustment 只可介乎
+`-0.01` 至 `0.01`；BUY 成本及 SELL proceeds／FIFO P&L 都會同步採用，
+但不會改寫來源股數、價格或 fee：
+
+```bash
+  --settlement-adjustment -0.005
+```
+
 模擬倉把 `--portfolio` 改成 `paper`，並可加入：
 
 ```text
@@ -297,7 +307,8 @@ python3 integrations/hermes_bridge.py \
 
 ### 修訂及取消
 
-AMEND 只可改目標 action 本身支援的 `note`、`fee`、`reason`、`strategy`。
+AMEND 只可改目標 action 本身支援的 `note`、`fee`、
+`settlement_adjustment`、`reason`、`strategy`。
 VOID 最好直接指向原始 economic event；亦可指向
 AMEND，效果係取消該 AMEND 所屬嘅原始 economic event。VOID 永遠不可指向
 另一個 VOID。

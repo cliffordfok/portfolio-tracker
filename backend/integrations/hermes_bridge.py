@@ -239,6 +239,7 @@ def parser() -> argparse.ArgumentParser:
     trade.add_argument("--shares", required=True)
     trade.add_argument("--price", required=True)
     trade.add_argument("--fee", default="0")
+    trade.add_argument("--settlement-adjustment")
     trade.add_argument("--instrument-id")
     trade.add_argument(
         "--instrument-type",
@@ -328,6 +329,7 @@ def parser() -> argparse.ArgumentParser:
     amend.add_argument("--occurred-at", required=True)
     amend.add_argument("--target", required=True)
     amend.add_argument("--fee")
+    amend.add_argument("--settlement-adjustment")
     amend.add_argument("--note")
     amend.add_argument("--reason")
     amend.add_argument("--strategy")
@@ -452,6 +454,8 @@ def main(argv: list[str] | None = None) -> int:
                         "fee": args.fee,
                     }
                 )
+                if args.settlement_adjustment is not None:
+                    event["settlement_adjustment"] = args.settlement_adjustment
                 for field in ("note", "reason", "strategy"):
                     value = getattr(args, field)
                     if value:
@@ -519,7 +523,13 @@ def main(argv: list[str] | None = None) -> int:
                 event = base_event(args, "AMEND")
                 changes = {
                     field: getattr(args, field)
-                    for field in ("fee", "note", "reason", "strategy")
+                    for field in (
+                        "fee",
+                        "settlement_adjustment",
+                        "note",
+                        "reason",
+                        "strategy",
+                    )
                     if getattr(args, field) is not None
                 }
                 if not changes:

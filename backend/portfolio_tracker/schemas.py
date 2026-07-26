@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from copy import deepcopy
 from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
 from typing import Any, Mapping
 
 from .decimal_utils import input_price, input_shares, money
@@ -29,7 +30,14 @@ CORRECTABLE_ACTIONS = {
     "INCOME_EXPENSE",
     "SPLIT",
 }
-MUTABLE_FIELDS = {"note", "fee", "reason", "strategy"}
+MUTABLE_FIELDS = {
+    "note",
+    "fee",
+    "settlement_adjustment",
+    "reason",
+    "strategy",
+}
+MAX_SETTLEMENT_ADJUSTMENT = Decimal("0.01")
 SOURCES = {
     "bootstrap",
     "telegram",
@@ -67,6 +75,7 @@ ACTION_FIELDS = {
         "shares",
         "price",
         "fee",
+        "settlement_adjustment",
         "note",
         "strategy",
         "reason",
@@ -77,6 +86,7 @@ ACTION_FIELDS = {
         "shares",
         "price",
         "fee",
+        "settlement_adjustment",
         "note",
         "strategy",
         "reason",
@@ -261,6 +271,14 @@ def validate_event(
             raise ValidationError("price must be greater than zero")
         if money(event.get("fee", 0), field="fee") < 0:
             raise ValidationError("fee must be non-negative")
+        settlement_adjustment = money(
+            event.get("settlement_adjustment", 0),
+            field="settlement_adjustment",
+        )
+        if abs(settlement_adjustment) > MAX_SETTLEMENT_ADJUSTMENT:
+            raise ValidationError(
+                "settlement_adjustment must be between -0.01 and 0.01"
+            )
         _validate_instrument_fields(event)
     elif action == "CASH_FLOW":
         _require(event, {"amount", "symbol"})
@@ -320,9 +338,19 @@ def validate_event(
         invalid = sorted(set(changes) - MUTABLE_FIELDS)
         if invalid:
             raise ValidationError(f"immutable fields cannot be amended: {', '.join(invalid)}")
-        if "fee" in changes and money(changes["fee"], field="changes.fee") < 0:
-            raise ValidationError("changes.fee must be non-negative")
-        for field in set(changes) - {"fee"}:
+        if "fee" in changes:
+            if money(changes["fee"], field="changes.fee") < 0:
+                raise ValidationError("changes.fee must be non-negative")
+        if "settlement_adjustment" in changes:
+            adjustment = money(
+                changes["settlement_adjustment"],
+                field="changes.settlement_adjustment",
+            )
+            if abs(adjustment) > MAX_SETTLEMENT_ADJUSTMENT:
+                raise ValidationError(
+                    "changes.settlement_adjustment must be between -0.01 and 0.01"
+                )
+        for field in set(changes) - {"fee", "settlement_adjustment"}:
             if changes[field] is not None and not isinstance(changes[field], str):
                 raise ValidationError(f"changes.{field} must be a string or null")
     elif action == "VOID":
@@ -380,6 +408,11 @@ def normalize_event(event: Mapping[str, Any]) -> dict[str, Any]:
             normalized["fee"],
             field="fee",
         )
+        if "settlement_adjustment" in normalized:
+            normalized["settlement_adjustment"] = _decimal_string(
+                normalized["settlement_adjustment"],
+                field="settlement_adjustment",
+            )
         if "contract_multiplier" in normalized:
             normalized["contract_multiplier"] = format(
                 input_shares(
@@ -416,11 +449,17 @@ def normalize_event(event: Mapping[str, Any]) -> dict[str, Any]:
             input_shares(normalized["denominator"], field="denominator"),
             "f",
         )
-    elif action == "AMEND" and "fee" in normalized["changes"]:
-        normalized["changes"]["fee"] = _decimal_string(
-            normalized["changes"]["fee"],
-            field="changes.fee",
-        )
+    elif action == "AMEND":
+        if "fee" in normalized["changes"]:
+            normalized["changes"]["fee"] = _decimal_string(
+                normalized["changes"]["fee"],
+                field="changes.fee",
+            )
+        if "settlement_adjustment" in normalized["changes"]:
+            normalized["changes"]["settlement_adjustment"] = _decimal_string(
+                normalized["changes"]["settlement_adjustment"],
+                field="changes.settlement_adjustment",
+            )
     elif action in MARKET_ACTIONS:
         normalized["close"] = format(
             input_price(normalized["close"], field="close"),
