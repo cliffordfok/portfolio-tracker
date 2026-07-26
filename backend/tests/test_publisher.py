@@ -16,6 +16,7 @@ from portfolio_tracker.publisher import (
     RemoteContent,
     SnapshotPublisher,
 )
+from portfolio_tracker.snapshot import build_snapshot
 
 
 class FakeClient:
@@ -84,10 +85,14 @@ class PublisherTests(unittest.TestCase):
         self.temp.cleanup()
 
     def write_snapshot(self, revision: int, marker: str) -> bytes:
-        content = json.dumps(
-            {"schema_version": 3, "revision": revision, "marker": marker},
-            sort_keys=True,
-        ).encode("utf-8")
+        payload = build_snapshot(self.root, write=False)
+        payload["revision"] = revision
+        payload["source_head"]["paper"]["count"] = revision
+        payload["source_head"]["paper"]["last_event_id"] = (
+            f"paper-publisher-{revision}" if revision else None
+        )
+        payload["marker"] = marker
+        content = json.dumps(payload, sort_keys=True).encode("utf-8")
         self.snapshot_path.write_bytes(content)
         return content
 
@@ -106,6 +111,22 @@ class PublisherTests(unittest.TestCase):
         self.assertFalse((self.root / "state" / "publication-attempt.json").exists())
         self.assertFalse((self.root / "state" / "publish.pending").exists())
         self.assertEqual(len(self.client.put_calls), 1)
+
+    def test_nested_snapshot_corruption_fails_before_github_requests(self) -> None:
+        corrupted = json.loads(self.snapshot_path.read_text(encoding="utf-8"))
+        corrupted["portfolios"]["paper"]["holdings"] = "not-an-array"
+        atomic_write_json(self.snapshot_path, corrupted)
+
+        with self.assertRaisesRegex(PublicationError, "paper.holdings"):
+            self.publisher().publish()
+
+        self.assertEqual(self.client.branch_calls, 0)
+        self.assertEqual(self.client.get_calls, 0)
+        self.assertEqual(self.client.put_calls, [])
+        self.assertTrue((self.root / "state" / "publish.pending").exists())
+        self.assertFalse(
+            (self.root / "state" / "publication-attempt.json").exists()
+        )
 
     def test_missing_pending_marker_exits_without_github_requests(self) -> None:
         content = self.snapshot_path.read_bytes()

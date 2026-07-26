@@ -16,8 +16,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Callable, Mapping, Protocol
 
-from .errors import PublicationError
+from .errors import PublicationError, ValidationError
 from .ledger import FileLock, atomic_write_json, durable_unlink
+from .snapshot import validate_snapshot
 
 
 class NetworkFailure(Exception):
@@ -259,8 +260,12 @@ class SnapshotPublisher:
             payload = json.loads(content)
         except (OSError, json.JSONDecodeError) as exc:
             raise PublicationError("local snapshot is missing or invalid") from exc
-        if not isinstance(payload, dict) or "revision" not in payload:
-            raise PublicationError("local snapshot has no revision")
+        try:
+            validate_snapshot(payload)
+        except ValidationError as exc:
+            raise PublicationError(
+                f"local snapshot failed schema validation: {exc}"
+            ) from exc
         return content, payload, _hash(content)
 
     def _write_attempt(
@@ -327,9 +332,9 @@ class SnapshotPublisher:
         with FileLock(self.lock_path, timeout=0):
             for attempt_number in range(1, self.max_attempts + 1):
                 try:
+                    local_bytes, local_payload, local_hash = self._snapshot()
                     if not self.client.branch_exists():
                         raise PublicationError("portfolio-data branch does not exist")
-                    local_bytes, local_payload, local_hash = self._snapshot()
                     published = _read_json(self.published_state_path)
                     intent = _read_json(self.attempt_path)
                     remote = self.client.get_content()

@@ -7,22 +7,406 @@ import json
 from bisect import bisect_left
 from collections import defaultdict
 from datetime import UTC, date, datetime, time, timedelta
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from .decimal_utils import ZERO, amount_for, json_safe, money, percent, price, shares
-from .errors import BusinessInvariantError
+from .errors import BusinessInvariantError, ValidationError
 from .ledger import FileLock, LedgerStore, atomic_write_json, durable_unlink
 from .replay import ReplayResult, replay_portfolio
-from .schemas import parse_timestamp
+from .schemas import SYMBOL_RE, parse_timestamp
 
 try:
     NEW_YORK: ZoneInfo | None = ZoneInfo("America/New_York")
 except ZoneInfoNotFoundError:
     NEW_YORK = None
 MARKET_CLOSE = time(16, 0)
+
+
+def _snapshot_decimal_or_none(value: Any, *, label: str) -> None:
+    if value is None:
+        return
+    if not isinstance(value, str) or not value:
+        raise ValidationError(f"{label} must be a Decimal string or null")
+    try:
+        parsed = Decimal(value)
+    except InvalidOperation as exc:
+        raise ValidationError(
+            f"{label} must be a Decimal string or null"
+        ) from exc
+    if not parsed.is_finite():
+        raise ValidationError(f"{label} must be finite")
+
+
+def _snapshot_date(value: Any, *, label: str) -> None:
+    if not isinstance(value, str):
+        raise ValidationError(f"{label} must use YYYY-MM-DD")
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError as exc:
+        raise ValidationError(f"{label} must use YYYY-MM-DD") from exc
+    if parsed.isoformat() != value:
+        raise ValidationError(f"{label} must use YYYY-MM-DD")
+
+
+def _snapshot_timestamp(
+    value: Any,
+    *,
+    label: str,
+    nullable: bool = True,
+) -> None:
+    if value is None and nullable:
+        return
+    try:
+        parse_timestamp(value, field=label)
+    except (ValidationError, ValueError) as exc:
+        raise ValidationError(
+            f"{label} must be a UTC timestamp or null"
+        ) from exc
+
+
+def validate_snapshot(snapshot: Any) -> None:
+    """Validate the complete intrinsic schema of one public snapshot."""
+
+    if not isinstance(snapshot, dict):
+        raise ValidationError("portfolio snapshot must be a JSON object")
+    if snapshot.get("schema_version") != 3:
+        raise ValidationError("portfolio snapshot schema_version must be 3")
+    revision = snapshot.get("revision")
+    if (
+        isinstance(revision, bool)
+        or not isinstance(revision, int)
+        or revision < 0
+    ):
+        raise ValidationError(
+            "portfolio snapshot revision must be a non-negative integer"
+        )
+    if snapshot.get("currency") != "USD":
+        raise ValidationError("portfolio snapshot currency must be USD")
+
+    source_head = snapshot.get("source_head")
+    if (
+        not isinstance(source_head, dict)
+        or set(source_head) != {"paper", "live", "market"}
+    ):
+        raise ValidationError(
+            "portfolio snapshot source_head must contain paper, live, and market"
+        )
+    source_count = 0
+    for name in ("paper", "live", "market"):
+        head = source_head[name]
+        if not isinstance(head, dict):
+            raise ValidationError(f"source_head.{name} must be an object")
+        count = head.get("count")
+        if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+            raise ValidationError(
+                f"source_head.{name}.count must be a non-negative integer"
+            )
+        digest = head.get("hash")
+        if (
+            not isinstance(digest, str)
+            or len(digest) != 64
+            or any(character not in "0123456789abcdef" for character in digest)
+        ):
+            raise ValidationError(
+                f"source_head.{name}.hash must be a lowercase SHA-256 digest"
+            )
+        last_event_id = head.get("last_event_id")
+        if count == 0:
+            if last_event_id is not None:
+                raise ValidationError(
+                    f"source_head.{name}.last_event_id must be null when count is zero"
+                )
+        elif (
+            not isinstance(last_event_id, str)
+            or not last_event_id.startswith(f"{name}-")
+        ):
+            raise ValidationError(
+                f"source_head.{name}.last_event_id is invalid"
+            )
+        source_count += count
+    if revision != source_count:
+        raise ValidationError(
+            "portfolio snapshot revision does not match source_head counts"
+        )
+
+    _snapshot_timestamp(
+        snapshot.get("generated_at"),
+        label="snapshot.generated_at",
+        nullable=False,
+    )
+    for field in ("data_as_of", "prices_as_of"):
+        if field not in snapshot:
+            raise ValidationError(f"portfolio snapshot is missing {field}")
+        _snapshot_timestamp(snapshot[field], label=f"snapshot.{field}")
+    warnings = snapshot.get("warnings")
+    if not isinstance(warnings, list) or not all(
+        isinstance(warning, str) for warning in warnings
+    ):
+        raise ValidationError("portfolio snapshot warnings must be strings")
+
+    portfolios = snapshot.get("portfolios")
+    if (
+        not isinstance(portfolios, dict)
+        or set(portfolios) != {"paper", "live"}
+    ):
+        raise ValidationError(
+            "portfolio snapshot portfolios must contain paper and live"
+        )
+    for name in ("paper", "live"):
+        portfolio = portfolios[name]
+        if not isinstance(portfolio, dict):
+            raise ValidationError(
+                f"portfolio snapshot has no {name} object"
+            )
+        if portfolio.get("data_status") not in {
+            "OK",
+            "INSUFFICIENT_DATA",
+            "NO_DATA",
+        }:
+            raise ValidationError(f"{name} data_status is invalid")
+        for field in ("holdings", "recent_trades", "daily"):
+            if not isinstance(portfolio.get(field), list):
+                raise ValidationError(f"{name}.{field} must be an array")
+        for field in ("cash", "initial_cash"):
+            if field in portfolio:
+                _snapshot_decimal_or_none(
+                    portfolio[field],
+                    label=f"{name}.{field}",
+                )
+
+        for holding in portfolio["holdings"]:
+            if not isinstance(holding, dict):
+                raise ValidationError(
+                    f"{name}.holdings entries must be objects"
+                )
+            if (
+                not isinstance(holding.get("symbol"), str)
+                or not SYMBOL_RE.fullmatch(holding["symbol"])
+            ):
+                raise ValidationError(f"{name}.holdings symbol is invalid")
+            for field in (
+                "shares",
+                "avg_cost",
+                "cost_basis",
+                "current_price",
+                "market_value",
+                "unrealized_pnl",
+                "unrealized_pnl_pct",
+            ):
+                if field not in holding:
+                    raise ValidationError(
+                        f"{name}.holdings is missing {field}"
+                    )
+                _snapshot_decimal_or_none(
+                    holding[field],
+                    label=f"{name}.holdings.{field}",
+                )
+            if "market_price_as_of" not in holding:
+                raise ValidationError(
+                    f"{name}.holdings is missing market_price_as_of"
+                )
+            _snapshot_timestamp(
+                holding["market_price_as_of"],
+                label=f"{name}.holdings.market_price_as_of",
+            )
+
+        for trade in portfolio["recent_trades"]:
+            if not isinstance(trade, dict) or trade.get("action") not in {
+                "BUY",
+                "SELL",
+                "CASH_FLOW",
+            }:
+                raise ValidationError(
+                    f"{name}.recent_trades entry is invalid"
+                )
+            if not isinstance(trade.get("event_id"), str) or not trade["event_id"]:
+                raise ValidationError(
+                    f"{name}.recent_trades event_id is invalid"
+                )
+            if trade.get("portfolio") != name:
+                raise ValidationError(
+                    f"{name}.recent_trades contains a cross-portfolio event"
+                )
+            if not isinstance(trade.get("source"), str) or not trade["source"]:
+                raise ValidationError(
+                    f"{name}.recent_trades source is invalid"
+                )
+            ledger_seq = trade.get("ledger_seq")
+            if (
+                isinstance(ledger_seq, bool)
+                or not isinstance(ledger_seq, int)
+                or ledger_seq < 1
+            ):
+                raise ValidationError(
+                    f"{name}.recent_trades ledger_seq is invalid"
+                )
+            _snapshot_timestamp(
+                trade.get("occurred_at"),
+                label=f"{name}.recent_trades.occurred_at",
+                nullable=False,
+            )
+            _snapshot_timestamp(
+                trade.get("created_at"),
+                label=f"{name}.recent_trades.created_at",
+                nullable=False,
+            )
+            if trade["action"] in {"BUY", "SELL"}:
+                if (
+                    not isinstance(trade.get("symbol"), str)
+                    or not SYMBOL_RE.fullmatch(trade["symbol"])
+                ):
+                    raise ValidationError(
+                        f"{name}.recent_trades symbol is invalid"
+                    )
+                for field in ("shares", "price", "fee", "pnl", "pnl_pct"):
+                    if field not in trade:
+                        raise ValidationError(
+                            f"{name}.recent_trades is missing {field}"
+                        )
+                    _snapshot_decimal_or_none(
+                        trade[field],
+                        label=f"{name}.recent_trades.{field}",
+                    )
+            elif trade.get("symbol") != "USD":
+                raise ValidationError(
+                    "CASH_FLOW snapshot symbol must be USD"
+                )
+            else:
+                if "amount" not in trade:
+                    raise ValidationError(
+                        f"{name}.recent_trades is missing amount"
+                    )
+                _snapshot_decimal_or_none(
+                    trade["amount"],
+                    label=f"{name}.recent_trades.amount",
+                )
+
+        for point in portfolio["daily"]:
+            if not isinstance(point, dict):
+                raise ValidationError(
+                    f"{name}.daily entries must be objects"
+                )
+            _snapshot_date(point.get("date"), label=f"{name}.daily.date")
+            if point.get("data_status") not in {
+                "OK",
+                "INSUFFICIENT_DATA",
+                "INSUFFICIENT_MARKET_DATA",
+            }:
+                raise ValidationError(f"{name}.daily data_status is invalid")
+            for field in (
+                "nav",
+                "cash",
+                "external_flow",
+                "daily_return",
+                "cumulative_return",
+                "segment_return",
+                "pnl",
+            ):
+                if field not in point:
+                    raise ValidationError(f"{name}.daily is missing {field}")
+                _snapshot_decimal_or_none(
+                    point[field],
+                    label=f"{name}.daily.{field}",
+                )
+            missing_symbols = point.get("missing_symbols")
+            if not isinstance(missing_symbols, list) or not all(
+                isinstance(symbol, str) and SYMBOL_RE.fullmatch(symbol)
+                for symbol in missing_symbols
+            ):
+                raise ValidationError(
+                    f"{name}.daily missing_symbols is invalid"
+                )
+            segment_id = point.get("segment_id")
+            if not (
+                segment_id is None
+                or (
+                    not isinstance(segment_id, bool)
+                    and isinstance(segment_id, int)
+                    and segment_id > 0
+                )
+            ):
+                raise ValidationError(
+                    f"{name}.daily segment_id is invalid"
+                )
+
+        metrics = portfolio.get("metrics")
+        if not isinstance(metrics, dict):
+            raise ValidationError(f"{name}.metrics must be an object")
+        if metrics.get("data_status") not in {
+            "OK",
+            "INSUFFICIENT_DATA",
+            "NO_DATA",
+        }:
+            raise ValidationError(f"{name}.metrics data_status is invalid")
+        for field in (
+            "total_return",
+            "realized_pnl",
+            "win_rate",
+            "max_drawdown",
+            "sharpe_ratio",
+        ):
+            if field not in metrics:
+                raise ValidationError(
+                    f"{name}.metrics is missing {field}"
+                )
+            _snapshot_decimal_or_none(
+                metrics[field],
+                label=f"{name}.metrics.{field}",
+            )
+        closed_episodes = metrics.get("closed_episodes")
+        if (
+            isinstance(closed_episodes, bool)
+            or not isinstance(closed_episodes, int)
+            or closed_episodes < 0
+        ):
+            raise ValidationError(
+                f"{name}.metrics.closed_episodes is invalid"
+            )
+
+    benchmark = snapshot.get("benchmark")
+    if not isinstance(benchmark, dict) or benchmark.get("symbol") != "SPY":
+        raise ValidationError("portfolio snapshot benchmark must be SPY")
+    daily = benchmark.get("daily")
+    if not isinstance(daily, list):
+        raise ValidationError(
+            "portfolio snapshot benchmark.daily must be an array"
+        )
+    for point in daily:
+        if not isinstance(point, dict):
+            raise ValidationError(
+                "benchmark.daily entries must be objects"
+            )
+        _snapshot_date(point.get("date"), label="benchmark.daily.date")
+        if point.get("data_status") not in {
+            "OK",
+            "INSUFFICIENT_MARKET_DATA",
+        }:
+            raise ValidationError("benchmark.daily data_status is invalid")
+        for field in (
+            "close",
+            "daily_return",
+            "cumulative_return",
+            "segment_return",
+        ):
+            if field not in point:
+                raise ValidationError(f"benchmark.daily is missing {field}")
+            _snapshot_decimal_or_none(
+                point[field],
+                label=f"benchmark.daily.{field}",
+            )
+        segment_id = point.get("segment_id")
+        if not (
+            segment_id is None
+            or (
+                not isinstance(segment_id, bool)
+                and isinstance(segment_id, int)
+                and segment_id > 0
+            )
+        ):
+            raise ValidationError("benchmark.daily segment_id is invalid")
 
 
 def _observed(day: date) -> date:
@@ -745,6 +1129,7 @@ def _build_snapshot_locked(
             "warnings": warnings,
         }
     )
+    validate_snapshot(snapshot)
 
     if write:
         target = Path(output) if output else root_path / "snapshots" / "portfolio-snapshot.json"
@@ -822,11 +1207,13 @@ def build_snapshot_if_needed(
                     current = parsed
             except (OSError, json.JSONDecodeError):
                 current = None
+        if current is not None:
+            try:
+                validate_snapshot(current)
+            except ValidationError:
+                current = None
         structurally_current = (
             current is not None
-            and current.get("schema_version") == 3
-            and isinstance(current.get("portfolios"), dict)
-            and isinstance(current.get("benchmark"), dict)
             and current.get("source_head") == current_heads
         )
         if structurally_current and not repairs:

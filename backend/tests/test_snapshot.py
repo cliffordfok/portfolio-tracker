@@ -12,7 +12,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from portfolio_tracker.cli import main as cli_main
-from portfolio_tracker.ledger import LedgerStore
+from portfolio_tracker.ledger import LedgerStore, atomic_write_json
 from portfolio_tracker.snapshot import (
     _metrics,
     _session_for_event,
@@ -417,6 +417,29 @@ class SnapshotTests(unittest.TestCase):
         self.assertTrue(rebuilt)
         self.assertEqual(updated["revision"], first["revision"] + 1)
         self.assertFalse((self.root / "state" / "rebuild.pending").exists())
+
+    def test_if_needed_rebuilds_snapshot_with_nested_corruption(self) -> None:
+        self.append(
+            "PORTFOLIO_OPEN",
+            "paper-open",
+            "2024-01-01T14:00:00Z",
+            initial_cash="1000",
+        )
+        build_snapshot(self.root)
+        path = self.root / "snapshots" / "portfolio-snapshot.json"
+        corrupted = json.loads(path.read_text(encoding="utf-8"))
+        corrupted["portfolios"]["paper"]["holdings"] = "not-an-array"
+        atomic_write_json(path, corrupted)
+        marker = self.root / "state" / "rebuild.pending"
+        atomic_write_json(marker, {"requested_by": "corruption-test"})
+
+        repaired, rebuilt = build_snapshot_if_needed(self.root)
+
+        self.assertTrue(rebuilt)
+        self.assertEqual(repaired["portfolios"]["paper"]["holdings"], [])
+        self.assertFalse(marker.exists())
+        persisted = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(persisted, repaired)
 
     def test_cli_append_reuses_a_systemd_preempted_snapshot(self) -> None:
         self.append(
