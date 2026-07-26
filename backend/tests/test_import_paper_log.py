@@ -80,12 +80,13 @@ class PaperLogImporterTests(unittest.TestCase):
         self.assertEqual(trade.occurred_at, "2026-07-16T14:00:29.976330Z")
 
     def test_legacy_sell_derived_fields_are_allowed_but_never_imported(self) -> None:
-        base = self.sample(action="SELL", shares=0.5, price=181.0)
+        base = self.sample(action="SELL_PARTIAL", shares=0.5, price=181.0)
         legacy_sell = {
             **base,
             "pnl": 0.25,
             "pnl_pct": 0.00275,
             "proceeds": 90.5,
+            "remaining_shares": 0.5,
         }
 
         self.assertEqual(
@@ -94,7 +95,21 @@ class PaperLogImporterTests(unittest.TestCase):
         )
         trade = IMPORTER.prepare_trade(legacy_sell, line_number=115)
         payload = IMPORTER.expected_ledger_payload(trade)
-        self.assertTrue({"pnl", "pnl_pct", "proceeds"}.isdisjoint(payload))
+        self.assertTrue(
+            {"pnl", "pnl_pct", "proceeds", "remaining_shares"}.isdisjoint(
+                payload
+            )
+        )
+
+    def test_unrecognized_source_field_still_fails_closed(self) -> None:
+        with self.assertRaisesRegex(
+            IMPORTER.PaperLogImportError,
+            "unknown fields: unexpected",
+        ):
+            IMPORTER.prepare_trade(
+                {**self.sample(), "unexpected": "value"},
+                line_number=1,
+            )
 
     def test_complete_preflight_happens_before_any_write(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
