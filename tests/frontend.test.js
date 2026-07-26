@@ -276,7 +276,16 @@ test("static page contains all required tabs, tables, and D3 v7", async () => {
   ]) {
     assert.ok(html.includes(required), `missing ${required}`);
   }
-  assert.match(config, /contents\/portfolio-snapshot\.json\?ref=portfolio-data/);
+  const rawDataUrl =
+    "https://raw.githubusercontent.com/cliffordfok/portfolio-tracker/portfolio-data/portfolio-snapshot.json";
+  const contentsApiUrl =
+    "https://api.github.com/repos/cliffordfok/portfolio-tracker/contents/portfolio-snapshot.json?ref=portfolio-data";
+  assert.ok(config.includes(rawDataUrl));
+  assert.ok(config.includes(contentsApiUrl));
+  assert.ok(
+    config.indexOf(rawDataUrl) < config.indexOf(contentsApiUrl),
+    "public raw snapshot must be tried before the rate-limited Contents API",
+  );
   assert.doesNotMatch(config, /contents\/data\/portfolio-snapshot\.json/);
 });
 

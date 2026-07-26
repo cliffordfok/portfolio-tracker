@@ -1,5 +1,6 @@
 window.PORTFOLIO_CONFIG = Object.freeze({
   snapshotUrls: Object.freeze([
+    "https://raw.githubusercontent.com/cliffordfok/portfolio-tracker/portfolio-data/portfolio-snapshot.json",
     "https://api.github.com/repos/cliffordfok/portfolio-tracker/contents/portfolio-snapshot.json?ref=portfolio-data",
     "./data/portfolio-snapshot.json",
   ]),

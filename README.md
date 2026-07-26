@@ -347,18 +347,20 @@ trades、NAV 與 metrics，不需要 agent 自行重算 FIFO。
    `/etc/portfolio-tracker/portfolio.env`，變數名必須為
    `PORTFOLIO_GITHUB_TOKEN`。不要改用 `/data/.hermes/.env` 的
    `GITHUB_TOKEN`，亦永遠不要放入 repository、JSON、systemd unit 或 log。
-7. `js/config.js` 已先讀取公開 data branch 的 GitHub raw media endpoint；
-   未建立 data branch 時才會回退至 `main` 的虛構示範快照：
+7. `js/config.js` 先讀取公開 data branch 的 raw endpoint，避免未認證
+   GitHub Contents API rate limit；API endpoint 及 `main` 本地快照只作後備：
 
 ```js
 snapshotUrls: [
+  "https://raw.githubusercontent.com/cliffordfok/portfolio-tracker/portfolio-data/portfolio-snapshot.json",
   "https://api.github.com/repos/cliffordfok/portfolio-tracker/contents/portfolio-snapshot.json?ref=portfolio-data",
   "./data/portfolio-snapshot.json",
 ]
 ```
 
-Frontend request 使用 GitHub raw media `Accept` header、cache-busting query、
-2 分鐘 TTL 及每小時共享 budget；唔依賴 jsDelivr cache。
+Frontend request 使用 cache-busting query、2 分鐘 TTL 及每小時共享 budget；
+Contents API 後備 request 會使用 GitHub raw media `Accept` header，亦唔依賴
+jsDelivr cache。
 
 本專案沒有 GitHub Actions；GitHub Pages 直接由 branch root 提供靜態檔案。
 
