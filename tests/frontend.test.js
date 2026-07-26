@@ -327,6 +327,27 @@ test("only the publisher service receives the GitHub token environment", async (
   );
 });
 
+test("Hermes contract uses the real Docker paths and never reads credentials", async () => {
+  const contract = await readFile(
+    new URL("../.hermes.md", import.meta.url),
+    "utf8",
+  );
+  for (const required of [
+    "/data/portfolio-tracker",
+    "/data/portfolio",
+    "telegram-trade",
+    "live-telegram-TELEGRAM_UPDATE_ID",
+    "Live has no `PORTFOLIO_OPEN` yet",
+    "Only `portfolio_cron.py publish|maintain`",
+    "Do not read `/data/.hermes/.env`",
+    "`/data/portfolio/secrets/github-token`",
+  ]) {
+    assert.ok(contract.includes(required), `missing Hermes rule: ${required}`);
+  }
+  assert.doesNotMatch(contract, /Project code: `\/opt\/portfolio-tracker`/);
+  assert.doesNotMatch(contract, /Private runtime: `\/var\/lib\/portfolio-tracker`/);
+});
+
 class MemoryStorage {
   constructor() {
     this.values = new Map();
