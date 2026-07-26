@@ -86,8 +86,8 @@
     "symbol": "SPY"
   },
   "currency": "USD",
-  "data_as_of": "2026-07-24T20:00:00Z",
-  "generated_at": "2026-07-26T09:32:50.291047Z",
+  "data_as_of": "2026-07-26T09:50:59Z",
+  "generated_at": "2026-07-26T09:50:59.753074Z",
   "portfolios": {
     "live": {
       "daily": [],
@@ -105,7 +105,7 @@
       "recent_trades": []
     },
     "paper": {
-      "cash": "64409.2773",
+      "cash": "100338.1781",
       "daily": [
         {
           "cash": "99970.432",
@@ -121,55 +121,46 @@
           "segment_return": "0"
         },
         {
-          "cash": "63902.036",
-          "cumulative_return": null,
-          "daily_return": null,
-          "data_status": "INSUFFICIENT_MARKET_DATA",
+          "cash": "99830.9368",
+          "cumulative_return": "-0.00139536",
+          "daily_return": "-0.00139536",
+          "data_status": "OK",
           "date": "2026-07-17",
           "external_flow": "0",
-          "missing_symbols": [
-            "XLP",
-            "XLV"
-          ],
-          "nav": null,
-          "pnl": null,
-          "segment_id": null,
-          "segment_return": null
+          "missing_symbols": [],
+          "nav": "99830.9368",
+          "pnl": "-169.0632",
+          "segment_id": 1,
+          "segment_return": "-0.00139536"
         },
         {
-          "cash": "63902.036",
-          "cumulative_return": null,
-          "daily_return": null,
-          "data_status": "INSUFFICIENT_MARKET_DATA",
+          "cash": "99830.9368",
+          "cumulative_return": "-0.00139536",
+          "daily_return": "0",
+          "data_status": "OK",
           "date": "2026-07-18",
           "external_flow": "0",
-          "missing_symbols": [
-            "XLP",
-            "XLV"
-          ],
-          "nav": null,
-          "pnl": null,
-          "segment_id": null,
-          "segment_return": null
+          "missing_symbols": [],
+          "nav": "99830.9368",
+          "pnl": "-169.0632",
+          "segment_id": 1,
+          "segment_return": "-0.00139536"
         },
         {
-          "cash": "63902.036",
-          "cumulative_return": null,
-          "daily_return": null,
-          "data_status": "INSUFFICIENT_MARKET_DATA",
+          "cash": "99830.9368",
+          "cumulative_return": "-0.00139536",
+          "daily_return": "0",
+          "data_status": "OK",
           "date": "2026-07-19",
           "external_flow": "0",
-          "missing_symbols": [
-            "XLP",
-            "XLV"
-          ],
-          "nav": null,
-          "pnl": null,
-          "segment_id": null,
-          "segment_return": null
+          "missing_symbols": [],
+          "nav": "99830.9368",
+          "pnl": "-169.0632",
+          "segment_id": 1,
+          "segment_return": "-0.00139536"
         },
         {
-          "cash": "21321.5383",
+          "cash": "57250.4391",
           "cumulative_return": null,
           "daily_return": null,
           "data_status": "INSUFFICIENT_MARKET_DATA",
@@ -178,9 +169,7 @@
           "missing_symbols": [
             "AMZN",
             "AVGO",
-            "MSFT",
-            "XLP",
-            "XLV"
+            "MSFT"
           ],
           "nav": null,
           "pnl": null,
@@ -188,7 +177,7 @@
           "segment_return": null
         },
         {
-          "cash": "13893.7573",
+          "cash": "49822.6581",
           "cumulative_return": null,
           "daily_return": null,
           "data_status": "INSUFFICIENT_MARKET_DATA",
@@ -198,9 +187,7 @@
             "AMD",
             "NVDA",
             "SPY",
-            "TSLA",
-            "XLP",
-            "XLV"
+            "TSLA"
           ],
           "nav": null,
           "pnl": null,
@@ -208,88 +195,56 @@
           "segment_return": null
         },
         {
-          "cash": "64409.2773",
+          "cash": "100338.1781",
           "cumulative_return": null,
           "daily_return": null,
-          "data_status": "INSUFFICIENT_MARKET_DATA",
+          "data_status": "OK",
           "date": "2026-07-22",
           "external_flow": "0",
-          "missing_symbols": [
-            "XLP",
-            "XLV"
-          ],
-          "nav": null,
-          "pnl": null,
-          "segment_id": null,
-          "segment_return": null
+          "missing_symbols": [],
+          "nav": "100338.1781",
+          "pnl": "338.1781",
+          "segment_id": 2,
+          "segment_return": "0"
         },
         {
-          "cash": "64409.2773",
+          "cash": "100338.1781",
           "cumulative_return": null,
-          "daily_return": null,
-          "data_status": "INSUFFICIENT_MARKET_DATA",
+          "daily_return": "0",
+          "data_status": "OK",
           "date": "2026-07-23",
           "external_flow": "0",
-          "missing_symbols": [
-            "XLP",
-            "XLV"
-          ],
-          "nav": null,
-          "pnl": null,
-          "segment_id": null,
-          "segment_return": null
+          "missing_symbols": [],
+          "nav": "100338.1781",
+          "pnl": "338.1781",
+          "segment_id": 2,
+          "segment_return": "0"
         },
         {
-          "cash": "64409.2773",
+          "cash": "100338.1781",
           "cumulative_return": null,
-          "daily_return": null,
-          "data_status": "INSUFFICIENT_MARKET_DATA",
+          "daily_return": "0",
+          "data_status": "OK",
           "date": "2026-07-24",
           "external_flow": "0",
-          "missing_symbols": [
-            "XLP",
-            "XLV"
-          ],
-          "nav": null,
-          "pnl": null,
-          "segment_id": null,
-          "segment_return": null
+          "missing_symbols": [],
+          "nav": "100338.1781",
+          "pnl": "338.1781",
+          "segment_id": 2,
+          "segment_return": "0"
         }
       ],
       "data_status": "INSUFFICIENT_DATA",
-      "holdings": [
-        {
-          "avg_cost": "85.08191489361702127659574468",
-          "cost_basis": "19994.25",
-          "current_price": null,
-          "market_price_as_of": null,
-          "market_value": null,
-          "shares": "235",
-          "symbol": "XLP",
-          "unrealized_pnl": null,
-          "unrealized_pnl_pct": null
-        },
-        {
-          "avg_cost": "160.915",
-          "cost_basis": "15930.585",
-          "current_price": null,
-          "market_price_as_of": null,
-          "market_value": null,
-          "shares": "99",
-          "symbol": "XLV",
-          "unrealized_pnl": null,
-          "unrealized_pnl_pct": null
-        }
-      ],
+      "holdings": [],
       "initial_cash": "100000",
       "metrics": {
-        "closed_episodes": 31,
+        "closed_episodes": 34,
         "data_status": "INSUFFICIENT_DATA",
         "max_drawdown": null,
-        "realized_pnl": "334.1123",
+        "realized_pnl": "338.1781",
         "sharpe_ratio": null,
         "total_return": null,
-        "win_rate": "0.48387097"
+        "win_rate": "0.47058824"
       },
       "realized_pnl_per_trade": [
         {
@@ -725,16 +680,16 @@
           "symbol": "XLP"
         },
         {
-          "cumulative_pnl": "-249.8175",
+          "cumulative_pnl": "-217.0782",
           "event_id": "paper-swing-17f6ceb5fc8bd56c3a8ddf4b7edbe65f",
           "fee": "0",
           "matches": [
             {
-              "buy_event_id": "paper-swing-86e362773c5d80c2bdb8f3777fbe8d43",
+              "buy_event_id": "paper-swing-2447e9418f1d46ee7ba81289cba4155c",
               "buy_fee": "0",
-              "buy_price": "161.2457",
-              "cost": "15963.3243",
-              "pnl": "-80.7543",
+              "buy_price": "160.915",
+              "cost": "15930.585",
+              "pnl": "-48.015",
               "proceeds": "15882.57",
               "sell_fee": "0",
               "sell_price": "160.43",
@@ -742,23 +697,23 @@
             }
           ],
           "occurred_at": "2026-07-20T14:30:47.977065Z",
-          "pnl": "-80.7543",
-          "pnl_pct": "-0.00505874",
+          "pnl": "-48.015",
+          "pnl_pct": "-0.00301401",
           "price": "160.43",
           "shares": "99",
           "symbol": "XLV"
         },
         {
-          "cumulative_pnl": "-233.1924",
+          "cumulative_pnl": "-214.0582",
           "event_id": "paper-swing-c36683aa299fd79d471de0095adbb46f",
           "fee": "0",
           "matches": [
             {
-              "buy_event_id": "paper-swing-dccc0095fba2a3ba78caf3fd9fdffb3e",
+              "buy_event_id": "paper-swing-915954057d0d7fd4fafb8311f0b0efa6",
               "buy_fee": "0",
-              "buy_price": "84.9599",
-              "cost": "12828.9449",
-              "pnl": "16.6251",
+              "buy_price": "85.05",
+              "cost": "12842.55",
+              "pnl": "3.02",
               "proceeds": "12845.57",
               "sell_fee": "0",
               "sell_price": "85.07",
@@ -766,49 +721,38 @@
             }
           ],
           "occurred_at": "2026-07-20T14:30:47.977550Z",
-          "pnl": "16.6251",
-          "pnl_pct": "0.00129591",
+          "pnl": "3.02",
+          "pnl_pct": "0.00023516",
           "price": "85.07",
           "shares": "151",
           "symbol": "XLP"
         },
         {
-          "cumulative_pnl": "-254.874",
+          "cumulative_pnl": "-250.8082",
           "event_id": "paper-swing-07090ee4dcdd8bc8b5905deb963f8ce6",
           "fee": "0",
           "matches": [
             {
-              "buy_event_id": "paper-swing-dccc0095fba2a3ba78caf3fd9fdffb3e",
+              "buy_event_id": "paper-swing-dc33315e324aefcd7a03e2cba7249bf5",
               "buy_fee": "0",
-              "buy_price": "84.9599",
-              "cost": "7136.6316",
-              "pnl": "-8.8116",
-              "proceeds": "7127.82",
+              "buy_price": "85.1",
+              "cost": "12765",
+              "pnl": "-36.75",
+              "proceeds": "12728.25",
               "sell_fee": "0",
               "sell_price": "84.855",
-              "shares": "84"
-            },
-            {
-              "buy_event_id": "paper-swing-915954057d0d7fd4fafb8311f0b0efa6",
-              "buy_fee": "0",
-              "buy_price": "85.05",
-              "cost": "5613.3",
-              "pnl": "-12.87",
-              "proceeds": "5600.43",
-              "sell_fee": "0",
-              "sell_price": "84.855",
-              "shares": "66"
+              "shares": "150"
             }
           ],
           "occurred_at": "2026-07-20T15:30:54.184682Z",
-          "pnl": "-21.6816",
-          "pnl_pct": "-0.00170053",
+          "pnl": "-36.75",
+          "pnl_pct": "-0.00287897",
           "price": "84.855",
           "shares": "150",
           "symbol": "XLP"
         },
         {
-          "cumulative_pnl": "-212.314",
+          "cumulative_pnl": "-208.2482",
           "event_id": "paper-swing-c9df29785d1eadf995648c207f4b5bd4",
           "fee": "0",
           "matches": [
@@ -832,7 +776,7 @@
           "symbol": "MSFT"
         },
         {
-          "cumulative_pnl": "-228.689",
+          "cumulative_pnl": "-224.6232",
           "event_id": "paper-swing-b6ef961d5609b103b012e9726f50963a",
           "fee": "0",
           "matches": [
@@ -856,7 +800,7 @@
           "symbol": "MSFT"
         },
         {
-          "cumulative_pnl": "-235.064",
+          "cumulative_pnl": "-230.9982",
           "event_id": "paper-swing-9400b40cc413a2800330db2001fd9872",
           "fee": "0",
           "matches": [
@@ -880,7 +824,7 @@
           "symbol": "MSFT"
         },
         {
-          "cumulative_pnl": "-146.339",
+          "cumulative_pnl": "-142.2732",
           "event_id": "paper-swing-c3acef0766811e6b5ea10d6960634bef",
           "fee": "0",
           "matches": [
@@ -904,7 +848,7 @@
           "symbol": "AMD"
         },
         {
-          "cumulative_pnl": "-178.8925",
+          "cumulative_pnl": "-174.8267",
           "event_id": "paper-swing-c84f2a979c19b15a7112f9361b052b86",
           "fee": "0",
           "matches": [
@@ -928,7 +872,7 @@
           "symbol": "MSFT"
         },
         {
-          "cumulative_pnl": "-410.6425",
+          "cumulative_pnl": "-406.5767",
           "event_id": "paper-swing-4ce2cbc2012f1b51774eb5da6164c9ce",
           "fee": "0",
           "matches": [
@@ -952,7 +896,7 @@
           "symbol": "AMZN"
         },
         {
-          "cumulative_pnl": "-336.3277",
+          "cumulative_pnl": "-332.2619",
           "event_id": "paper-swing-f81cbf9b62022fc4eb960573404efb28",
           "fee": "0",
           "matches": [
@@ -976,7 +920,7 @@
           "symbol": "AVGO"
         },
         {
-          "cumulative_pnl": "-210.9277",
+          "cumulative_pnl": "-206.8619",
           "event_id": "paper-swing-2805ad97e6796fe23893f3702d1dffd4",
           "fee": "0",
           "matches": [
@@ -1000,7 +944,7 @@
           "symbol": "AMD"
         },
         {
-          "cumulative_pnl": "-217.8977",
+          "cumulative_pnl": "-213.8319",
           "event_id": "paper-swing-e38dfff0c3c87eba07cc9fb00342574c",
           "fee": "0",
           "matches": [
@@ -1024,7 +968,7 @@
           "symbol": "AVGO"
         },
         {
-          "cumulative_pnl": "-8.6177",
+          "cumulative_pnl": "-4.5519",
           "event_id": "paper-swing-270efb437e219686e811e5ae53b9926b",
           "fee": "0",
           "matches": [
@@ -1048,7 +992,7 @@
           "symbol": "AMD"
         },
         {
-          "cumulative_pnl": "160.6473",
+          "cumulative_pnl": "164.7131",
           "event_id": "paper-swing-2540397e31cef8dc223cf87eb4d4ea74",
           "fee": "0",
           "matches": [
@@ -1072,7 +1016,7 @@
           "symbol": "NVDA"
         },
         {
-          "cumulative_pnl": "394.8423",
+          "cumulative_pnl": "398.9081",
           "event_id": "paper-swing-e4eaddfa714b3e83e6b411bcb3d1a83b",
           "fee": "0",
           "matches": [
@@ -1096,7 +1040,7 @@
           "symbol": "AMD"
         },
         {
-          "cumulative_pnl": "416.4323",
+          "cumulative_pnl": "420.4981",
           "event_id": "paper-swing-c4cb29eaa46863f2d8bf7650ec003b24",
           "fee": "0",
           "matches": [
@@ -1120,7 +1064,7 @@
           "symbol": "SPY"
         },
         {
-          "cumulative_pnl": "334.1123",
+          "cumulative_pnl": "338.1781",
           "event_id": "paper-swing-9a9432c5b58efe9d4f345690b00f7df0",
           "fee": "0",
           "matches": [
@@ -1148,7 +1092,7 @@
         {
           "action": "SELL",
           "created_at": "2026-07-21T23:55:23.146349Z",
-          "cumulative_pnl": "334.1123",
+          "cumulative_pnl": "338.1781",
           "event_id": "paper-swing-9a9432c5b58efe9d4f345690b00f7df0",
           "fee": "0",
           "ledger_seq": 72,
@@ -1166,7 +1110,7 @@
         {
           "action": "SELL",
           "created_at": "2026-07-21T23:54:37.411751Z",
-          "cumulative_pnl": "416.4323",
+          "cumulative_pnl": "420.4981",
           "event_id": "paper-swing-c4cb29eaa46863f2d8bf7650ec003b24",
           "fee": "0",
           "ledger_seq": 71,
@@ -1184,7 +1128,7 @@
         {
           "action": "SELL",
           "created_at": "2026-07-21T23:54:37.354632Z",
-          "cumulative_pnl": "394.8423",
+          "cumulative_pnl": "398.9081",
           "event_id": "paper-swing-e4eaddfa714b3e83e6b411bcb3d1a83b",
           "fee": "0",
           "ledger_seq": 70,
@@ -1202,7 +1146,7 @@
         {
           "action": "SELL",
           "created_at": "2026-07-21T23:54:37.286907Z",
-          "cumulative_pnl": "160.6473",
+          "cumulative_pnl": "164.7131",
           "event_id": "paper-swing-2540397e31cef8dc223cf87eb4d4ea74",
           "fee": "0",
           "ledger_seq": 69,
@@ -1220,7 +1164,7 @@
         {
           "action": "SELL",
           "created_at": "2026-07-21T17:30:12.868181Z",
-          "cumulative_pnl": "-8.6177",
+          "cumulative_pnl": "-4.5519",
           "event_id": "paper-swing-270efb437e219686e811e5ae53b9926b",
           "fee": "0",
           "ledger_seq": 68,
@@ -1269,7 +1213,7 @@
         {
           "action": "SELL",
           "created_at": "2026-07-21T15:00:13.939177Z",
-          "cumulative_pnl": "-217.8977",
+          "cumulative_pnl": "-213.8319",
           "event_id": "paper-swing-e38dfff0c3c87eba07cc9fb00342574c",
           "fee": "0",
           "ledger_seq": 65,
@@ -1318,7 +1262,7 @@
         {
           "action": "SELL",
           "created_at": "2026-07-21T14:30:15.065728Z",
-          "cumulative_pnl": "-210.9277",
+          "cumulative_pnl": "-206.8619",
           "event_id": "paper-swing-2805ad97e6796fe23893f3702d1dffd4",
           "fee": "0",
           "ledger_seq": 62,
@@ -1367,7 +1311,7 @@
         {
           "action": "SELL",
           "created_at": "2026-07-21T14:00:17.000683Z",
-          "cumulative_pnl": "-336.3277",
+          "cumulative_pnl": "-332.2619",
           "event_id": "paper-swing-f81cbf9b62022fc4eb960573404efb28",
           "fee": "0",
           "ledger_seq": 59,
@@ -1384,7 +1328,7 @@
         {
           "action": "SELL",
           "created_at": "2026-07-21T14:00:17.000540Z",
-          "cumulative_pnl": "-410.6425",
+          "cumulative_pnl": "-406.5767",
           "event_id": "paper-swing-4ce2cbc2012f1b51774eb5da6164c9ce",
           "fee": "0",
           "ledger_seq": 58,
@@ -1401,7 +1345,7 @@
         {
           "action": "SELL",
           "created_at": "2026-07-21T14:00:16.999535Z",
-          "cumulative_pnl": "-178.8925",
+          "cumulative_pnl": "-174.8267",
           "event_id": "paper-swing-c84f2a979c19b15a7112f9361b052b86",
           "fee": "0",
           "ledger_seq": 57,
@@ -1434,7 +1378,7 @@
         {
           "action": "SELL",
           "created_at": "2026-07-20T19:01:01.647415Z",
-          "cumulative_pnl": "-146.339",
+          "cumulative_pnl": "-142.2732",
           "event_id": "paper-swing-c3acef0766811e6b5ea10d6960634bef",
           "fee": "0",
           "ledger_seq": 55,
@@ -1451,7 +1395,7 @@
         {
           "action": "SELL",
           "created_at": "2026-07-20T18:00:55.335662Z",
-          "cumulative_pnl": "-235.064",
+          "cumulative_pnl": "-230.9982",
           "event_id": "paper-swing-9400b40cc413a2800330db2001fd9872",
           "fee": "0",
           "ledger_seq": 54,
@@ -1484,7 +1428,7 @@
         {
           "action": "SELL",
           "created_at": "2026-07-20T17:00:53.755239Z",
-          "cumulative_pnl": "-228.689",
+          "cumulative_pnl": "-224.6232",
           "event_id": "paper-swing-b6ef961d5609b103b012e9726f50963a",
           "fee": "0",
           "ledger_seq": 52,
@@ -1533,7 +1477,7 @@
         {
           "action": "SELL",
           "created_at": "2026-07-20T16:00:53.893396Z",
-          "cumulative_pnl": "-212.314",
+          "cumulative_pnl": "-208.2482",
           "event_id": "paper-swing-c9df29785d1eadf995648c207f4b5bd4",
           "fee": "0",
           "ledger_seq": 49,
@@ -1566,13 +1510,13 @@
         {
           "action": "SELL",
           "created_at": "2026-07-20T15:30:54.184682Z",
-          "cumulative_pnl": "-254.874",
+          "cumulative_pnl": "-250.8082",
           "event_id": "paper-swing-07090ee4dcdd8bc8b5905deb963f8ce6",
           "fee": "0",
           "ledger_seq": 47,
           "occurred_at": "2026-07-20T15:30:54.184682Z",
-          "pnl": "-21.6816",
-          "pnl_pct": "-0.00170053",
+          "pnl": "-36.75",
+          "pnl_pct": "-0.00287897",
           "portfolio": "paper",
           "price": "84.855",
           "reason": "連續跌穿SMA10 (confirmed 3 candles)",
@@ -1615,13 +1559,13 @@
         {
           "action": "SELL",
           "created_at": "2026-07-20T14:30:47.977550Z",
-          "cumulative_pnl": "-233.1924",
+          "cumulative_pnl": "-214.0582",
           "event_id": "paper-swing-c36683aa299fd79d471de0095adbb46f",
           "fee": "0",
           "ledger_seq": 44,
           "occurred_at": "2026-07-20T14:30:47.977550Z",
-          "pnl": "16.6251",
-          "pnl_pct": "0.00129591",
+          "pnl": "3.02",
+          "pnl_pct": "0.00023516",
           "portfolio": "paper",
           "price": "85.07",
           "reason": "連續跌穿SMA10 (confirmed 3 candles)",
@@ -1632,13 +1576,13 @@
         {
           "action": "SELL",
           "created_at": "2026-07-20T14:30:47.977065Z",
-          "cumulative_pnl": "-249.8175",
+          "cumulative_pnl": "-217.0782",
           "event_id": "paper-swing-17f6ceb5fc8bd56c3a8ddf4b7edbe65f",
           "fee": "0",
           "ledger_seq": 43,
           "occurred_at": "2026-07-20T14:30:47.977065Z",
-          "pnl": "-80.7543",
-          "pnl_pct": "-0.00505874",
+          "pnl": "-48.015",
+          "pnl_pct": "-0.00301401",
           "portfolio": "paper",
           "price": "160.43",
           "reason": "連續跌穿SMA10 (confirmed 3 candles)",
@@ -1693,38 +1637,6 @@
           "shares": "39",
           "source": "swing-trader",
           "symbol": "AMD"
-        },
-        {
-          "action": "BUY",
-          "created_at": "2026-07-17T19:00:56.572829Z",
-          "event_id": "paper-swing-86e362773c5d80c2bdb8f3777fbe8d43",
-          "fee": "0",
-          "ledger_seq": 39,
-          "occurred_at": "2026-07-17T19:00:56.572829Z",
-          "pnl": null,
-          "pnl_pct": null,
-          "portfolio": "paper",
-          "price": "161.2457",
-          "reason": "高於SMA20(趨勢向上); 低過VWAP 0.6%",
-          "shares": "99",
-          "source": "swing-trader",
-          "symbol": "XLV"
-        },
-        {
-          "action": "BUY",
-          "created_at": "2026-07-17T19:00:56.572610Z",
-          "event_id": "paper-swing-dccc0095fba2a3ba78caf3fd9fdffb3e",
-          "fee": "0",
-          "ledger_seq": 38,
-          "occurred_at": "2026-07-17T19:00:56.572610Z",
-          "pnl": null,
-          "pnl_pct": null,
-          "portfolio": "paper",
-          "price": "84.9599",
-          "reason": "高於SMA20(趨勢向上); 低過VWAP 1.0%; 連續上升",
-          "shares": "235",
-          "source": "swing-trader",
-          "symbol": "XLP"
         },
         {
           "action": "SELL",
@@ -2324,7 +2236,7 @@
     }
   },
   "prices_as_of": "2026-07-24T20:00:00Z",
-  "revision": 86,
+  "revision": 88,
   "schema_version": 3,
   "source_head": {
     "live": {
@@ -2338,9 +2250,9 @@
       "last_event_id": "market-quote-2026-07-24-qqq-45a3a5bd"
     },
     "paper": {
-      "count": 72,
-      "hash": "dcddc19ffff2baba068c57298eb452b36f17d5d319c2df3fadc0b988dcaaf903",
-      "last_event_id": "paper-swing-9a9432c5b58efe9d4f345690b00f7df0"
+      "count": 74,
+      "hash": "c398de89c87944117d64701eb403ae5355e7ec5953e27d1f862c7de6814b873e",
+      "last_event_id": "paper-void-xlv-legacy-1785059459"
     }
   },
   "warnings": [
