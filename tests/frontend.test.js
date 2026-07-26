@@ -515,6 +515,61 @@ function validSnapshot(revision = 1) {
   };
 }
 
+test("schema 3 public snapshot is upgraded in memory during rollout", async () => {
+  const previousWindow = globalThis.window;
+  const previousFetch = globalThis.fetch;
+  globalThis.window = {
+    location: { href: "https://cliffordfok.github.io/portfolio-tracker/" },
+    localStorage: new MemoryStorage(),
+  };
+  const payload = validSnapshot(3);
+  payload.schema_version = 3;
+  delete payload.portfolios.paper.metrics.income_expense;
+  payload.portfolios.paper.data_status = "INSUFFICIENT_DATA";
+  payload.portfolios.paper.metrics.data_status = "INSUFFICIENT_DATA";
+  payload.portfolios.paper.holdings = [
+    {
+      symbol: "AAPL",
+      shares: "2",
+      avg_cost: "100",
+      cost_basis: "200",
+      current_price: null,
+      market_price_as_of: null,
+      market_value: null,
+      unrealized_pnl: null,
+      unrealized_pnl_pct: null,
+    },
+  ];
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => payload,
+  });
+  try {
+    const result = await loadDashboardData(
+      {
+        snapshotUrls: ["https://example.test/snapshot-v3.json"],
+        storagePrefix: "schema-v3-rollout-test",
+        staleAfterMinutes: 999999,
+      },
+      { now: 1000 },
+    );
+    assert.equal(result.source, "snapshot");
+    assert.equal(result.schema_version, 4);
+    assert.equal(result.portfolios.paper.metrics.income_expense, "0");
+    assert.equal(
+      result.portfolios.paper.holdings[0].instrument_id,
+      "AAPL",
+    );
+    assert.equal(
+      result.portfolios.paper.holdings[0].quote_status,
+      "MISSING",
+    );
+  } finally {
+    globalThis.window = previousWindow;
+    globalThis.fetch = previousFetch;
+  }
+});
+
 test("snapshot validation accepts an intentional return-base gap", async () => {
   const previousWindow = globalThis.window;
   const previousFetch = globalThis.fetch;

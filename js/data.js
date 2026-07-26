@@ -52,7 +52,40 @@ async function fetchJson(url, { githubRaw = false } = {}) {
   return response.json();
 }
 
+function upgradeLegacySnapshot(snapshot) {
+  if (
+    snapshot === null ||
+    typeof snapshot !== "object" ||
+    snapshot.schema_version !== 3
+  ) {
+    return snapshot;
+  }
+  const upgraded = JSON.parse(JSON.stringify(snapshot));
+  upgraded.schema_version = 4;
+  for (const name of ["paper", "live"]) {
+    const portfolio = upgraded.portfolios?.[name];
+    if (!portfolio || typeof portfolio !== "object") continue;
+    portfolio.metrics = {
+      ...portfolio.metrics,
+      income_expense: portfolio.metrics?.income_expense ?? "0",
+    };
+    portfolio.holdings = (portfolio.holdings || []).map((holding) => ({
+      instrument_id: holding.instrument_id || holding.symbol,
+      instrument_type: holding.instrument_type || "EQUITY",
+      instrument_name: holding.instrument_name ?? null,
+      quote_symbol: holding.quote_symbol ?? holding.symbol,
+      quote_status:
+        holding.quote_status ||
+        (holding.current_price === null ? "MISSING" : "OK"),
+      contract_multiplier: holding.contract_multiplier || "1",
+      ...holding,
+    }));
+  }
+  return upgraded;
+}
+
 function validateSnapshot(snapshot) {
+  snapshot = upgradeLegacySnapshot(snapshot);
   const fail = () => {
     throw new Error("快照格式不正確");
   };
