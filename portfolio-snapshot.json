@@ -63,13 +63,31 @@
         "date": "2026-07-22",
         "segment_id": null,
         "segment_return": null
+      },
+      {
+        "close": null,
+        "cumulative_return": null,
+        "daily_return": null,
+        "data_status": "INSUFFICIENT_MARKET_DATA",
+        "date": "2026-07-23",
+        "segment_id": null,
+        "segment_return": null
+      },
+      {
+        "close": "738.93",
+        "cumulative_return": null,
+        "daily_return": null,
+        "data_status": "OK",
+        "date": "2026-07-24",
+        "segment_id": 1,
+        "segment_return": "0"
       }
     ],
     "symbol": "SPY"
   },
   "currency": "USD",
-  "data_as_of": "2026-07-21T23:55:23.146349Z",
-  "generated_at": "2026-07-25T14:11:50.476084Z",
+  "data_as_of": "2026-07-24T20:00:00Z",
+  "generated_at": "2026-07-26T09:32:50.291047Z",
   "portfolios": {
     "live": {
       "daily": [],
@@ -195,6 +213,38 @@
           "daily_return": null,
           "data_status": "INSUFFICIENT_MARKET_DATA",
           "date": "2026-07-22",
+          "external_flow": "0",
+          "missing_symbols": [
+            "XLP",
+            "XLV"
+          ],
+          "nav": null,
+          "pnl": null,
+          "segment_id": null,
+          "segment_return": null
+        },
+        {
+          "cash": "64409.2773",
+          "cumulative_return": null,
+          "daily_return": null,
+          "data_status": "INSUFFICIENT_MARKET_DATA",
+          "date": "2026-07-23",
+          "external_flow": "0",
+          "missing_symbols": [
+            "XLP",
+            "XLV"
+          ],
+          "nav": null,
+          "pnl": null,
+          "segment_id": null,
+          "segment_return": null
+        },
+        {
+          "cash": "64409.2773",
+          "cumulative_return": null,
+          "daily_return": null,
+          "data_status": "INSUFFICIENT_MARKET_DATA",
+          "date": "2026-07-24",
           "external_flow": "0",
           "missing_symbols": [
             "XLP",
@@ -2273,8 +2323,8 @@
       ]
     }
   },
-  "prices_as_of": null,
-  "revision": 72,
+  "prices_as_of": "2026-07-24T20:00:00Z",
+  "revision": 86,
   "schema_version": 3,
   "source_head": {
     "live": {
@@ -2283,9 +2333,9 @@
       "last_event_id": null
     },
     "market": {
-      "count": 0,
-      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "last_event_id": null
+      "count": 14,
+      "hash": "a4983736369642456efcde7bf445d5d4614a5dd16f502f381e98330d43ab54aa",
+      "last_event_id": "market-quote-2026-07-24-qqq-45a3a5bd"
     },
     "paper": {
       "count": 72,
