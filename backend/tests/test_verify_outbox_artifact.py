@@ -143,7 +143,8 @@ class OutboxArtifactVerifierTests(unittest.TestCase):
             "assert spec is not None and spec.loader is not None\n"
             "module = importlib.util.module_from_spec(spec)\n"
             "spec.loader.exec_module(module)\n"
-            "assert callable(module.run)\n",
+            "assert callable(module.run)\n"
+            "print('artifact 測試 ✅')\n",
             encoding="utf-8",
             newline="\n",
         )

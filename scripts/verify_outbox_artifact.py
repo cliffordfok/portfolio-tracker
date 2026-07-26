@@ -510,6 +510,7 @@ def verify_test_contract(path: Path) -> dict[str, str]:
 def run_artifact_tests(paths: BundlePaths, *, timeout: int) -> dict[str, Any]:
     environment = os.environ.copy()
     environment["PYTHONDONTWRITEBYTECODE"] = "1"
+    environment["PYTHONIOENCODING"] = "utf-8"
     environment["OUTBOX_ARTIFACT"] = str(paths.patched)
     result = subprocess.run(
         [sys.executable, "-B", str(paths.tests)],
@@ -517,6 +518,8 @@ def run_artifact_tests(paths: BundlePaths, *, timeout: int) -> dict[str, Any]:
         env=environment,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="backslashreplace",
         timeout=timeout,
         check=False,
     )
@@ -606,6 +609,9 @@ def parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    reconfigure = getattr(sys.stdout, "reconfigure", None)
+    if callable(reconfigure):
+        reconfigure(encoding="utf-8")
     args = parser().parse_args(argv)
     try:
         result = verify(args)
