@@ -133,6 +133,27 @@ python3 scripts/import_paper_log.py
 寫入 durable outbox，再呼叫 bridge；bridge 成功或回覆 duplicate 後才可從
 outbox 移除。
 
+### Outbox artifact 部署前驗收
+
+`scripts/verify_outbox_artifact.py` 會在完全不接觸 production state、log 或
+ledger 的情況下，驗證 staging bundle 的 manifest/hash、以 zero-fuzz
+重建 patch、檢查實際 patched source 的 lock/UTC/BUY 原子持久化路徑，並可
+執行 bundle 內指向同一 patched file 的 real-artifact tests。例如：
+
+```bash
+python3 scripts/verify_outbox_artifact.py \
+  --bundle-dir /data/portfolio/staging/outbox-d0c5bc0-v4 \
+  --patched swing_trader.py.patched.v4 \
+  --patch outbox.v4.patch \
+  --tests test_outbox_artifact_v4.py \
+  --manifest manifest.v4.json \
+  --run-artifact-tests
+```
+
+Linux 預設要求五個 artifact 均為 owner-only `0600`。只有輸出
+`"status": "valid"`、patched SHA 在 tests 前後不變，而且 repository
+backend/frontend tests 亦通過，先可進入 production deploy review。
+
 ### 建立 portfolio
 
 `PORTFOLIO_OPEN` 係不可變 master fact。Paper 已確認由
