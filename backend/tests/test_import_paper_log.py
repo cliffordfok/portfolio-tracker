@@ -79,6 +79,23 @@ class PaperLogImporterTests(unittest.TestCase):
         self.assertEqual(trade.symbol, "AAPL")
         self.assertEqual(trade.occurred_at, "2026-07-16T14:00:29.976330Z")
 
+    def test_legacy_sell_derived_fields_are_allowed_but_never_imported(self) -> None:
+        base = self.sample(action="SELL", shares=0.5, price=181.0)
+        legacy_sell = {
+            **base,
+            "pnl": 0.25,
+            "pnl_pct": 0.00275,
+            "proceeds": 90.5,
+        }
+
+        self.assertEqual(
+            IMPORTER.legacy_event_id(legacy_sell),
+            IMPORTER.legacy_event_id(base),
+        )
+        trade = IMPORTER.prepare_trade(legacy_sell, line_number=115)
+        payload = IMPORTER.expected_ledger_payload(trade)
+        self.assertTrue({"pnl", "pnl_pct", "proceeds"}.isdisjoint(payload))
+
     def test_complete_preflight_happens_before_any_write(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             source = self.write_log(

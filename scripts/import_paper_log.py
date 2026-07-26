@@ -29,12 +29,18 @@ DEFAULT_BRIDGE = (
     / "integrations"
     / "hermes_bridge.py"
 )
+# ``pnl``, ``pnl_pct`` and ``proceeds`` are legacy SELL log output only.
+# They are deliberately accepted for reconciliation but never hashed or copied
+# into master ledger events, where all P&L must be derived by FIFO replay.
 ALLOWED_SOURCE_FIELDS = {
     "action",
     "cost",
     "fee",
     "note",
+    "pnl",
+    "pnl_pct",
     "price",
+    "proceeds",
     "reason",
     "shares",
     "strategy",
