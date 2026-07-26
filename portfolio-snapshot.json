@@ -15864,7 +15864,7 @@
   },
   "currency": "USD",
   "data_as_of": "2026-07-26T09:50:59Z",
-  "generated_at": "2026-07-26T14:42:30.309778Z",
+  "generated_at": "2026-07-26T15:47:38.562732Z",
   "portfolios": {
     "live": {
       "cash": "171.61",
@@ -45590,6 +45590,8 @@
         "data_status": "INSUFFICIENT_DATA",
         "income_expense": "1791.8",
         "max_drawdown": null,
+        "performance_effective_date": null,
+        "performance_scope": null,
         "realized_pnl": "623.75",
         "sharpe_ratio": null,
         "total_return": null,
@@ -64600,17 +64602,19 @@
           "segment_return": "0"
         }
       ],
-      "data_status": "INSUFFICIENT_DATA",
+      "data_status": "OK",
       "holdings": [],
       "initial_cash": "100000",
       "metrics": {
         "closed_episodes": 34,
-        "data_status": "INSUFFICIENT_DATA",
+        "data_status": "OK",
         "income_expense": "0",
-        "max_drawdown": null,
+        "max_drawdown": "0",
+        "performance_effective_date": "2026-07-22",
+        "performance_scope": "LATEST_COMPLETE_SEGMENT",
         "realized_pnl": "338.1781",
         "sharpe_ratio": null,
-        "total_return": null,
+        "total_return": "0",
         "win_rate": "0.47058824"
       },
       "realized_pnl_per_trade": [
@@ -66903,7 +66907,7 @@
     }
   },
   "warnings": [
-    "paper performance contains incomplete market data",
+    "paper performance starts at 2026-07-22 after incomplete market data",
     "live performance contains incomplete market data"
   ]
 }
