@@ -112,6 +112,27 @@ node --check js/utils.js
 
 所有 writer 都必須經 `backend/integrations/hermes_bridge.py` 或底層 `LedgerStore.append()`。不要由 cron、Telegram handler 或 agent 直接修改 JSONL。
 
+### 舊 Paper log 一次性匯入
+
+`scripts/import_paper_log.py` 只用於既有 `paper_trading_log.jsonl` 的遷移與重試。
+它會先完整驗證來源、保留 Stage A 已使用的 legacy event ID 規則，再逐筆經
+`hermes_bridge.py` 寫入。先執行唯讀 preflight：
+
+```bash
+python3 scripts/import_paper_log.py --check-only
+```
+
+確認統計後才執行匯入：
+
+```bash
+python3 scripts/import_paper_log.py
+```
+
+這個 importer 不是持續 writer。新 Paper trade 必須由
+`swing_trader.py` 先把完整 event（包括只生成一次的 immutable event ID）
+寫入 durable outbox，再呼叫 bridge；bridge 成功或回覆 duplicate 後才可從
+outbox 移除。
+
 ### 建立 portfolio
 
 `PORTFOLIO_OPEN` 係不可變 master fact。Paper 已確認由
