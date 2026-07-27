@@ -405,11 +405,35 @@ python3 integrations/hermes_bridge.py \
 `instrument_id`：
 
 ```text
---symbol SPCX --instrument-id PRIVATE:SPACEX --source manual-quote
+--symbol ACME --instrument-id PRIVATE:ACME --source manual-quote
 ```
 
 快照會把報價標記為 `MANUAL`；未提供報價就標記 `MISSING`，不會以交易價、
 零或另一個同名 ticker 冒充現價。
+
+Space Exploration Technologies Corp. 已於 2026 年 6 月以 `SPCX` 上市；
+應使用 `EQUITY:SPCX`、`instrument_type=EQUITY` 及
+`quote_symbol=SPCX`，不可再沿用上市前的私募分類。
+
+已經錯誤匯入為 `PRIVATE:SPACEX` 的生產資料，使用一次性 append-only
+migration 修正。`--check-only` 只驗證目標、報價衝突及重播不變量；
+`--apply` 會先備份三個 ledger，再以 VOID + replacement BUY 保留 audit
+trail，補齊 2026-07-22 至 2026-07-24 收市價，重建 snapshot 及建立
+`publish.pending`：
+
+```bash
+python3 scripts/repair_spcx_listing.py \
+  --root /data/portfolio \
+  --check-only
+
+python3 scripts/repair_spcx_listing.py \
+  --root /data/portfolio \
+  --apply
+```
+
+Migration 必須證明現金、買入資金流、已實現損益、交易數量、SPCX 股數及
+平均成本不變；重跑同一指令必須回傳 `status=current`，不得再增加 ledger
+事件或備份。
 
 同一個 session 必須為所有未平倉 symbol 提供 close。任何一個缺失，該日整個
 portfolio NAV 會標記為 `INSUFFICIENT_MARKET_DATA`。如果 SPY 本身亦是持倉，

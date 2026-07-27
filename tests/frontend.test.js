@@ -746,12 +746,12 @@ test("snapshot validation accepts instrument, income, and split fields", async (
     initial_cash: "1000",
     holdings: [
       {
-        instrument_id: "PRIVATE:SPACEX",
+        instrument_id: "PRIVATE:ACME",
         instrument_type: "PRIVATE",
-        instrument_name: "Space Exploration Technologies Corp.",
+        instrument_name: "Example Private Company",
         quote_symbol: null,
         quote_status: "MISSING",
-        symbol: "SPCX",
+        symbol: "ACME",
         shares: "4",
         avg_cost: "50",
         cost_basis: "200",
@@ -772,7 +772,7 @@ test("snapshot validation accepts instrument, income, and split fields", async (
         source: "manual-import",
         ledger_seq: 3,
         action: "INCOME_EXPENSE",
-        symbol: "SPCX",
+        symbol: "ACME",
         amount: "7",
         gross_amount: "10",
         withholding_tax: "3",
@@ -788,8 +788,8 @@ test("snapshot validation accepts instrument, income, and split fields", async (
         source: "manual-import",
         ledger_seq: 4,
         action: "SPLIT",
-        symbol: "SPCX",
-        instrument_id: "PRIVATE:SPACEX",
+        symbol: "ACME",
+        instrument_id: "PRIVATE:ACME",
         numerator: "2",
         denominator: "1",
         shares_before: "2",
@@ -836,7 +836,7 @@ test("snapshot validation accepts instrument, income, and split fields", async (
     );
     assert.equal(
       result.portfolios.live.holdings[0].instrument_id,
-      "PRIVATE:SPACEX",
+      "PRIVATE:ACME",
     );
     assert.equal(result.portfolios.live.recent_trades[0].amount, "7");
     assert.equal(

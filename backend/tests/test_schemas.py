@@ -287,11 +287,11 @@ class SchemaTests(unittest.TestCase):
         value = candidate(
             "QUOTE",
             portfolio="market",
-            event_id="market-spacex-manual",
+            event_id="market-acme-manual",
             occurred_at="2024-01-02T21:00:00Z",
             source="manual-quote",
-            symbol="SPCX",
-            instrument_id="PRIVATE:SPACEX",
+            symbol="ACME",
+            instrument_id="PRIVATE:ACME",
             close="210",
             session_date="2024-01-02",
         )
