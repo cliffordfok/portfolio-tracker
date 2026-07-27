@@ -285,7 +285,15 @@ def replay_portfolio(
                 if lot.remaining_shares > 0
             ]
             instrument_type = event.get("instrument_type", "EQUITY")
-            quote_symbol = event.get("quote_symbol", symbol)
+            quote_symbol = (
+                event.get("quote_symbol")
+                if "quote_symbol" in event
+                else (
+                    None
+                    if instrument_type in {"OPTION", "PRIVATE"}
+                    else symbol
+                )
+            )
             if any(
                 lot.symbol != symbol
                 or lot.instrument_type != instrument_type
@@ -310,7 +318,7 @@ def replay_portfolio(
                     "instrument_id": instrument_id,
                     "instrument_type": event.get("instrument_type", "EQUITY"),
                     "instrument_name": event.get("instrument_name"),
-                    "quote_symbol": event.get("quote_symbol", symbol),
+                    "quote_symbol": quote_symbol,
                     "symbol": symbol,
                     "opened_at": event["occurred_at"],
                     "opened_event_id": event["event_id"],

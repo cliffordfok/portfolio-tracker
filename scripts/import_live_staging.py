@@ -19,7 +19,11 @@ if str(BACKEND_ROOT) not in sys.path:
 from portfolio_tracker.errors import ConflictError, PortfolioError
 from portfolio_tracker.ledger import LedgerStore, atomic_write_json
 from portfolio_tracker.replay import ReplayResult, replay_portfolio
-from portfolio_tracker.schemas import normalize_event, validate_event
+from portfolio_tracker.schemas import (
+    normalize_event,
+    validate_event,
+    validate_intake_instrument_identity,
+)
 from portfolio_tracker.snapshot import build_snapshot_if_needed
 
 
@@ -150,6 +154,7 @@ def validate_plan(
         if "ledger_seq" in event:
             raise LiveImportError(f"event {index} must not contain ledger_seq")
         validate_event(event, allow_future=True)
+        validate_intake_instrument_identity(event)
         if event["portfolio"] != "live":
             raise LiveImportError(f"event {index} must target live")
         if event["event_id"] in ids:

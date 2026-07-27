@@ -8,6 +8,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from portfolio_tracker.errors import ValidationError
+
 
 SCRIPT_PATH = (
     Path(__file__).resolve().parents[2] / "scripts" / "import_live_staging.py"
@@ -131,6 +133,34 @@ class LiveStagingImporterTests(unittest.TestCase):
             self.assertEqual(result["status"], "valid")
             self.assertEqual(result["events"], 5)
             self.assertFalse((root / "runtime" / "ledger" / "live.jsonl").exists())
+
+    def test_staging_rejects_post_listing_private_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source.xlsx"
+            source.write_bytes(b"fixture")
+            plan = self.plan(source)
+            plan["events"] = [
+                plan["events"][0],
+                self.event(
+                    "live-buy-cbrs-private",
+                    "2026-05-18T15:00:00Z",
+                    "BUY",
+                    symbol="CBRS",
+                    instrument_id="PRIVATE:CEREBRAS",
+                    instrument_type="PRIVATE",
+                    quote_symbol=None,
+                    shares="1",
+                    price="200",
+                    fee="0",
+                ),
+            ]
+
+            with self.assertRaisesRegex(
+                ValidationError,
+                "CBRS must use EQUITY:CBRS",
+            ):
+                IMPORTER.validate_plan(plan)
 
     def test_apply_is_atomic_and_retry_is_idempotent(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -19,6 +19,7 @@ from integrations.hermes_bridge import (
     parser,
     quote_batch_events,
 )
+from portfolio_tracker.errors import ValidationError
 from portfolio_tracker.ledger import LedgerStore
 from portfolio_tracker.publisher import (
     PutResult,
@@ -572,6 +573,34 @@ class HermesBridgeTests(unittest.TestCase):
                 [event["event_id"] for event in LedgerStore(root).read("live")],
                 ["live-open", "live-buy-msft"],
             )
+            live_buy = LedgerStore(root).read("live")[1]
+            self.assertEqual(live_buy["instrument_id"], "EQUITY:MSFT")
+            self.assertEqual(live_buy["instrument_type"], "EQUITY")
+            self.assertEqual(live_buy["quote_symbol"], "MSFT")
+
+    def test_quote_batch_rejects_retired_symbol_before_write(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            with self.assertRaisesRegex(
+                ValidationError,
+                "SKHYV is retired; use SKHY",
+            ):
+                append_quote_batch_and_rebuild(
+                    root,
+                    [
+                        candidate(
+                            "QUOTE",
+                            portfolio="market",
+                            event_id="market-skhyv-retired",
+                            occurred_at="2026-07-22T20:00:00Z",
+                            symbol="SKHYV",
+                            close="165.27",
+                            session_date="2026-07-22",
+                            source="cron-quote",
+                        )
+                    ],
+                )
+            self.assertFalse((root / "ledger").exists())
 
     def test_trade_to_public_snapshot_end_to_end(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

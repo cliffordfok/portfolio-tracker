@@ -5,12 +5,125 @@ from datetime import UTC, datetime
 
 from seed_demo import market_events, portfolio_events
 from portfolio_tracker.errors import ValidationError
-from portfolio_tracker.schemas import normalize_event, validate_event
+from portfolio_tracker.schemas import (
+    default_live_trade_identity,
+    normalize_event,
+    validate_event,
+    validate_intake_instrument_identity,
+)
 
 from .helpers import candidate
 
 
 class SchemaTests(unittest.TestCase):
+    def test_live_identity_defaults_distinguish_known_etfs(self) -> None:
+        self.assertEqual(
+            default_live_trade_identity("VOO"),
+            {
+                "instrument_id": "ETF:VOO",
+                "instrument_type": "ETF",
+                "quote_symbol": "VOO",
+            },
+        )
+        self.assertEqual(
+            default_live_trade_identity("AAPL"),
+            {
+                "instrument_id": "EQUITY:AAPL",
+                "instrument_type": "EQUITY",
+                "quote_symbol": "AAPL",
+            },
+        )
+
+    def test_intake_rejects_listed_security_as_private(self) -> None:
+        value = candidate(
+            "BUY",
+            portfolio="live",
+            event_id="live-buy-cbrs-private",
+            occurred_at="2026-05-18T15:00:00Z",
+            symbol="CBRS",
+            instrument_id="PRIVATE:CEREBRAS",
+            instrument_type="PRIVATE",
+            quote_symbol=None,
+            shares="1",
+            price="200",
+            fee="0",
+        )
+        validate_event(value, allow_future=True)
+        with self.assertRaisesRegex(
+            ValidationError,
+            "CBRS must use EQUITY:CBRS",
+        ):
+            validate_intake_instrument_identity(value)
+
+    def test_intake_rejects_retired_when_issued_symbol(self) -> None:
+        before = candidate(
+            "BUY",
+            portfolio="live",
+            event_id="live-buy-skhyv-before",
+            occurred_at="2026-07-10T15:00:00Z",
+            symbol="SKHYV",
+            instrument_id="EQUITY:SKHYV",
+            instrument_type="EQUITY",
+            quote_symbol="SKHYV",
+            shares="1",
+            price="170",
+            fee="0",
+        )
+        validate_intake_instrument_identity(before)
+        after = {
+            **before,
+            "event_id": "live-buy-skhyv-after",
+            "occurred_at": "2026-07-13T15:00:00Z",
+            "created_at": "2026-07-13T15:00:00Z",
+        }
+        with self.assertRaisesRegex(
+            ValidationError,
+            "SKHYV is retired; use SKHY",
+        ):
+            validate_intake_instrument_identity(after)
+
+    def test_intake_requires_option_quotes_by_instrument_id(self) -> None:
+        value = candidate(
+            "BUY",
+            portfolio="live",
+            event_id="live-buy-amd-option",
+            occurred_at="2026-07-01T15:00:00Z",
+            symbol="AMD",
+            instrument_id="OPTION:AMD:2026-12-18:C:200",
+            instrument_type="OPTION",
+            quote_symbol="AMD",
+            contract_multiplier="100",
+            shares="1",
+            price="10",
+            fee="0",
+        )
+        validate_event(value, allow_future=True)
+        with self.assertRaisesRegex(
+            ValidationError,
+            "OPTION quote_symbol must be omitted",
+        ):
+            validate_intake_instrument_identity(value)
+
+    def test_intake_rejects_instrument_prefix_mismatch(self) -> None:
+        value = candidate(
+            "BUY",
+            portfolio="live",
+            event_id="live-buy-voo-wrong-prefix",
+            occurred_at="2026-07-01T15:00:00Z",
+            symbol="VOO",
+            instrument_id="EQUITY:VOO",
+            instrument_type="ETF",
+            quote_symbol="VOO",
+            shares="1",
+            price="600",
+            fee="0",
+        )
+        with self.assertRaisesRegex(
+            ValidationError,
+            "prefix must match",
+        ):
+            validate_intake_instrument_identity(value)
+
     def test_brk_dot_b_is_accepted(self) -> None:
         value = candidate(
             "BUY",

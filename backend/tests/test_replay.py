@@ -130,6 +130,25 @@ class ReplayTests(unittest.TestCase):
         self.assertEqual(result.realized_pnl_total, Decimal("59.95"))
         self.assertEqual(result.holdings, [])
 
+    def test_open_option_without_quote_symbol_uses_instrument_id(self) -> None:
+        result = replay_portfolio(
+            [
+                event(1, "PORTFOLIO_OPEN", initial_cash="10000"),
+                event(
+                    2,
+                    "BUY",
+                    symbol="AMD",
+                    instrument_id="OPTION:AMD:2026-12-18:C:200",
+                    instrument_type="OPTION",
+                    contract_multiplier="100",
+                    shares="1",
+                    price="10",
+                    fee="0",
+                ),
+            ]
+        )
+        self.assertIsNone(result.holdings[0]["quote_symbol"])
+
     def test_open_lots_reject_reused_instrument_id_with_new_identity(self) -> None:
         events = [
             event(1, "PORTFOLIO_OPEN", initial_cash="10000"),

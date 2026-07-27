@@ -52,6 +52,42 @@ INSTRUMENT_ID_RE = re.compile(r"^[A-Z0-9][A-Z0-9:._/-]{0,95}$")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 INSTRUMENT_TYPES = {"EQUITY", "ETF", "OPTION", "PRIVATE"}
 INCOME_TYPES = {"DIVIDEND", "INTEREST", "FEE", "CASH_IN_LIEU", "OTHER"}
+LISTED_IDENTITY_RULES = {
+    "CBRS": {
+        "effective_at": "2026-05-14T00:00:00Z",
+        "instrument_id": "EQUITY:CBRS",
+        "instrument_type": "EQUITY",
+        "quote_symbol": "CBRS",
+    },
+    "SPCX": {
+        "effective_at": "2026-06-15T00:00:00Z",
+        "instrument_id": "EQUITY:SPCX",
+        "instrument_type": "EQUITY",
+        "quote_symbol": "SPCX",
+    },
+    "SKHY": {
+        "effective_at": "2026-07-13T00:00:00Z",
+        "instrument_id": "EQUITY:SKHY",
+        "instrument_type": "EQUITY",
+        "quote_symbol": "SKHY",
+    },
+}
+RETIRED_SYMBOL_RULES = {
+    "SKHYV": {
+        "retired_at": "2026-07-13T00:00:00Z",
+        "replacement": "SKHY",
+    },
+}
+KNOWN_LIVE_ETF_SYMBOLS = {
+    "INDA",
+    "QQQ",
+    "SARK",
+    "SGOV",
+    "SPY",
+    "SQQQ",
+    "TQQQ",
+    "VOO",
+}
 INSTRUMENT_FIELDS = {
     "instrument_id",
     "instrument_type",
@@ -184,6 +220,103 @@ def _validate_instrument_fields(event: Mapping[str, Any]) -> None:
 def _validate_string(event: Mapping[str, Any], field: str) -> None:
     if field in event and event[field] is not None and not isinstance(event[field], str):
         raise ValidationError(f"{field} must be a string")
+
+
+def validate_intake_instrument_identity(event: Mapping[str, Any]) -> None:
+    """Apply current identity rules only to newly proposed writes.
+
+    Immutable historical ledgers remain readable even when a security later
+    lists publicly or changes ticker.
+    """
+
+    action = event.get("action")
+    if action not in {"BUY", "SELL", "SPLIT", "QUOTE"}:
+        return
+    symbol = event.get("symbol")
+    if not isinstance(symbol, str):
+        return
+    occurred_at = parse_timestamp(event.get("occurred_at"), field="occurred_at")
+
+    retired = RETIRED_SYMBOL_RULES.get(symbol)
+    if retired is not None and occurred_at >= parse_timestamp(
+        retired["retired_at"],
+        field="retired_at",
+    ):
+        raise ValidationError(
+            f"{symbol} is retired; use {retired['replacement']}"
+        )
+
+    if action == "QUOTE" or event.get("portfolio") != "live":
+        return
+
+    instrument_id = event.get("instrument_id")
+    instrument_type = event.get("instrument_type")
+    quote_symbol = event.get("quote_symbol")
+    prefix = (
+        instrument_id.split(":", 1)[0]
+        if isinstance(instrument_id, str) and ":" in instrument_id
+        else None
+    )
+    if (
+        isinstance(instrument_id, str)
+        and instrument_type is not None
+        and prefix != instrument_type
+    ):
+        raise ValidationError(
+            "instrument_id prefix must match instrument_type"
+        )
+    if (
+        instrument_type in {"ETF", "OPTION", "PRIVATE"}
+        and not instrument_id
+    ):
+        raise ValidationError(
+            f"{instrument_type} Live trades require instrument_id"
+        )
+    if (
+        instrument_type is None
+        and prefix in {"ETF", "OPTION", "PRIVATE"}
+    ):
+        raise ValidationError(
+            "non-equity instrument_id requires instrument_type"
+        )
+    resolved_type = instrument_type or "EQUITY"
+    if resolved_type in {"OPTION", "PRIVATE"} and quote_symbol is not None:
+        raise ValidationError(
+            f"{resolved_type} quote_symbol must be omitted; "
+            "quote by instrument_id"
+        )
+
+    rule = LISTED_IDENTITY_RULES.get(symbol)
+    if rule is None or occurred_at < parse_timestamp(
+        rule["effective_at"],
+        field="effective_at",
+    ):
+        return
+    resolved_id = instrument_id or f"EQUITY:{symbol}"
+    resolved_quote = quote_symbol or symbol
+    if (
+        resolved_id != rule["instrument_id"]
+        or resolved_type != rule["instrument_type"]
+        or resolved_quote != rule["quote_symbol"]
+    ):
+        raise ValidationError(
+            f"{symbol} must use {rule['instrument_id']}, "
+            f"{rule['instrument_type']}, and quote_symbol "
+            f"{rule['quote_symbol']}"
+        )
+
+
+def default_live_trade_identity(symbol: str) -> dict[str, str]:
+    """Return explicit master identity fields for a simple Live trade."""
+
+    instrument_type = (
+        "ETF" if symbol in KNOWN_LIVE_ETF_SYMBOLS else "EQUITY"
+    )
+    return {
+        "instrument_id": f"{instrument_type}:{symbol}",
+        "instrument_type": instrument_type,
+        "quote_symbol": symbol,
+    }
 
 
 def validate_event(

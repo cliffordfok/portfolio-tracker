@@ -6,6 +6,7 @@ import argparse
 import json
 import re
 import sys
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +15,10 @@ if __package__ in {None, ""}:
 
 from portfolio_tracker.errors import PortfolioError
 from portfolio_tracker.ledger import LedgerStore, atomic_write_json
+from portfolio_tracker.schemas import (
+    default_live_trade_identity,
+    validate_intake_instrument_identity,
+)
 from portfolio_tracker.snapshot import build_snapshot, build_snapshot_if_needed
 
 TRADE_COMMAND_RE = re.compile(
@@ -197,7 +202,22 @@ def _rebuild_after_write(
 
 
 def append_and_rebuild(root: Path, event: dict[str, Any]) -> dict[str, Any]:
-    result = LedgerStore(root).append(event)
+    prepared = deepcopy(event)
+    if (
+        prepared.get("portfolio") == "live"
+        and prepared.get("action") in {"BUY", "SELL"}
+        and not any(
+            field in prepared
+            for field in (
+                "instrument_id",
+                "instrument_type",
+                "quote_symbol",
+            )
+        )
+    ):
+        prepared.update(default_live_trade_identity(prepared["symbol"]))
+    validate_intake_instrument_identity(prepared)
+    result = LedgerStore(root).append(prepared)
     return _rebuild_after_write(
         root,
         result,
@@ -210,6 +230,8 @@ def append_quote_batch_and_rebuild(
     root: Path,
     events: list[dict[str, Any]],
 ) -> dict[str, Any]:
+    for event in events:
+        validate_intake_instrument_identity(event)
     result = LedgerStore(root).append_many(events)
     return _rebuild_after_write(
         root,
