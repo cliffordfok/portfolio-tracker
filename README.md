@@ -431,9 +431,9 @@ python3 scripts/repair_spcx_listing.py \
   --apply
 ```
 
-Migration 必須證明現金、買入資金流、已實現損益、交易數量、SPCX 股數及
-平均成本不變；重跑同一指令必須回傳 `status=current`，不得再增加 ledger
-事件或備份。
+Migration 會逐筆配對原有 SPCX BUY，並必須證明現金、買入資金流、已實現
+損益、交易數量、SPCX 股數及平均成本不變；重跑同一指令必須回傳
+`status=current`，不得再增加 ledger 事件或備份。
 
 同一個 session 必須為所有未平倉 symbol 提供 close。任何一個缺失，該日整個
 portfolio NAV 會標記為 `INSUFFICIENT_MARKET_DATA`。如果 SPY 本身亦是持倉，

@@ -69,8 +69,22 @@ class SpcxListingMigrationTests(unittest.TestCase):
                 instrument_type="PRIVATE",
                 instrument_name="Space Exploration Technologies Corp.",
                 quote_symbol=None,
-                shares="30",
-                price="170",
+                shares="10",
+                price="160",
+                fee="0",
+            ),
+            self.event(
+                "live-buy-spcx-private-2",
+                "live",
+                "2026-07-11T14:00:00Z",
+                "BUY",
+                symbol="SPCX",
+                instrument_id="PRIVATE:SPACEX",
+                instrument_type="PRIVATE",
+                instrument_name="Space Exploration Technologies Corp.",
+                quote_symbol=None,
+                shares="20",
+                price="175",
                 fee="0",
             ),
             self.event(
@@ -179,7 +193,8 @@ class SpcxListingMigrationTests(unittest.TestCase):
             result = MIGRATION.execute(root=root, apply=False)
 
             self.assertEqual(result["status"], "valid")
-            self.assertEqual(result["pending"], 17)
+            self.assertEqual(result["target_events"], 2)
+            self.assertEqual(result["pending"], 19)
             self.assertEqual(result["quote_events"], 15)
             self.assertEqual(
                 (root / "ledger" / "live.jsonl").read_bytes(),
@@ -209,7 +224,7 @@ class SpcxListingMigrationTests(unittest.TestCase):
             second = MIGRATION.execute(root=root, apply=True)
 
             self.assertEqual(first["status"], "corrected")
-            self.assertEqual(first["appended"], 17)
+            self.assertEqual(first["appended"], 19)
             self.assertEqual(first["snapshot_status"], "rebuilt")
             self.assertEqual(first["acceptance"]["instrument_id"], "EQUITY:SPCX")
             self.assertEqual(first["acceptance"]["quote_status"], "OK")
@@ -229,7 +244,7 @@ class SpcxListingMigrationTests(unittest.TestCase):
             self.assertNotIn("PRIVATE:SPACEX", holdings)
             self.assertEqual(holdings["EQUITY:SPCX"]["shares"], 30)
             self.assertEqual(holdings["EQUITY:SPCX"]["avg_cost"], 170)
-            self.assertEqual(len(live_lines), 8)
+            self.assertEqual(len(live_lines), 11)
             self.assertEqual(len(market_lines), 18)
             self.assertEqual(second["status"], "current")
             self.assertEqual(second["pending"], 0)

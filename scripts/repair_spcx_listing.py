@@ -71,7 +71,7 @@ class MigrationPlan:
     pending: int
     duplicates: int
     quote_candidates: int
-    target_event_id: str
+    target_events: int
     already_corrected: bool
 
 
@@ -311,12 +311,15 @@ def inspect_migration(root: Path) -> MigrationPlan:
         and event.get("symbol") == SPCX_SYMBOL
         and event.get("instrument_id") == OLD_INSTRUMENT_ID
     ]
-    if len(raw_targets) != 1:
+    if not raw_targets:
         raise SpcxMigrationError(
-            "expected exactly one raw PRIVATE:SPACEX BUY event"
+            "expected at least one raw PRIVATE:SPACEX BUY event"
         )
-    target = raw_targets[0]
-    correction_events = _correction_events(target)
+    correction_events = [
+        correction
+        for target in raw_targets
+        for correction in _correction_events(target)
+    ]
     existing_by_id = _existing_event_map(live_events + market_events)
     correction_presence = [
         event["event_id"] in existing_by_id
@@ -337,7 +340,13 @@ def inspect_migration(root: Path) -> MigrationPlan:
             raise SpcxMigrationError(
                 "recorded SPCX correction did not retire the private identity"
             )
-    elif active_old != [target]:
+    elif {
+        event["event_id"]
+        for event in active_old
+    } != {
+        event["event_id"]
+        for event in raw_targets
+    }:
         raise SpcxMigrationError(
             "PRIVATE:SPACEX has unsupported dependent or duplicate events"
         )
@@ -366,7 +375,7 @@ def inspect_migration(root: Path) -> MigrationPlan:
         pending=correction_pending + quote_pending,
         duplicates=correction_duplicates + quote_duplicates,
         quote_candidates=len(quote_candidates),
-        target_event_id=target["event_id"],
+        target_events=len(raw_targets),
         already_corrected=already_corrected,
     )
 
@@ -413,7 +422,7 @@ def execute(*, root: Path, apply: bool) -> dict[str, Any]:
     response: dict[str, Any] = {
         "status": "valid" if not apply else "ready",
         "migration": "spcx-public-listing-2026",
-        "target_events": 1,
+        "target_events": plan.target_events,
         "quote_events": plan.quote_candidates,
         "pending": plan.pending,
         "duplicates": plan.duplicates,
