@@ -15833,38 +15833,38 @@
         "segment_return": null
       },
       {
-        "close": null,
+        "close": "747.41",
         "cumulative_return": null,
         "daily_return": null,
-        "data_status": "INSUFFICIENT_MARKET_DATA",
+        "data_status": "OK",
         "date": "2026-07-22",
-        "segment_id": null,
-        "segment_return": null
+        "segment_id": 1,
+        "segment_return": "0"
       },
       {
-        "close": null,
+        "close": "738.18",
         "cumulative_return": null,
-        "daily_return": null,
-        "data_status": "INSUFFICIENT_MARKET_DATA",
+        "daily_return": "-0.01234931",
+        "data_status": "OK",
         "date": "2026-07-23",
-        "segment_id": null,
-        "segment_return": null
+        "segment_id": 1,
+        "segment_return": "-0.01234931"
       },
       {
         "close": "738.93",
         "cumulative_return": null,
-        "daily_return": null,
+        "daily_return": "0.00101601",
         "data_status": "OK",
         "date": "2026-07-24",
         "segment_id": 1,
-        "segment_return": "0"
+        "segment_return": "-0.01134585"
       }
     ],
     "symbol": "SPY"
   },
   "currency": "USD",
-  "data_as_of": "2026-07-26T09:50:59Z",
-  "generated_at": "2026-07-26T15:47:38.562732Z",
+  "data_as_of": "2026-07-26T16:00:00Z",
+  "generated_at": "2026-07-27T14:32:53.383520Z",
   "portfolios": {
     "live": {
       "cash": "171.61",
@@ -45444,59 +45444,43 @@
           "cash": "171.61",
           "cumulative_return": null,
           "daily_return": null,
-          "data_status": "INSUFFICIENT_MARKET_DATA",
+          "data_status": "OK",
           "date": "2026-07-22",
           "external_flow": "0",
-          "missing_symbols": [
-            "MU",
-            "NVDA",
-            "SKHYV",
-            "SPCX",
-            "VOO"
-          ],
-          "nav": null,
-          "pnl": null,
-          "segment_id": null,
-          "segment_return": null
+          "missing_symbols": [],
+          "nav": "99982.1901589",
+          "pnl": "24147.1901589",
+          "segment_id": 2,
+          "segment_return": "0"
         },
         {
           "cash": "171.61",
           "cumulative_return": null,
-          "daily_return": null,
-          "data_status": "INSUFFICIENT_MARKET_DATA",
+          "daily_return": "-0.00313664",
+          "data_status": "OK",
           "date": "2026-07-23",
           "external_flow": "0",
-          "missing_symbols": [
-            "MU",
-            "NVDA",
-            "SKHYV",
-            "SPCX",
-            "VOO"
-          ],
-          "nav": null,
-          "pnl": null,
-          "segment_id": null,
-          "segment_return": null
+          "missing_symbols": [],
+          "nav": "99668.5822343",
+          "pnl": "23833.5822343",
+          "segment_id": 2,
+          "segment_return": "-0.00313664"
         },
         {
           "cash": "171.61",
           "cumulative_return": null,
-          "daily_return": null,
-          "data_status": "INSUFFICIENT_MARKET_DATA",
+          "daily_return": "-0.0138678",
+          "data_status": "OK",
           "date": "2026-07-24",
           "external_flow": "0",
-          "missing_symbols": [
-            "SKHYV",
-            "SPCX",
-            "VOO"
-          ],
-          "nav": null,
-          "pnl": null,
-          "segment_id": null,
-          "segment_return": null
+          "missing_symbols": [],
+          "nav": "98286.3983982",
+          "pnl": "22451.3983982",
+          "segment_id": 2,
+          "segment_return": "-0.01696094"
         }
       ],
-      "data_status": "INSUFFICIENT_DATA",
+      "data_status": "OK",
       "holdings": [
         {
           "avg_cost": "1042.549411764705882352941176",
@@ -45536,65 +45520,65 @@
           "avg_cost": "170",
           "contract_multiplier": "1",
           "cost_basis": "1700",
-          "current_price": null,
+          "current_price": "154.57",
           "instrument_id": "EQUITY:SKHYV",
           "instrument_name": "SK hynix Inc. ADR",
           "instrument_type": "EQUITY",
-          "market_price_as_of": null,
-          "market_value": null,
-          "quote_status": "MISSING",
+          "market_price_as_of": "2026-07-24T20:00:00Z",
+          "market_value": "1545.7",
+          "quote_status": "OK",
           "quote_symbol": "SKHYV",
           "shares": "10",
           "symbol": "SKHYV",
-          "unrealized_pnl": null,
-          "unrealized_pnl_pct": null
-        },
-        {
-          "avg_cost": "463.4829702077160744329220281",
-          "contract_multiplier": "1",
-          "cost_basis": "51452",
-          "current_price": null,
-          "instrument_id": "ETF:VOO",
-          "instrument_name": "Vanguard S&P 500 ETF",
-          "instrument_type": "ETF",
-          "market_price_as_of": null,
-          "market_value": null,
-          "quote_status": "MISSING",
-          "quote_symbol": "VOO",
-          "shares": "111.01163",
-          "symbol": "VOO",
-          "unrealized_pnl": null,
-          "unrealized_pnl_pct": null
+          "unrealized_pnl": "-154.3",
+          "unrealized_pnl_pct": "-0.09076471"
         },
         {
           "avg_cost": "170",
           "contract_multiplier": "1",
           "cost_basis": "5100",
-          "current_price": null,
-          "instrument_id": "PRIVATE:SPACEX",
+          "current_price": "115.07",
+          "instrument_id": "EQUITY:SPCX",
           "instrument_name": "Space Exploration Technologies Corp.",
-          "instrument_type": "PRIVATE",
-          "market_price_as_of": null,
-          "market_value": null,
-          "quote_status": "MISSING",
-          "quote_symbol": null,
+          "instrument_type": "EQUITY",
+          "market_price_as_of": "2026-07-24T20:00:00Z",
+          "market_value": "3452.1",
+          "quote_status": "OK",
+          "quote_symbol": "SPCX",
           "shares": "30",
           "symbol": "SPCX",
-          "unrealized_pnl": null,
-          "unrealized_pnl_pct": null
+          "unrealized_pnl": "-1647.9",
+          "unrealized_pnl_pct": "-0.32311765"
+        },
+        {
+          "avg_cost": "463.4829702077160744329220281",
+          "contract_multiplier": "1",
+          "cost_basis": "51452",
+          "current_price": "679.14",
+          "instrument_id": "ETF:VOO",
+          "instrument_name": "Vanguard S&P 500 ETF",
+          "instrument_type": "ETF",
+          "market_price_as_of": "2026-07-24T20:00:00Z",
+          "market_value": "75392.4383982",
+          "quote_status": "OK",
+          "quote_symbol": "VOO",
+          "shares": "111.01163",
+          "symbol": "VOO",
+          "unrealized_pnl": "23940.4383982",
+          "unrealized_pnl_pct": "0.46529656"
         }
       ],
       "initial_cash": "0",
       "metrics": {
         "closed_episodes": 105,
-        "data_status": "INSUFFICIENT_DATA",
+        "data_status": "OK",
         "income_expense": "1791.8",
-        "max_drawdown": null,
-        "performance_effective_date": null,
-        "performance_scope": null,
+        "max_drawdown": "-0.01696094",
+        "performance_effective_date": "2026-07-22",
+        "performance_scope": "LATEST_COMPLETE_SEGMENT",
         "realized_pnl": "623.75",
         "sharpe_ratio": null,
-        "total_return": null,
+        "total_return": "-0.01696094",
         "win_rate": "0.75238095"
       },
       "realized_pnl_per_trade": [
@@ -52151,20 +52135,20 @@
         },
         {
           "action": "BUY",
-          "created_at": "2026-06-17T15:08:06Z",
-          "event_id": "live-apex-5b1871fe559ebb1369b809970a30695a",
+          "created_at": "2026-07-26T16:00:00Z",
+          "event_id": "live-spcx-listing-buy-b0993ecbf090f29a6166d469",
           "fee": "0",
-          "instrument_id": "PRIVATE:SPACEX",
+          "instrument_id": "EQUITY:SPCX",
           "instrument_name": "Space Exploration Technologies Corp.",
-          "instrument_type": "PRIVATE",
-          "ledger_seq": 631,
+          "instrument_type": "EQUITY",
+          "ledger_seq": 648,
           "note": "Imported broker trade; execution 2026-06-16 10:22:15 ET",
           "occurred_at": "2026-06-17T15:08:06Z",
           "pnl": null,
           "pnl_pct": null,
           "portfolio": "live",
           "price": "210",
-          "quote_symbol": null,
+          "quote_symbol": "SPCX",
           "shares": "10",
           "source": "manual-import",
           "symbol": "SPCX"
@@ -52188,20 +52172,20 @@
         },
         {
           "action": "BUY",
-          "created_at": "2026-06-15T15:08:05Z",
-          "event_id": "live-apex-ee6c63d42c488d14862b8d38c5e80a25",
+          "created_at": "2026-07-26T16:00:00Z",
+          "event_id": "live-spcx-listing-buy-f356bbfef140990e23bf6574",
           "fee": "0",
-          "instrument_id": "PRIVATE:SPACEX",
+          "instrument_id": "EQUITY:SPCX",
           "instrument_name": "Space Exploration Technologies Corp.",
-          "instrument_type": "PRIVATE",
-          "ledger_seq": 629,
+          "instrument_type": "EQUITY",
+          "ledger_seq": 646,
           "note": "Imported broker trade; execution 2026-06-12 11:46:46 ET",
           "occurred_at": "2026-06-15T15:08:05Z",
           "pnl": null,
           "pnl_pct": null,
           "portfolio": "live",
           "price": "150",
-          "quote_symbol": null,
+          "quote_symbol": "SPCX",
           "shares": "20",
           "source": "manual-import",
           "symbol": "SPCX"
@@ -66887,18 +66871,18 @@
     }
   },
   "prices_as_of": "2026-07-24T20:00:00Z",
-  "revision": 733,
+  "revision": 752,
   "schema_version": 4,
   "source_head": {
     "live": {
-      "count": 645,
-      "hash": "9a3a4c6782c7e5d6f48a95b610fa32fced9ccaf47586253bb861cf56c37d25c6",
-      "last_event_id": "live-apex-541eb2007d9e8c61b6ae8ced1fbfb532"
+      "count": 649,
+      "hash": "cdc088a2d47d196aeec67075f61cda5402f2f3a99adc21f619d048cdc72e6a0b",
+      "last_event_id": "live-spcx-listing-void-b0993ecbf090f29a6166d469"
     },
     "market": {
-      "count": 14,
-      "hash": "a4983736369642456efcde7bf445d5d4614a5dd16f502f381e98330d43ab54aa",
-      "last_event_id": "market-quote-2026-07-24-qqq-45a3a5bd"
+      "count": 29,
+      "hash": "adec27e5d146c46df4cba16c6e287363525acbbdb1b1f0d7455fb37dd838c517",
+      "last_event_id": "market-ibkr-backfill-spcx-2026-07-24"
     },
     "paper": {
       "count": 74,
@@ -66908,6 +66892,6 @@
   },
   "warnings": [
     "paper performance starts at 2026-07-22 after incomplete market data",
-    "live performance contains incomplete market data"
+    "live performance starts at 2026-07-22 after incomplete market data"
   ]
 }
