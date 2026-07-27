@@ -15863,8 +15863,8 @@
     "symbol": "SPY"
   },
   "currency": "USD",
-  "data_as_of": "2026-07-26T16:00:00Z",
-  "generated_at": "2026-07-27T14:32:53.383520Z",
+  "data_as_of": "2026-07-27T14:40:00Z",
+  "generated_at": "2026-07-27T15:08:52.912818Z",
   "portfolios": {
     "live": {
       "cash": "171.61",
@@ -45222,7 +45222,7 @@
           "missing_symbols": [
             "MU",
             "NVDA",
-            "SKHYV",
+            "SKHY",
             "SPCX",
             "VOO"
           ],
@@ -45241,7 +45241,7 @@
           "missing_symbols": [
             "MU",
             "NVDA",
-            "SKHYV",
+            "SKHY",
             "SPCX",
             "VOO"
           ],
@@ -45260,7 +45260,7 @@
           "missing_symbols": [
             "MU",
             "NVDA",
-            "SKHYV",
+            "SKHY",
             "SPCX",
             "VOO"
           ],
@@ -45279,7 +45279,7 @@
           "missing_symbols": [
             "MU",
             "NVDA",
-            "SKHYV",
+            "SKHY",
             "SPCX",
             "VOO"
           ],
@@ -45298,7 +45298,7 @@
           "missing_symbols": [
             "MU",
             "NVDA",
-            "SKHYV",
+            "SKHY",
             "SPCX",
             "VOO"
           ],
@@ -45317,7 +45317,7 @@
           "missing_symbols": [
             "MU",
             "NVDA",
-            "SKHYV",
+            "SKHY",
             "SPCX",
             "VOO"
           ],
@@ -45336,7 +45336,7 @@
           "missing_symbols": [
             "MU",
             "NVDA",
-            "SKHYV",
+            "SKHY",
             "SPCX",
             "VOO"
           ],
@@ -45355,7 +45355,7 @@
           "missing_symbols": [
             "MU",
             "NVDA",
-            "SKHYV",
+            "SKHY",
             "SPCX",
             "VOO"
           ],
@@ -45374,7 +45374,7 @@
           "missing_symbols": [
             "MU",
             "NVDA",
-            "SKHYV",
+            "SKHY",
             "SPCX",
             "VOO"
           ],
@@ -45393,7 +45393,7 @@
           "missing_symbols": [
             "MU",
             "NVDA",
-            "SKHYV",
+            "SKHY",
             "SPCX",
             "VOO"
           ],
@@ -45412,7 +45412,7 @@
           "missing_symbols": [
             "MU",
             "NVDA",
-            "SKHYV",
+            "SKHY",
             "SPCX",
             "VOO"
           ],
@@ -45431,7 +45431,7 @@
           "missing_symbols": [
             "MU",
             "NVDA",
-            "SKHYV",
+            "SKHY",
             "SPCX",
             "VOO"
           ],
@@ -45521,15 +45521,15 @@
           "contract_multiplier": "1",
           "cost_basis": "1700",
           "current_price": "154.57",
-          "instrument_id": "EQUITY:SKHYV",
+          "instrument_id": "EQUITY:SKHY",
           "instrument_name": "SK hynix Inc. ADR",
           "instrument_type": "EQUITY",
           "market_price_as_of": "2026-07-24T20:00:00Z",
           "market_value": "1545.7",
           "quote_status": "OK",
-          "quote_symbol": "SKHYV",
+          "quote_symbol": "SKHY",
           "shares": "10",
-          "symbol": "SKHYV",
+          "symbol": "SKHY",
           "unrealized_pnl": "-154.3",
           "unrealized_pnl_pct": "-0.09076471"
         },
@@ -51598,20 +51598,20 @@
         {
           "contract_multiplier": "1",
           "cumulative_pnl": "-1535.4",
-          "event_id": "live-apex-8a593608f385a81556890ab8796ad217",
+          "event_id": "live-identity-cbrs-public-sell-6e2a8ed4be190717232d7026",
           "fee": "0.05",
-          "instrument_id": "PRIVATE:CEREBRAS",
+          "instrument_id": "EQUITY:CBRS",
           "instrument_name": "Cerebras Systems Inc.",
-          "instrument_type": "PRIVATE",
+          "instrument_type": "EQUITY",
           "matches": [
             {
-              "buy_event_id": "live-apex-0fba69aecd6fa638bfa6cefc63203db3",
+              "buy_event_id": "live-identity-cbrs-public-buy-b9120e3bff029c7e157a78d5",
               "buy_fee": "0",
               "buy_price": "300",
               "buy_settlement_adjustment": "0",
               "contract_multiplier": "1",
               "cost": "1200",
-              "instrument_id": "PRIVATE:CEREBRAS",
+              "instrument_id": "EQUITY:CBRS",
               "pnl": "-300.02",
               "proceeds": "899.98",
               "sell_fee": "0.02",
@@ -51620,13 +51620,13 @@
               "shares": "4"
             },
             {
-              "buy_event_id": "live-apex-06a1e4db647bd4565ca8cec9d9832c81",
+              "buy_event_id": "live-identity-cbrs-public-buy-8bd9a1ca90c72f96df400da7",
               "buy_fee": "0",
               "buy_price": "290",
               "buy_settlement_adjustment": "0",
               "contract_multiplier": "1",
               "cost": "1160",
-              "instrument_id": "PRIVATE:CEREBRAS",
+              "instrument_id": "EQUITY:CBRS",
               "pnl": "-260.02",
               "proceeds": "899.98",
               "sell_fee": "0.02",
@@ -51635,13 +51635,13 @@
               "shares": "4"
             },
             {
-              "buy_event_id": "live-apex-7405f49cf89d32d988b15f1640ef3f18",
+              "buy_event_id": "live-identity-cbrs-public-buy-0633c8d01238b30e8a121186",
               "buy_fee": "0",
               "buy_price": "278.6",
               "buy_settlement_adjustment": "0",
               "contract_multiplier": "1",
               "cost": "278.6",
-              "instrument_id": "PRIVATE:CEREBRAS",
+              "instrument_id": "EQUITY:CBRS",
               "pnl": "-53.61",
               "proceeds": "224.99",
               "sell_fee": "0.01",
@@ -51650,13 +51650,13 @@
               "shares": "1"
             },
             {
-              "buy_event_id": "live-apex-0b10b62abdcd5aa4ba1c260af64b0516",
+              "buy_event_id": "live-identity-cbrs-public-buy-d9757c279561d0d6b1a30066",
               "buy_fee": "0",
               "buy_price": "260",
               "buy_settlement_adjustment": "0",
               "contract_multiplier": "1",
               "cost": "260",
-              "instrument_id": "PRIVATE:CEREBRAS",
+              "instrument_id": "EQUITY:CBRS",
               "pnl": "-35",
               "proceeds": "225",
               "sell_fee": "0",
@@ -51860,23 +51860,23 @@
       "recent_trades": [
         {
           "action": "BUY",
-          "created_at": "2026-07-10T15:08:17Z",
-          "event_id": "live-apex-541eb2007d9e8c61b6ae8ced1fbfb532",
+          "created_at": "2026-07-27T14:40:00Z",
+          "event_id": "live-identity-skhy-symbol-buy-3302055f0416a49cef6f7541",
           "fee": "0",
-          "instrument_id": "EQUITY:SKHYV",
+          "instrument_id": "EQUITY:SKHY",
           "instrument_name": "SK hynix Inc. ADR",
           "instrument_type": "EQUITY",
-          "ledger_seq": 645,
+          "ledger_seq": 660,
           "note": "Imported broker trade",
           "occurred_at": "2026-07-10T15:08:17Z",
           "pnl": null,
           "pnl_pct": null,
           "portfolio": "live",
           "price": "170",
-          "quote_symbol": "SKHYV",
+          "quote_symbol": "SKHY",
           "shares": "10",
           "source": "manual-import",
-          "symbol": "SKHYV"
+          "symbol": "SKHY"
         },
         {
           "action": "BUY",
@@ -52383,21 +52383,21 @@
         },
         {
           "action": "SELL",
-          "created_at": "2026-06-02T15:07:57Z",
+          "created_at": "2026-07-27T14:40:00Z",
           "cumulative_pnl": "-1535.4",
-          "event_id": "live-apex-8a593608f385a81556890ab8796ad217",
+          "event_id": "live-identity-cbrs-public-sell-6e2a8ed4be190717232d7026",
           "fee": "0.05",
-          "instrument_id": "PRIVATE:CEREBRAS",
+          "instrument_id": "EQUITY:CBRS",
           "instrument_name": "Cerebras Systems Inc.",
-          "instrument_type": "PRIVATE",
-          "ledger_seq": 618,
+          "instrument_type": "EQUITY",
+          "ledger_seq": 658,
           "note": "Imported broker trade; execution 2026-06-01 09:48:32 ET",
           "occurred_at": "2026-06-02T15:07:57Z",
           "pnl": "-648.65",
           "pnl_pct": "-0.22378045",
           "portfolio": "live",
           "price": "225",
-          "quote_symbol": null,
+          "quote_symbol": "CBRS",
           "shares": "10",
           "source": "manual-import",
           "symbol": "CBRS"
@@ -52465,20 +52465,20 @@
         },
         {
           "action": "BUY",
-          "created_at": "2026-05-26T15:07:53Z",
-          "event_id": "live-apex-0b10b62abdcd5aa4ba1c260af64b0516",
+          "created_at": "2026-07-27T14:40:00Z",
+          "event_id": "live-identity-cbrs-public-buy-d9757c279561d0d6b1a30066",
           "fee": "0",
-          "instrument_id": "PRIVATE:CEREBRAS",
+          "instrument_id": "EQUITY:CBRS",
           "instrument_name": "Cerebras Systems Inc.",
-          "instrument_type": "PRIVATE",
-          "ledger_seq": 614,
+          "instrument_type": "EQUITY",
+          "ledger_seq": 656,
           "note": "Imported broker trade; execution 2026-05-22 10:09:16 ET",
           "occurred_at": "2026-05-26T15:07:53Z",
           "pnl": null,
           "pnl_pct": null,
           "portfolio": "live",
           "price": "260",
-          "quote_symbol": null,
+          "quote_symbol": "CBRS",
           "shares": "1",
           "source": "manual-import",
           "symbol": "CBRS"
@@ -52505,20 +52505,20 @@
         },
         {
           "action": "BUY",
-          "created_at": "2026-05-22T15:07:51Z",
-          "event_id": "live-apex-7405f49cf89d32d988b15f1640ef3f18",
+          "created_at": "2026-07-27T14:40:00Z",
+          "event_id": "live-identity-cbrs-public-buy-0633c8d01238b30e8a121186",
           "fee": "0",
-          "instrument_id": "PRIVATE:CEREBRAS",
+          "instrument_id": "EQUITY:CBRS",
           "instrument_name": "Cerebras Systems Inc.",
-          "instrument_type": "PRIVATE",
-          "ledger_seq": 612,
+          "instrument_type": "EQUITY",
+          "ledger_seq": 654,
           "note": "Imported broker trade; execution 2026-05-21 12:05:06 ET",
           "occurred_at": "2026-05-22T15:07:51Z",
           "pnl": null,
           "pnl_pct": null,
           "portfolio": "live",
           "price": "278.6",
-          "quote_symbol": null,
+          "quote_symbol": "CBRS",
           "shares": "1",
           "source": "manual-import",
           "symbol": "CBRS"
@@ -52585,40 +52585,40 @@
         },
         {
           "action": "BUY",
-          "created_at": "2026-05-18T15:07:47Z",
-          "event_id": "live-apex-06a1e4db647bd4565ca8cec9d9832c81",
+          "created_at": "2026-07-27T14:40:00Z",
+          "event_id": "live-identity-cbrs-public-buy-8bd9a1ca90c72f96df400da7",
           "fee": "0",
-          "instrument_id": "PRIVATE:CEREBRAS",
+          "instrument_id": "EQUITY:CBRS",
           "instrument_name": "Cerebras Systems Inc.",
-          "instrument_type": "PRIVATE",
-          "ledger_seq": 608,
+          "instrument_type": "EQUITY",
+          "ledger_seq": 652,
           "note": "Imported broker trade; execution 2026-05-15 11:56:52 ET",
           "occurred_at": "2026-05-18T15:07:47Z",
           "pnl": null,
           "pnl_pct": null,
           "portfolio": "live",
           "price": "290",
-          "quote_symbol": null,
+          "quote_symbol": "CBRS",
           "shares": "4",
           "source": "manual-import",
           "symbol": "CBRS"
         },
         {
           "action": "BUY",
-          "created_at": "2026-05-18T15:07:46Z",
-          "event_id": "live-apex-0fba69aecd6fa638bfa6cefc63203db3",
+          "created_at": "2026-07-27T14:40:00Z",
+          "event_id": "live-identity-cbrs-public-buy-b9120e3bff029c7e157a78d5",
           "fee": "0",
-          "instrument_id": "PRIVATE:CEREBRAS",
+          "instrument_id": "EQUITY:CBRS",
           "instrument_name": "Cerebras Systems Inc.",
-          "instrument_type": "PRIVATE",
-          "ledger_seq": 607,
+          "instrument_type": "EQUITY",
+          "ledger_seq": 650,
           "note": "Imported broker trade; execution 2026-05-15 09:38:15 ET",
           "occurred_at": "2026-05-18T15:07:46Z",
           "pnl": null,
           "pnl_pct": null,
           "portfolio": "live",
           "price": "300",
-          "quote_symbol": null,
+          "quote_symbol": "CBRS",
           "shares": "4",
           "source": "manual-import",
           "symbol": "CBRS"
@@ -66871,18 +66871,18 @@
     }
   },
   "prices_as_of": "2026-07-24T20:00:00Z",
-  "revision": 752,
+  "revision": 767,
   "schema_version": 4,
   "source_head": {
     "live": {
-      "count": 649,
-      "hash": "cdc088a2d47d196aeec67075f61cda5402f2f3a99adc21f619d048cdc72e6a0b",
-      "last_event_id": "live-spcx-listing-void-b0993ecbf090f29a6166d469"
+      "count": 661,
+      "hash": "9edf7f19842538bfae6f2439ee2b20b12724d914992303324ffd7d4dab2a9d6e",
+      "last_event_id": "live-identity-skhy-symbol-void-3302055f0416a49cef6f7541"
     },
     "market": {
-      "count": 29,
-      "hash": "adec27e5d146c46df4cba16c6e287363525acbbdb1b1f0d7455fb37dd838c517",
-      "last_event_id": "market-ibkr-backfill-spcx-2026-07-24"
+      "count": 32,
+      "hash": "b67f9188d1ce3fa3ddcebcf0552e6c468d4417424c6f477bfd6f4d787601a51f",
+      "last_event_id": "market-skhy-symbol-quote-afb04a0a508c4ef1a68b176e"
     },
     "paper": {
       "count": 74,
