@@ -351,7 +351,7 @@ class HermesBridgeTests(unittest.TestCase):
                 },
             )
 
-    def test_quote_batch_requires_one_session_and_one_benchmark(self) -> None:
+    def test_quote_batch_requires_one_benchmark_per_session(self) -> None:
         events = quote_batch_events(self.quote_batch())
         self.assertEqual(len(events), 3)
         self.assertEqual(events[0]["symbol"], "AAPL")
@@ -359,13 +359,149 @@ class HermesBridgeTests(unittest.TestCase):
         self.assertEqual(events[2]["source"], "cron-benchmark")
 
         without_benchmark = self.quote_batch()[:-1]
-        with self.assertRaisesRegex(ValueError, "exactly one benchmark"):
+        with self.assertRaisesRegex(ValueError, "per session"):
             quote_batch_events(without_benchmark)
 
         multiple_sessions = self.quote_batch()
         multiple_sessions[1]["session_date"] = "2024-01-03"
-        with self.assertRaisesRegex(ValueError, "one session_date"):
+        with self.assertRaisesRegex(ValueError, "2024-01-03"):
             quote_batch_events(multiple_sessions)
+
+    def test_quote_batch_accepts_multiple_complete_sessions(self) -> None:
+        second_session = [
+            {
+                **item,
+                "event_id": item["event_id"].replace(
+                    "2024-01-02",
+                    "2024-01-03",
+                ),
+                "occurred_at": item["occurred_at"].replace(
+                    "2024-01-02",
+                    "2024-01-03",
+                ),
+                "session_date": "2024-01-03",
+            }
+            for item in self.quote_batch()
+        ]
+
+        events = quote_batch_events(self.quote_batch() + second_session)
+
+        self.assertEqual(len(events), 6)
+        self.assertEqual(
+            {event["session_date"] for event in events},
+            {"2024-01-02", "2024-01-03"},
+        )
+        self.assertEqual(
+            sum(event["action"] == "BENCHMARK_CLOSE" for event in events),
+            2,
+        )
+
+    def test_quote_batch_duplicate_key_is_scoped_to_session(self) -> None:
+        payload = self.quote_batch()
+        duplicate = {
+            **payload[0],
+            "event_id": "market-aapl-duplicate-2024-01-02",
+        }
+        with self.assertRaisesRegex(ValueError, "on 2024-01-02"):
+            quote_batch_events(payload + [duplicate])
+
+        next_session_quote = {
+            **payload[0],
+            "event_id": "market-aapl-2024-01-03",
+            "occurred_at": "2024-01-03T21:00:00Z",
+            "session_date": "2024-01-03",
+        }
+        next_session_benchmark = {
+            **payload[2],
+            "event_id": "market-spy-benchmark-2024-01-03",
+            "occurred_at": "2024-01-03T21:00:01Z",
+            "session_date": "2024-01-03",
+        }
+        events = quote_batch_events(
+            payload + [next_session_quote, next_session_benchmark]
+        )
+        self.assertEqual(len(events), 5)
+
+    def test_option_contracts_with_same_underlying_are_distinct_quotes(self) -> None:
+        payload = [
+            {
+                "event_id": "market-nvda-call-2024-01-02",
+                "occurred_at": "2024-01-02T21:00:00Z",
+                "session_date": "2024-01-02",
+                "symbol": "NVDA",
+                "instrument_id": "OPTION:NVDA:2024-01-19:C:500",
+                "close": "6",
+            },
+            {
+                "event_id": "market-nvda-put-2024-01-02",
+                "occurred_at": "2024-01-02T21:00:01Z",
+                "session_date": "2024-01-02",
+                "symbol": "NVDA",
+                "instrument_id": "OPTION:NVDA:2024-01-19:P:500",
+                "close": "4",
+            },
+            {
+                "event_id": "market-spy-benchmark-2024-01-02",
+                "occurred_at": "2024-01-02T21:00:02Z",
+                "session_date": "2024-01-02",
+                "symbol": "SPY",
+                "close": "470",
+                "benchmark": True,
+            },
+        ]
+
+        events = quote_batch_events(payload)
+
+        self.assertEqual(len(events), 3)
+        self.assertEqual(
+            {
+                event.get("instrument_id")
+                for event in events
+                if event["action"] == "QUOTE"
+            },
+            {
+                "OPTION:NVDA:2024-01-19:C:500",
+                "OPTION:NVDA:2024-01-19:P:500",
+            },
+        )
+
+    def test_invalid_later_session_causes_zero_writes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            payload = self.quote_batch()
+            payload.extend(
+                [
+                    {
+                        "event_id": "market-aapl-2024-01-03",
+                        "occurred_at": "2024-01-03T21:00:00Z",
+                        "session_date": "2024-01-03",
+                        "symbol": "AAPL",
+                        "close": "111",
+                    },
+                    {
+                        "event_id": "market-spy-benchmark-2024-01-03",
+                        "occurred_at": "2024-01-03T21:00:01Z",
+                        "session_date": "2024-01-03",
+                        "symbol": "SPY",
+                        "close": "471",
+                        "benchmark": True,
+                    },
+                    {
+                        "event_id": "market-spy-benchmark-duplicate-2024-01-03",
+                        "occurred_at": "2024-01-03T21:00:02Z",
+                        "session_date": "2024-01-03",
+                        "symbol": "SPY",
+                        "close": "471",
+                        "benchmark": True,
+                    },
+                ]
+            )
+
+            with self.assertRaisesRegex(ValueError, "2024-01-03"):
+                events = quote_batch_events(payload)
+                append_quote_batch_and_rebuild(root, events)
+
+            self.assertEqual(LedgerStore(root).read("market"), [])
 
     def test_quote_batch_rebuilds_once_after_all_quotes_are_durable(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

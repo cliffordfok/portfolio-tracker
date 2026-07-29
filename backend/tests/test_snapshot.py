@@ -307,6 +307,197 @@ class SnapshotTests(unittest.TestCase):
         )
         self.assertEqual(_session_for_event(event, sessions), "2024-01-03")
 
+    def test_future_paper_session_does_not_extend_live_or_benchmark(self) -> None:
+        for portfolio in ("paper", "live"):
+            self.store.append(
+                candidate(
+                    "PORTFOLIO_OPEN",
+                    portfolio=portfolio,
+                    event_id=f"{portfolio}-open",
+                    occurred_at="2024-01-02T14:00:00Z",
+                    initial_cash="1000",
+                )
+            )
+            self.store.append(
+                candidate(
+                    "BUY",
+                    portfolio=portfolio,
+                    event_id=f"{portfolio}-buy-aapl",
+                    occurred_at="2024-01-02T15:00:00Z",
+                    symbol="AAPL",
+                    shares="1",
+                    price="100",
+                    fee="0",
+                )
+            )
+        self.store.append(
+            candidate(
+                "BUY",
+                portfolio="paper",
+                event_id="paper-after-hours-msft",
+                occurred_at="2024-01-02T22:00:00Z",
+                symbol="MSFT",
+                shares="1",
+                price="200",
+                fee="0",
+            )
+        )
+        for action, symbol, close in (
+            ("QUOTE", "AAPL", "110"),
+            ("BENCHMARK_CLOSE", "SPY", "470"),
+        ):
+            self.store.append(
+                candidate(
+                    action,
+                    portfolio="market",
+                    event_id=f"market-{symbol.lower()}-2024-01-02",
+                    occurred_at="2024-01-02T21:00:00Z",
+                    symbol=symbol,
+                    close=close,
+                    session_date="2024-01-02",
+                )
+            )
+
+        snapshot = build_snapshot(self.root, write=False)
+
+        self.assertEqual(
+            snapshot["portfolios"]["live"]["daily"][-1]["date"],
+            "2024-01-02",
+        )
+        self.assertEqual(
+            snapshot["portfolios"]["live"]["daily"][-1]["data_status"],
+            "OK",
+        )
+        self.assertEqual(
+            snapshot["portfolios"]["live"]["holdings"][0]["quote_status"],
+            "OK",
+        )
+        self.assertEqual(
+            snapshot["portfolios"]["paper"]["daily"][-1]["date"],
+            "2024-01-03",
+        )
+        self.assertEqual(
+            snapshot["portfolios"]["paper"]["daily"][-1]["data_status"],
+            "INSUFFICIENT_MARKET_DATA",
+        )
+        self.assertEqual(
+            snapshot["benchmark"]["daily"][-1]["date"],
+            "2024-01-02",
+        )
+
+    def test_legacy_option_never_uses_underlying_equity_quote(self) -> None:
+        self.store.append(
+            candidate(
+                "PORTFOLIO_OPEN",
+                portfolio="live",
+                event_id="live-open",
+                occurred_at="2024-01-02T14:00:00Z",
+                initial_cash="10000",
+            )
+        )
+        self.store.append(
+            candidate(
+                "BUY",
+                portfolio="live",
+                event_id="live-buy-option",
+                occurred_at="2024-01-02T15:00:00Z",
+                symbol="NVDA",
+                instrument_id="OPTION:NVDA:2024-01-19:C:500",
+                instrument_type="OPTION",
+                quote_symbol="NVDA",
+                contract_multiplier="100",
+                shares="1",
+                price="5",
+                fee="0",
+            )
+        )
+        for instrument_id, close, suffix in (
+            (None, "500", "underlying"),
+            ("OPTION:NVDA:2024-01-19:C:500", "6", "contract"),
+        ):
+            event = candidate(
+                "QUOTE",
+                portfolio="market",
+                event_id=f"market-nvda-{suffix}",
+                occurred_at="2024-01-02T21:00:00Z",
+                symbol="NVDA",
+                close=close,
+                session_date="2024-01-02",
+            )
+            if instrument_id is not None:
+                event["instrument_id"] = instrument_id
+            self.store.append(event)
+        self.store.append(
+            candidate(
+                "BENCHMARK_CLOSE",
+                portfolio="market",
+                event_id="market-spy-2024-01-02",
+                occurred_at="2024-01-02T21:00:01Z",
+                symbol="SPY",
+                close="470",
+                session_date="2024-01-02",
+            )
+        )
+
+        snapshot = build_snapshot(self.root, write=False)
+        holding = snapshot["portfolios"]["live"]["holdings"][0]
+
+        self.assertEqual(holding["current_price"], "6")
+        self.assertEqual(holding["market_value"], "600")
+        self.assertEqual(holding["quote_status"], "OK")
+        self.assertEqual(
+            snapshot["portfolios"]["live"]["daily"][-1]["nav"],
+            "10100",
+        )
+
+    def test_legacy_option_without_contract_quote_is_incomplete(self) -> None:
+        self.store.append(
+            candidate(
+                "PORTFOLIO_OPEN",
+                portfolio="live",
+                event_id="live-open",
+                occurred_at="2024-01-02T14:00:00Z",
+                initial_cash="10000",
+            )
+        )
+        self.store.append(
+            candidate(
+                "BUY",
+                portfolio="live",
+                event_id="live-buy-option",
+                occurred_at="2024-01-02T15:00:00Z",
+                symbol="NVDA",
+                instrument_id="OPTION:NVDA:2024-01-19:C:500",
+                instrument_type="OPTION",
+                quote_symbol="NVDA",
+                contract_multiplier="100",
+                shares="1",
+                price="5",
+                fee="0",
+            )
+        )
+        self.store.append(
+            candidate(
+                "QUOTE",
+                portfolio="market",
+                event_id="market-nvda-underlying",
+                occurred_at="2024-01-02T21:00:00Z",
+                symbol="NVDA",
+                close="500",
+                session_date="2024-01-02",
+            )
+        )
+
+        snapshot = build_snapshot(self.root, write=False)
+        holding = snapshot["portfolios"]["live"]["holdings"][0]
+
+        self.assertEqual(holding["quote_status"], "MISSING")
+        self.assertIsNone(holding["current_price"])
+        self.assertEqual(
+            snapshot["portfolios"]["live"]["daily"][-1]["data_status"],
+            "INSUFFICIENT_MARKET_DATA",
+        )
+
     def test_summer_dst_session_boundary_uses_new_york_time(self) -> None:
         sessions = ["2024-07-01", "2024-07-02"]
         before_close = candidate(

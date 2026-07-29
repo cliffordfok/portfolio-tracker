@@ -6,6 +6,7 @@ import argparse
 import json
 import re
 import sys
+from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -92,8 +93,8 @@ def quote_batch_events(payload: Any) -> list[dict[str, Any]]:
     }
     events: list[dict[str, Any]] = []
     sessions: set[str] = set()
-    quote_keys: set[tuple[str, str]] = set()
-    benchmark_count = 0
+    quote_keys: set[tuple[str, str, str]] = set()
+    benchmarks_per_session: dict[str, int] = defaultdict(int)
 
     for index, item in enumerate(payload, start=1):
         if not isinstance(item, dict):
@@ -119,21 +120,22 @@ def quote_batch_events(payload: Any) -> list[dict[str, Any]]:
         if not isinstance(symbol, str):
             raise ValueError(f"quote batch item {index} symbol must be a string")
         symbol = symbol.upper()
-        instrument_id = item.get("instrument_id")
-        quote_key = (action, instrument_id or symbol)
-        if quote_key in quote_keys:
-            raise ValueError(
-                f"quote batch contains duplicate {action} for {symbol}"
-            )
-        quote_keys.add(quote_key)
         session_date = item["session_date"]
         if not isinstance(session_date, str):
             raise ValueError(
                 f"quote batch item {index} session_date must be a string"
             )
         sessions.add(session_date)
+        instrument_id = item.get("instrument_id")
+        quote_key = (action, instrument_id or symbol, session_date)
+        if quote_key in quote_keys:
+            raise ValueError(
+                f"quote batch contains duplicate {action} for {symbol} "
+                f"on {session_date}"
+            )
+        quote_keys.add(quote_key)
         if is_benchmark:
-            benchmark_count += 1
+            benchmarks_per_session[session_date] += 1
 
         event = {
                 "event_id": item["event_id"],
@@ -154,10 +156,16 @@ def quote_batch_events(payload: Any) -> list[dict[str, Any]]:
             event["instrument_id"] = instrument_id
         events.append(event)
 
-    if len(sessions) != 1:
-        raise ValueError("quote batch must contain exactly one session_date")
-    if benchmark_count != 1:
-        raise ValueError("quote batch must contain exactly one benchmark event")
+    invalid_benchmark_sessions = [
+        session
+        for session in sorted(sessions)
+        if benchmarks_per_session[session] != 1
+    ]
+    if invalid_benchmark_sessions:
+        raise ValueError(
+            "quote batch must contain exactly one benchmark event per session: "
+            + ", ".join(invalid_benchmark_sessions)
+        )
     return events
 
 

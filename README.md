@@ -344,9 +344,9 @@ VPS 現有 bot 可以繼續用 yfinance 作內部研究／模擬用途，但 yfi
 其資料。因此，未取得另外授權前，不要把 yfinance 衍生的 close／SPY benchmark
 經 `quote-batch` 寫入會公開發布的 snapshot。
 
-取得允許公開／再分發資料的 quote provider 後，正式 daily cron 必須把同一個
-session 的所有持倉 close 及一個 SPY benchmark 組成單一 JSON batch，再交給
-bridge：
+取得允許公開／再分發資料的 quote provider 後，正式 daily cron 必須為每個
+session 提供所有持倉 close 及一個 SPY benchmark。單日或多日可以組成同一個
+JSON batch 再交給 bridge：
 
 ```bash
 cat <<'JSON' | python3 integrations/hermes_bridge.py \
@@ -380,9 +380,11 @@ cat <<'JSON' | python3 integrations/hermes_bridge.py \
 JSON
 ```
 
-`quote-batch` 會先驗證整批資料必須屬於同一個 session、每個
-`(action, instrument_id 或 symbol)` 唯一，而且剛好有一個 SPY benchmark。全部通過後才會
-在同一把 global ledger lock 下寫入，最後只 rebuild／request publish 一次。
+`quote-batch` 會先按 session 驗證每個
+`(action, instrument_id 或 symbol, session_date)` 唯一，而且每個 session
+剛好有一個 SPY benchmark。任何較後 session 無效時，較前 session 亦不會寫入。
+全部通過後才會在同一把 global ledger lock 下寫入，最後只
+rebuild／request publish 一次。
 同一批資料 retry 會按 stable event ID 成為 no-op。如果程序在 batch 中途
 終止，`rebuild.pending` 會保留完整 event ID 清單；systemd 會拒絕由部分
 batch 生成快照，直至原 batch 用相同 stable IDs retry 完成。
@@ -461,9 +463,56 @@ CBRS、SPCX 及 SKHY 必須使用已核實的上市身份；Option 不得以相�
 一般 Live 股票及已知 ETF 經 Hermes bridge 寫入時會補上明確 identity，
 避免使用裸 symbol 作 lot key。
 
+已匯入但仍帶有 underlying `quote_symbol` 的舊 Option 交易，先執行
+append-only identity migration。它會為每筆交易建立移除 `quote_symbol`
+的 replacement，再 VOID 原事件；成交價、股數、contract multiplier、
+現金及 FIFO P&L 必須完全不變。沒有 option-contract close 的日期會保留為
+`INSUFFICIENT_MARKET_DATA`，不可用正股價格代替：
+
+```bash
+python3 scripts/repair_legacy_option_identities.py \
+  --root /data/portfolio \
+  --check-only
+
+python3 scripts/repair_legacy_option_identities.py \
+  --root /data/portfolio \
+  --apply
+```
+
+yfinance 的歷史 `Close` 會反映其後 stock split，而券商交易股數及價格保留
+各成交日 basis。必須先完成上面的 Option migration，再從最新 ledgers
+產生 hash-bound split plan，人工核對 split facts，最後才可 check/apply：
+
+```bash
+python3 scripts/repair_split_adjusted_quotes.py \
+  --root /data/portfolio \
+  --generate-plan /data/portfolio/staging/split-basis-plan.json
+
+python3 scripts/repair_split_adjusted_quotes.py \
+  --root /data/portfolio \
+  --plan /data/portfolio/staging/split-basis-plan.json \
+  --check-only
+
+python3 scripts/repair_split_adjusted_quotes.py \
+  --root /data/portfolio \
+  --plan /data/portfolio/staging/split-basis-plan.json \
+  --apply
+```
+
+Plan 只會把 provider 的 split-adjusted close 乘以該 session 之後的累積
+split ratio，append 新 `manual-quote` 作 session-native close；原 quote、
+Live ledger 及交易紀錄不會被覆寫。若 Live／Market source digest 與 plan
+不符，migration 會在 backup 或 write 前停止。Plan 必須保留作審批證據，
+不可在產生後手改；實際公開資料仍須符合 quote provider 授權。
+
 同一個 session 必須為所有未平倉 symbol 提供 close。任何一個缺失，該日整個
 portfolio NAV 會標記為 `INSUFFICIENT_MARKET_DATA`。如果 SPY 本身亦是持倉，
 batch 要同時包含 SPY `QUOTE` 及 `BENCHMARK_CLOSE`，兩者用途不同。
+
+Paper、Live 及 benchmark 各自使用獨立終止日期。Paper 的 after-hours event
+只可延伸 Paper，不能把 Live 或 SPY 延伸至尚未有報價的下一交易日。Paper
+trader cron 應以 `America/New_York` 排程並在正常交易時段內產生交易；
+不要用固定 UTC 時間假設全年收市時間相同。
 
 交易 ledger 仍由開倉日起完整重播，用作 FIFO、現金、持倉及已實現損益核算。
 回報、最大回撤及 Sharpe 只使用延伸至快照最新日期的完整估值 segment：

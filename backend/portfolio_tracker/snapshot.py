@@ -749,9 +749,7 @@ def _quote_for_day(
     return records[max(eligible)] if eligible else None
 
 
-def _session_for_event(event: dict[str, Any], sessions: list[str]) -> str | None:
-    if not sessions:
-        return None
+def _event_session_candidate(event: dict[str, Any]) -> str:
     occurred = parse_timestamp(event["occurred_at"], field="occurred_at")
     local = _new_york_local(occurred)
     session_day = local.date()
@@ -762,7 +760,13 @@ def _session_for_event(event: dict[str, Any], sessions: list[str]) -> str | None
         session_day += timedelta(days=1)
         while not is_nyse_session(session_day):
             session_day += timedelta(days=1)
-    session_text = session_day.isoformat()
+    return session_day.isoformat()
+
+
+def _session_for_event(event: dict[str, Any], sessions: list[str]) -> str | None:
+    if not sessions:
+        return None
+    session_text = _event_session_candidate(event)
     index = bisect_left(sessions, session_text)
     if index >= len(sessions) or sessions[index] != session_text:
         return None
@@ -782,6 +786,21 @@ def _latest_completed_session(now: datetime) -> date:
     return candidate
 
 
+def _position_quote_key(item: dict[str, Any]) -> str:
+    """Resolve a quote identity without reusing an underlying for derivatives.
+
+    Early imported OPTION/PRIVATE events carried a display-oriented
+    ``quote_symbol``. Treating that alias as a price source materially
+    misprices the instrument, so these identities always quote by their stable
+    instrument ID. Listed equities and ETFs may continue to use ticker aliases.
+    """
+
+    instrument_id = item.get("instrument_id") or item["symbol"]
+    if item.get("instrument_type") in {"OPTION", "PRIVATE"}:
+        return instrument_id
+    return item.get("quote_symbol") or instrument_id
+
+
 def _enrich_holdings(
     result: ReplayResult,
     quotes: dict[str, dict[str, dict[str, Any]]],
@@ -791,7 +810,7 @@ def _enrich_holdings(
     enriched: list[dict[str, Any]] = []
     for holding in result.holdings:
         symbol = holding["symbol"]
-        quote_key = holding.get("quote_symbol") or holding["instrument_id"]
+        quote_key = _position_quote_key(holding)
         current_quote = (
             _quote_for_day(
                 quotes.get(quote_key, {}),
@@ -1001,7 +1020,7 @@ def _daily_series(
                 )
                 position_meta[instrument_id] = {
                     "symbol": event["symbol"],
-                    "quote_key": event.get("quote_symbol") or instrument_id,
+                    "quote_key": _position_quote_key(event),
                     "contract_multiplier": multiplier,
                 }
                 positions[instrument_id] = shares(
@@ -1030,7 +1049,7 @@ def _daily_series(
                     instrument_id,
                     {
                         "symbol": event["symbol"],
-                        "quote_key": event.get("quote_symbol") or instrument_id,
+                        "quote_key": _position_quote_key(event),
                         "contract_multiplier": multiplier,
                     },
                 )
@@ -1219,6 +1238,35 @@ def _benchmark_series(
     return series
 
 
+def _portfolio_calendar(
+    result: ReplayResult,
+    market_sessions: list[str],
+) -> tuple[list[str], list[str]]:
+    """Build a portfolio-local calendar.
+
+    Market sessions are shared source data, but a future-dated Paper event must
+    not extend Live (or the benchmark) into a session for which no quote exists.
+    Each portfolio may extend only its own terminal session.
+    """
+
+    candidates = set(market_sessions)
+    candidates.update(
+        _event_session_candidate(event)
+        for event in result.effective_events
+    )
+    if not candidates:
+        return [], []
+    sessions = nyse_sessions(
+        date.fromisoformat(min(candidates)),
+        date.fromisoformat(max(candidates)),
+    )
+    days = _calendar_days(
+        date.fromisoformat(sessions[0]),
+        date.fromisoformat(sessions[-1]),
+    )
+    return sessions, days
+
+
 def _build_snapshot_locked(
     root_path: Path,
     store: LedgerStore,
@@ -1253,37 +1301,14 @@ def _build_snapshot_locked(
         for name, events in (("paper", paper_events), ("live", live_events))
         if events
     }
-    session_candidates = set(market_sessions)
-    for result in replay_results.values():
-        for event in result.effective_events:
-            occurred = parse_timestamp(event["occurred_at"], field="occurred_at")
-            local = _new_york_local(occurred)
-            candidate = local.date()
-            if (
-                local.timetz().replace(tzinfo=None) > MARKET_CLOSE
-                or not is_nyse_session(candidate)
-            ):
-                candidate += timedelta(days=1)
-                while not is_nyse_session(candidate):
-                    candidate += timedelta(days=1)
-            session_candidates.add(candidate.isoformat())
-    sessions = (
-        nyse_sessions(
-            date.fromisoformat(min(session_candidates)),
-            date.fromisoformat(max(session_candidates)),
-        )
-        if session_candidates
-        else []
-    )
-    days = (
+    benchmark_days = (
         _calendar_days(
-            date.fromisoformat(sessions[0]),
-            date.fromisoformat(sessions[-1]),
+            date.fromisoformat(market_sessions[0]),
+            date.fromisoformat(market_sessions[-1]),
         )
-        if sessions
+        if market_sessions
         else []
     )
-    session_set = set(sessions)
     warnings = [
         (
             f"{Path(repair['ledger']).stem} ledger tail repaired; "
@@ -1317,9 +1342,23 @@ def _build_snapshot_locked(
             continue
 
         result = replay_results[name]
-        daily = _daily_series(result, quotes, days, sessions)
-        last_day = days[-1] if days else None
-        holdings = _enrich_holdings(result, quotes, last_day, session_set)
+        portfolio_sessions, portfolio_days = _portfolio_calendar(
+            result,
+            market_sessions,
+        )
+        daily = _daily_series(
+            result,
+            quotes,
+            portfolio_days,
+            portfolio_sessions,
+        )
+        last_day = portfolio_days[-1] if portfolio_days else None
+        holdings = _enrich_holdings(
+            result,
+            quotes,
+            last_day,
+            set(portfolio_sessions),
+        )
         metrics = _metrics(daily, result)
         if metrics["data_status"] != "OK":
             warnings.append(f"{name} performance contains incomplete market data")
@@ -1395,7 +1434,11 @@ def _build_snapshot_locked(
             "portfolios": portfolios,
             "benchmark": {
                 "symbol": "SPY",
-                "daily": _benchmark_series(benchmark, days, sessions),
+                "daily": _benchmark_series(
+                    benchmark,
+                    benchmark_days,
+                    market_sessions,
+                ),
             },
             "warnings": warnings,
         }
