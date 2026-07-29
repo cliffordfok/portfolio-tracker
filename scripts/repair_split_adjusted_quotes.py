@@ -513,6 +513,11 @@ def generate_plan(
     return payload
 
 
+def _yfinance_symbol(symbol: str) -> str:
+    # Yahoo uses a dash for listed share classes such as BRK.B.
+    return symbol.replace(".", "-")
+
+
 def _yfinance_fetcher() -> Callable[[str], Iterable[tuple[Any, Any]]]:
     try:
         import yfinance as yf
@@ -522,7 +527,18 @@ def _yfinance_fetcher() -> Callable[[str], Iterable[tuple[Any, Any]]]:
         ) from exc
 
     def fetch(symbol: str) -> Iterable[tuple[Any, Any]]:
-        return list(yf.Ticker(symbol).splits.items())
+        provider_symbol = _yfinance_symbol(symbol)
+        try:
+            splits = yf.Ticker(provider_symbol).splits
+        except Exception as exc:
+            raise SplitQuoteMigrationError(
+                f"yfinance split lookup failed for {symbol}"
+            ) from exc
+        if splits is None or not hasattr(splits, "items"):
+            raise SplitQuoteMigrationError(
+                f"yfinance returned no split series for {symbol}"
+            )
+        return list(splits.items())
 
     return fetch
 

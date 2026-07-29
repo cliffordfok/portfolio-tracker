@@ -7,6 +7,8 @@ import tempfile
 import unittest
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from portfolio_tracker.ledger import LedgerStore
 from portfolio_tracker.snapshot import build_snapshot
@@ -319,6 +321,41 @@ class SplitAdjustedQuoteMigrationTests(unittest.TestCase):
                     }
                 ],
             )
+
+    def test_yfinance_fetcher_normalizes_listed_share_class(self) -> None:
+        requested: list[str] = []
+        split_date = datetime(2024, 1, 2)
+
+        class FakeTicker:
+            def __init__(self, symbol: str) -> None:
+                requested.append(symbol)
+                self.splits = {split_date: 50}
+
+        with patch.dict(
+            sys.modules,
+            {"yfinance": SimpleNamespace(Ticker=FakeTicker)},
+        ):
+            fetch = MIGRATION._yfinance_fetcher()
+
+        self.assertEqual(list(fetch("BRK.B")), [(split_date, 50)])
+        self.assertEqual(requested, ["BRK-B"])
+
+    def test_yfinance_fetcher_fails_closed_on_missing_series(self) -> None:
+        class FakeTicker:
+            def __init__(self, symbol: str) -> None:
+                self.splits = None
+
+        with patch.dict(
+            sys.modules,
+            {"yfinance": SimpleNamespace(Ticker=FakeTicker)},
+        ):
+            fetch = MIGRATION._yfinance_fetcher()
+
+        with self.assertRaisesRegex(
+            MIGRATION.SplitQuoteMigrationError,
+            "returned no split series for BRK.B",
+        ):
+            list(fetch("BRK.B"))
 
 
 if __name__ == "__main__":
