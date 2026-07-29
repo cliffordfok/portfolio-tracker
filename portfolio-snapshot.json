@@ -15896,11 +15896,20 @@
         "segment_return": "0.78507467"
       },
       {
+        "close": "729.46",
+        "cumulative_return": "0.7576068",
+        "daily_return": "-0.01538752",
+        "data_status": "OK",
+        "date": "2026-07-29",
+        "segment_id": 1,
+        "segment_return": "0.7576068"
+      },
+      {
         "close": null,
         "cumulative_return": null,
         "daily_return": null,
         "data_status": "INSUFFICIENT_MARKET_DATA",
-        "date": "2026-07-29",
+        "date": "2026-07-30",
         "segment_id": null,
         "segment_return": null
       }
@@ -15908,8 +15917,8 @@
     "symbol": "SPY"
   },
   "currency": "USD",
-  "data_as_of": "2026-07-28T20:30:50.269726Z",
-  "generated_at": "2026-07-28T21:00:53.247670Z",
+  "data_as_of": "2026-07-29T20:30:09.319939Z",
+  "generated_at": "2026-07-29T21:00:11.204583Z",
   "portfolios": {
     "live": {
       "cash": "171.61",
@@ -38905,9 +38914,22 @@
         {
           "cash": "171.61",
           "cumulative_return": null,
+          "daily_return": "-0.02852802",
+          "data_status": "OK",
+          "date": "2026-07-29",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "93726.8394269",
+          "pnl": "17891.8394269",
+          "segment_id": 2,
+          "segment_return": "-0.10137203"
+        },
+        {
+          "cash": "171.61",
+          "cumulative_return": null,
           "daily_return": null,
           "data_status": "INSUFFICIENT_MARKET_DATA",
-          "date": "2026-07-29",
+          "date": "2026-07-30",
           "external_flow": "0",
           "missing_symbols": [
             "MU",
@@ -57899,7 +57921,7 @@
       ]
     },
     "paper": {
-      "cash": "80273.4581",
+      "cash": "100226.6681",
       "daily": [
         {
           "cash": "99970.432",
@@ -58075,51 +58097,44 @@
         {
           "cash": "80273.4581",
           "cumulative_return": null,
-          "daily_return": null,
-          "data_status": "INSUFFICIENT_MARKET_DATA",
+          "daily_return": "-0.00111134",
+          "data_status": "OK",
           "date": "2026-07-29",
           "external_flow": "0",
-          "missing_symbols": [
-            "AAPL"
-          ],
-          "nav": null,
-          "pnl": null,
-          "segment_id": null,
-          "segment_return": null
-        }
-      ],
-      "data_status": "INSUFFICIENT_DATA",
-      "holdings": [
+          "missing_symbols": [],
+          "nav": "100226.6681",
+          "pnl": "226.6681",
+          "segment_id": 2,
+          "segment_return": "-0.00111134"
+        },
         {
-          "avg_cost": "340.08",
-          "contract_multiplier": "1",
-          "cost_basis": "20064.72",
-          "current_price": null,
-          "instrument_id": "AAPL",
-          "instrument_name": null,
-          "instrument_type": "EQUITY",
-          "market_price_as_of": null,
-          "market_value": null,
-          "quote_status": "MISSING",
-          "quote_symbol": "AAPL",
-          "shares": "59",
-          "symbol": "AAPL",
-          "unrealized_pnl": null,
-          "unrealized_pnl_pct": null
+          "cash": "100226.6681",
+          "cumulative_return": null,
+          "daily_return": "0",
+          "data_status": "OK",
+          "date": "2026-07-30",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "100226.6681",
+          "pnl": "226.6681",
+          "segment_id": 2,
+          "segment_return": "-0.00111134"
         }
       ],
+      "data_status": "OK",
+      "holdings": [],
       "initial_cash": "100000",
       "metrics": {
-        "closed_episodes": 34,
-        "data_status": "INSUFFICIENT_DATA",
+        "closed_episodes": 35,
+        "data_status": "OK",
         "income_expense": "0",
-        "max_drawdown": null,
-        "performance_effective_date": null,
-        "performance_scope": null,
-        "realized_pnl": "338.1781",
+        "max_drawdown": "-0.00111134",
+        "performance_effective_date": "2026-07-22",
+        "performance_scope": "LATEST_COMPLETE_SEGMENT",
+        "realized_pnl": "226.6681",
         "sharpe_ratio": null,
-        "total_return": null,
-        "win_rate": "0.47058824"
+        "total_return": "-0.00111134",
+        "win_rate": "0.45714286"
       },
       "realized_pnl_per_trade": [
         {
@@ -59241,9 +59256,59 @@
           "price": "378.93",
           "shares": "28",
           "symbol": "TSLA"
+        },
+        {
+          "contract_multiplier": "1",
+          "cumulative_pnl": "226.6681",
+          "event_id": "paper-swing-v2-bf5f0ddfba0940afb1f561ec0e0fe10e",
+          "fee": "0",
+          "instrument_id": "AAPL",
+          "instrument_name": null,
+          "instrument_type": "EQUITY",
+          "matches": [
+            {
+              "buy_event_id": "paper-swing-v2-379fe0a905d6444783e7fd8dd0646c9c",
+              "buy_fee": "0",
+              "buy_price": "340.08",
+              "buy_settlement_adjustment": "0",
+              "contract_multiplier": "1",
+              "cost": "20064.72",
+              "instrument_id": "AAPL",
+              "pnl": "-111.51",
+              "proceeds": "19953.21",
+              "sell_fee": "0",
+              "sell_price": "338.19",
+              "sell_settlement_adjustment": "0",
+              "shares": "59"
+            }
+          ],
+          "occurred_at": "2026-07-29T20:30:09.319939Z",
+          "pnl": "-111.51",
+          "pnl_pct": "-0.00555752",
+          "price": "338.19",
+          "shares": "59",
+          "symbol": "AAPL"
         }
       ],
       "recent_trades": [
+        {
+          "action": "SELL",
+          "created_at": "2026-07-29T20:30:09.319939Z",
+          "cumulative_pnl": "226.6681",
+          "event_id": "paper-swing-v2-bf5f0ddfba0940afb1f561ec0e0fe10e",
+          "fee": "0",
+          "ledger_seq": 76,
+          "occurred_at": "2026-07-29T20:30:09.319939Z",
+          "pnl": "-111.51",
+          "pnl_pct": "-0.00555752",
+          "portfolio": "paper",
+          "price": "338.19",
+          "reason": "持倉超時(24.0h)",
+          "shares": "59",
+          "source": "swing-trader",
+          "strategy": "legacy_exit",
+          "symbol": "AAPL"
+        },
         {
           "action": "BUY",
           "created_at": "2026-07-28T20:30:50.269726Z",
@@ -60407,8 +60472,8 @@
       ]
     }
   },
-  "prices_as_of": "2026-07-28T20:00:00Z",
-  "revision": 35074,
+  "prices_as_of": "2026-07-29T20:00:00Z",
+  "revision": 35106,
   "schema_version": 4,
   "source_head": {
     "live": {
@@ -60417,18 +60482,18 @@
       "last_event_id": "live-identity-skhy-symbol-void-3302055f0416a49cef6f7541"
     },
     "market": {
-      "count": 34338,
-      "hash": "cc9be9da8b0ebf0b82ba99ee025e59054f780454996793e303edf28ce10c3bfe",
-      "last_event_id": "market-quote-2026-07-28-spy-5649783f"
+      "count": 34369,
+      "hash": "4663d7785b436cbd442deee80c8fd05beab15e7dfafd2b04d54c363f1851c801",
+      "last_event_id": "market-quote-2026-07-29-spy-b52b21ed"
     },
     "paper": {
-      "count": 75,
-      "hash": "674013df03a8866669e7bac9c2a105f0275d4fca4474091b051d07fcf9c261ec",
-      "last_event_id": "paper-swing-v2-379fe0a905d6444783e7fd8dd0646c9c"
+      "count": 76,
+      "hash": "c1028460dfcde8883a4a2b185c5023a731a77efc9f488d5a088c4b898c140e9d",
+      "last_event_id": "paper-swing-v2-bf5f0ddfba0940afb1f561ec0e0fe10e"
     }
   },
   "warnings": [
-    "paper performance contains incomplete market data",
+    "paper performance starts at 2026-07-22 after incomplete market data",
     "live performance contains incomplete market data"
   ]
 }
