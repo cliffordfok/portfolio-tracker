@@ -21,6 +21,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from decimal import Decimal, InvalidOperation
+from fractions import Fraction
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
@@ -444,8 +445,13 @@ def _listed_quote_symbols(live_events: list[dict[str, Any]]) -> set[str]:
 
 def _ratio_parts(value: Any) -> tuple[str, str]:
     ratio = _decimal(value, field="split ratio")
-    numerator, denominator = ratio.as_integer_ratio()
-    return str(numerator), str(denominator)
+    fraction = Fraction(ratio).limit_denominator(10_000)
+    normalized = Decimal(fraction.numerator) / Decimal(fraction.denominator)
+    if abs(normalized - ratio) > Decimal("1e-12"):
+        raise SplitQuoteMigrationError(
+            f"split ratio cannot be normalized safely: {value}"
+        )
+    return str(fraction.numerator), str(fraction.denominator)
 
 
 def generate_plan(

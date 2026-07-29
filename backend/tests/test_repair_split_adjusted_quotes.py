@@ -357,6 +357,25 @@ class SplitAdjustedQuoteMigrationTests(unittest.TestCase):
         ):
             list(fetch("BRK.B"))
 
+    def test_provider_float_ratio_is_normalized_to_auditable_fraction(
+        self,
+    ) -> None:
+        self.assertEqual(
+            MIGRATION._ratio_parts(0.3333333333333333),
+            ("1", "3"),
+        )
+        self.assertEqual(MIGRATION._ratio_parts(0.2), ("1", "5"))
+        self.assertEqual(MIGRATION._ratio_parts(10.0), ("10", "1"))
+
+    def test_provider_ratio_fails_closed_when_not_safely_normalized(
+        self,
+    ) -> None:
+        with self.assertRaisesRegex(
+            MIGRATION.SplitQuoteMigrationError,
+            "cannot be normalized safely",
+        ):
+            MIGRATION._ratio_parts("1.234567890123456789")
+
 
 if __name__ == "__main__":
     unittest.main()
