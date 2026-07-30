@@ -514,6 +514,49 @@ Paper、Live 及 benchmark 各自使用獨立終止日期。Paper 的 after-hour
 trader cron 應以 `America/New_York` 排程並在正常交易時段內產生交易；
 不要用固定 UTC 時間假設全年收市時間相同。
 
+Hermes cron 只支援 UTC 時，Paper job 應同時安排兩個 DST candidate：
+
+```cron
+45 19,20 * * 1-5
+```
+
+兩次 invocation 都必須經以下守門器；只有等於美東 `15:45` 的一次會執行
+trader，另一個會回傳 `skipped`。NYSE 假期及已列入官方 2026–2028 日曆的
+提早收市日亦會跳過：
+
+```bash
+/usr/local/bin/python3 \
+  /data/portfolio-tracker/scripts/run_paper_trader_market_window.py \
+  -- /usr/local/bin/python3 /data/scripts/swing_trader.py
+```
+
+缺失歷史報價只可用已核實的 provider close 作精準補錄。工具預設
+check-only，拒絕今日／未來 New York session、非 NYSE session，以及已有
+不同 close 的 `(instrument, session)`；`--apply` 會先備份三個 ledger，再經
+Hermes bridge append 及重建：
+
+```bash
+/usr/local/bin/python3 \
+  /data/portfolio-tracker/scripts/repair_missing_quote.py \
+  --root /data/portfolio \
+  --symbol SPY \
+  --session-date 2026-07-21 \
+  --close PROVIDER_VERIFIED_CLOSE
+
+# check-only 輸出 status=valid、pending=1 後才可執行
+/usr/local/bin/python3 \
+  /data/portfolio-tracker/scripts/repair_missing_quote.py \
+  --root /data/portfolio \
+  --symbol SPY \
+  --session-date 2026-07-21 \
+  --close PROVIDER_VERIFIED_CLOSE \
+  --apply
+```
+
+成功後以完全相同參數重試必須回傳 `status=current`、`pending=0`，而且不得
+再產生 backup。若 SPY 同時是持倉，這個工具補的是普通 `QUOTE`；既有
+`BENCHMARK_CLOSE` 不會被覆寫或取代。
+
 交易 ledger 仍由開倉日起完整重播，用作 FIFO、現金、持倉及已實現損益核算。
 回報、最大回撤及 Sharpe 只使用延伸至快照最新日期的完整估值 segment：
 如果歷史曾有報價缺口，首個其後連續完整估值日會成為
@@ -713,6 +756,11 @@ snapshot；只有 rebuild 成功後才讀取 token 及啟動 bootstrap publisher
 `maintain` 會先以完全冇 PAT 嘅環境執行 `rebuild --if-needed`；成功後先讀取
 token file，並只注入 publisher child。如果 rebuild 失敗，佢唔會讀 PAT 或
 啟動 publisher。
+
+Paper trader job 不可使用一個全年固定的 UTC 收市時間。Hermes job 使用
+`45 19,20 * * 1-5`，而 `/data/scripts/swing_trader.sh` 只負責 `exec`
+上述 `run_paper_trader_market_window.py`；守門器會按
+`America/New_York` 自動選擇夏令或冬令嗰一次 invocation。
 
 單一 Unix user container 無法提供 systemd credential／獨立 service user
 級別嘅檔案隔離；以上 wrapper 提供 process environment 最小權限。需要嚴格
