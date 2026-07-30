@@ -288,7 +288,33 @@ class SplitAdjustedQuoteMigrationTests(unittest.TestCase):
         )
 
         self.assertEqual(factor, MIGRATION.Decimal("0.04"))
-        self.assertEqual(corrected["close"], "10.00")
+        self.assertEqual(corrected["close"], "10.000000")
+
+    def test_repeating_split_price_is_rounded_to_schema_precision(self) -> None:
+        source = self.event(
+            "market-sark-2024-01-02",
+            "market",
+            "2024-01-02T21:00:00Z",
+            "QUOTE",
+            symbol="SARK",
+            close="10",
+            session_date="2024-01-02",
+        )
+        fact = MIGRATION.SplitFact(
+            "SARK",
+            "ETF:SARK",
+            "2024-11-27",
+            MIGRATION.Decimal("1"),
+            MIGRATION.Decimal("3"),
+        )
+
+        corrected = MIGRATION._corrected_quote(
+            source,
+            MIGRATION._factor_for_quote(source, [fact]),
+            created_at="2026-07-29T00:00:00Z",
+        )
+
+        self.assertEqual(corrected["close"], "3.333333")
 
     def test_generate_plan_uses_only_splits_inside_quote_range(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

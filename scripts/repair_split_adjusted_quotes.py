@@ -31,7 +31,7 @@ if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 from portfolio_tracker.backup import backup_ledgers
-from portfolio_tracker.decimal_utils import price
+from portfolio_tracker.decimal_utils import PRICE_QUANT, quantize
 from portfolio_tracker.errors import ConflictError, PortfolioError
 from portfolio_tracker.ledger import LedgerStore, atomic_write_json
 from portfolio_tracker.resolver import resolve_effective_events
@@ -274,8 +274,9 @@ def _corrected_quote(
         "action": "QUOTE",
         "symbol": source["symbol"],
         "close": format(
-            price(
+            quantize(
                 _decimal(source["close"], field="close") * factor,
+                PRICE_QUANT,
                 field="close",
             ),
             "f",
