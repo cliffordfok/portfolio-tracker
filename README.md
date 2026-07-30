@@ -536,6 +536,11 @@ check-only，拒絕今日／未來 New York session、非 NYSE session，以及�
 Hermes bridge append 及重建：
 
 ```bash
+# 先用 production 相同 yfinance adapter 核實 raw close；此步只讀
+/data/portfolio-tracker/scripts/check_yfinance_close.sh \
+  --symbol SPY \
+  --session-date 2026-07-21
+
 /usr/local/bin/python3 \
   /data/portfolio-tracker/scripts/repair_missing_quote.py \
   --root /data/portfolio \
