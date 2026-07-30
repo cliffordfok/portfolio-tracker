@@ -36,6 +36,20 @@ class RecordingRunner:
 
 
 class PaperTraderMarketWindowTests(unittest.TestCase):
+    def test_deployment_wrapper_routes_through_guard(self) -> None:
+        wrapper = (
+            SCRIPT_PATH.parent / "run_paper_trader_market_window.sh"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "/data/portfolio-tracker/scripts/"
+            "run_paper_trader_market_window.py",
+            wrapper,
+        )
+        self.assertIn(
+            "-- /usr/local/bin/python3 /data/scripts/swing_trader.py",
+            wrapper,
+        )
+
     def test_summer_candidate_runs_at_1545_edt(self) -> None:
         decision = WINDOW.decide(
             datetime(2026, 7, 30, 19, 45, tzinfo=UTC)
