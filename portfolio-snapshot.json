@@ -15909,7 +15909,7 @@
   },
   "currency": "USD",
   "data_as_of": "2026-07-29T23:35:06.739678Z",
-  "generated_at": "2026-07-30T13:42:53.983462Z",
+  "generated_at": "2026-07-30T14:29:49.823554Z",
   "portfolios": {
     "live": {
       "cash": "171.61",
@@ -57997,35 +57997,33 @@
         },
         {
           "cash": "49822.6581",
-          "cumulative_return": null,
-          "daily_return": null,
-          "data_status": "INSUFFICIENT_MARKET_DATA",
+          "cumulative_return": "0.00367855",
+          "daily_return": "0.0062717",
+          "data_status": "OK",
           "date": "2026-07-21",
           "external_flow": "0",
-          "missing_symbols": [
-            "SPY"
-          ],
-          "nav": null,
-          "pnl": null,
-          "segment_id": null,
-          "segment_return": null
+          "missing_symbols": [],
+          "nav": "100338.1781",
+          "pnl": "338.1781",
+          "segment_id": 1,
+          "segment_return": "0.00367855"
         },
         {
           "cash": "100338.1781",
-          "cumulative_return": null,
-          "daily_return": null,
+          "cumulative_return": "0.00367855",
+          "daily_return": "0",
           "data_status": "OK",
           "date": "2026-07-22",
           "external_flow": "0",
           "missing_symbols": [],
           "nav": "100338.1781",
           "pnl": "338.1781",
-          "segment_id": 2,
-          "segment_return": "0"
+          "segment_id": 1,
+          "segment_return": "0.00367855"
         },
         {
           "cash": "100338.1781",
-          "cumulative_return": null,
+          "cumulative_return": "0.00367855",
           "daily_return": "0",
           "data_status": "OK",
           "date": "2026-07-23",
@@ -58033,12 +58031,12 @@
           "missing_symbols": [],
           "nav": "100338.1781",
           "pnl": "338.1781",
-          "segment_id": 2,
-          "segment_return": "0"
+          "segment_id": 1,
+          "segment_return": "0.00367855"
         },
         {
           "cash": "100338.1781",
-          "cumulative_return": null,
+          "cumulative_return": "0.00367855",
           "daily_return": "0",
           "data_status": "OK",
           "date": "2026-07-24",
@@ -58046,12 +58044,12 @@
           "missing_symbols": [],
           "nav": "100338.1781",
           "pnl": "338.1781",
-          "segment_id": 2,
-          "segment_return": "0"
+          "segment_id": 1,
+          "segment_return": "0.00367855"
         },
         {
           "cash": "100338.1781",
-          "cumulative_return": null,
+          "cumulative_return": "0.00367855",
           "daily_return": "0",
           "data_status": "OK",
           "date": "2026-07-25",
@@ -58059,12 +58057,12 @@
           "missing_symbols": [],
           "nav": "100338.1781",
           "pnl": "338.1781",
-          "segment_id": 2,
-          "segment_return": "0"
+          "segment_id": 1,
+          "segment_return": "0.00367855"
         },
         {
           "cash": "100338.1781",
-          "cumulative_return": null,
+          "cumulative_return": "0.00367855",
           "daily_return": "0",
           "data_status": "OK",
           "date": "2026-07-26",
@@ -58072,12 +58070,12 @@
           "missing_symbols": [],
           "nav": "100338.1781",
           "pnl": "338.1781",
-          "segment_id": 2,
-          "segment_return": "0"
+          "segment_id": 1,
+          "segment_return": "0.00367855"
         },
         {
           "cash": "100338.1781",
-          "cumulative_return": null,
+          "cumulative_return": "0.00367855",
           "daily_return": "0",
           "data_status": "OK",
           "date": "2026-07-27",
@@ -58085,12 +58083,12 @@
           "missing_symbols": [],
           "nav": "100338.1781",
           "pnl": "338.1781",
-          "segment_id": 2,
-          "segment_return": "0"
+          "segment_id": 1,
+          "segment_return": "0.00367855"
         },
         {
           "cash": "100338.1781",
-          "cumulative_return": null,
+          "cumulative_return": "0.00367855",
           "daily_return": "0",
           "data_status": "OK",
           "date": "2026-07-28",
@@ -58098,12 +58096,12 @@
           "missing_symbols": [],
           "nav": "100338.1781",
           "pnl": "338.1781",
-          "segment_id": 2,
-          "segment_return": "0"
+          "segment_id": 1,
+          "segment_return": "0.00367855"
         },
         {
           "cash": "80273.4581",
-          "cumulative_return": null,
+          "cumulative_return": "0.00256312",
           "daily_return": "-0.00111134",
           "data_status": "OK",
           "date": "2026-07-29",
@@ -58111,8 +58109,8 @@
           "missing_symbols": [],
           "nav": "100226.6681",
           "pnl": "226.6681",
-          "segment_id": 2,
-          "segment_return": "-0.00111134"
+          "segment_id": 1,
+          "segment_return": "0.00256312"
         },
         {
           "cash": "80273.4581",
@@ -60584,7 +60582,7 @@
     }
   },
   "prices_as_of": "2026-07-29T20:00:00Z",
-  "revision": 39085,
+  "revision": 39086,
   "schema_version": 4,
   "source_head": {
     "live": {
@@ -60593,9 +60591,9 @@
       "last_event_id": "live-option-identity-void-2653fd0e9463ca242c6a5bf6"
     },
     "market": {
-      "count": 38333,
-      "hash": "a66ea8a14345fd3722486de8a7f2bb9190a516d82c776665e2338acf530fb22c",
-      "last_event_id": "market-split-basis-3d905f37d9db85c5f2f4771f63976d5f"
+      "count": 38334,
+      "hash": "a4434f9eec5831dbc15d5829671f3bb9e075af3a313cfa8c617ce86124c79057",
+      "last_event_id": "market-manual-quote-spy-2026-07-21"
     },
     "paper": {
       "count": 79,
