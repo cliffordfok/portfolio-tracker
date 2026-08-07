@@ -517,9 +517,9 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(_session_for_event(before_close, sessions), "2024-07-01")
         self.assertEqual(_session_for_event(after_close, sessions), "2024-07-02")
 
-    def test_new_year_observed_holiday_is_not_a_session(self) -> None:
-        self.assertFalse(is_nyse_session(date(2021, 12, 31)))
-        self.assertTrue(is_nyse_session(date(2021, 12, 30)))
+    def test_new_year_holiday_uses_nyse_year_end_exception(self) -> None:
+        self.assertTrue(is_nyse_session(date(2021, 12, 31)))
+        self.assertFalse(is_nyse_session(date(2023, 1, 2)))
 
     def test_special_exchange_closures_are_not_sessions(self) -> None:
         closures = (

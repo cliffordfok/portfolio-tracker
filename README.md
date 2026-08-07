@@ -389,6 +389,28 @@ rebuild／request publish 一次。
 終止，`rebuild.pending` 會保留完整 event ID 清單；systemd 會拒絕由部分
 batch 生成快照，直至原 batch 用相同 stable IDs retry 完成。
 
+VPS daily adapter 的 canonical source 是 `scripts/market_quotes.py`。每個
+`event_id` 由 action、symbol 及 session 組成，而 `occurred_at`、`created_at`
+固定為該 session 的 NYSE 官方收市時間；同一 session 重跑會重現完整 payload。
+SPY 會同時產生 raw `QUOTE` 及 adjusted `BENCHMARK_CLOSE`。部署後必須確認
+repository copy 與外置執行檔完全相同：
+
+```bash
+cmp \
+  /data/portfolio-tracker/scripts/market_quotes.py \
+  /data/scripts/market_quotes.py
+```
+
+歷史重複 key 應先用唯讀 audit 分辨 split correction overlay 與真正 provider
+retry；`status=review_required` 時不可直接改寫 ledger，必須先產生及核對
+append-only correction plan：
+
+```bash
+/usr/local/bin/python3 \
+  /data/portfolio-tracker/scripts/audit_market_quote_duplicates.py \
+  --root /data/portfolio
+```
+
 單筆 `quote` 只應用於人工補數：
 
 ```bash
@@ -529,6 +551,9 @@ trader，另一個會回傳 `skipped`。NYSE 假期及已列入官方 2026–202
   /data/portfolio-tracker/scripts/run_paper_trader_market_window.py \
   -- /usr/local/bin/python3 /data/scripts/swing_trader.py
 ```
+
+NYSE 元旦規則保留年結例外：當翌年 1 月 1 日是星期六，交易所不會在
+前一個星期五補假；例如 2021-12-31 及 2027-12-31 仍是正常交易日。
 
 缺失歷史報價只可用已核實的 provider close 作精準補錄。工具預設
 check-only，拒絕今日／未來 New York session、非 NYSE session，以及已有
