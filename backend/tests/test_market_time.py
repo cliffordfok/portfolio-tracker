@@ -20,6 +20,13 @@ class MarketTimeTests(unittest.TestCase):
         self.assertFalse(is_nyse_session(date(2024, 1, 15)))
         self.assertTrue(is_nyse_session(date(2024, 1, 16)))
 
+    def test_saturday_new_year_does_not_close_preceding_friday(self) -> None:
+        self.assertTrue(is_nyse_session(date(2021, 12, 31)))
+        self.assertTrue(is_nyse_session(date(2027, 12, 31)))
+
+    def test_sunday_new_year_is_observed_on_monday(self) -> None:
+        self.assertFalse(is_nyse_session(date(2023, 1, 2)))
+
     def test_regular_session_completes_at_official_close(self) -> None:
         self.assertEqual(
             latest_completed_nyse_session(

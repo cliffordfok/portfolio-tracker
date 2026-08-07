@@ -35,6 +35,15 @@ def _observed(day: date) -> date:
     return day
 
 
+def _new_year_holiday(year: int) -> date:
+    day = date(year, 1, 1)
+    if day.weekday() == 6:
+        return day + timedelta(days=1)
+    # NYSE does not observe a Saturday New Year's Day on the preceding Friday
+    # because that Friday is the final monthly and yearly accounting period.
+    return day
+
+
 def _last_weekday(year: int, month: int, weekday: int) -> date:
     if month == 12:
         cursor = date(year + 1, 1, 1) - timedelta(days=1)
@@ -79,7 +88,7 @@ _SPECIAL_NYSE_CLOSURES = {
 
 def _nyse_holidays(year: int) -> set[date]:
     holidays = {
-        _observed(date(year, 1, 1)),
+        _new_year_holiday(year),
         _nth_weekday(year, 1, 0, 3),
         _nth_weekday(year, 2, 0, 3),
         _easter_sunday(year) - timedelta(days=2),
@@ -91,9 +100,6 @@ def _nyse_holidays(year: int) -> set[date]:
     }
     if year >= 2022:
         holidays.add(_observed(date(year, 6, 19)))
-    next_new_year_observed = _observed(date(year + 1, 1, 1))
-    if next_new_year_observed.year == year:
-        holidays.add(next_new_year_observed)
     holidays.update(day for day in _SPECIAL_NYSE_CLOSURES if day.year == year)
     return holidays
 

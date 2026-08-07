@@ -530,6 +530,9 @@ trader，另一個會回傳 `skipped`。NYSE 假期及已列入官方 2026–202
   -- /usr/local/bin/python3 /data/scripts/swing_trader.py
 ```
 
+NYSE 元旦規則保留年結例外：當翌年 1 月 1 日是星期六，交易所不會在
+前一個星期五補假；例如 2021-12-31 及 2027-12-31 仍是正常交易日。
+
 缺失歷史報價只可用已核實的 provider close 作精準補錄。工具預設
 check-only，拒絕今日／未來 New York session、非 NYSE session，以及已有
 不同 close 的 `(instrument, session)`；`--apply` 會先備份三個 ledger，再經
