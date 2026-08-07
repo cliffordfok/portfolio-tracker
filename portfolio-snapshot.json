@@ -857,18 +857,18 @@
         "segment_return": "0.0795068"
       },
       {
-        "close": "448.028",
-        "cumulative_return": "0.0795068",
-        "daily_return": "0",
+        "close": "446.899",
+        "cumulative_return": "0.07678652",
+        "daily_return": "-0.00251993",
         "data_status": "OK",
         "date": "2021-12-31",
         "segment_id": 1,
-        "segment_return": "0.0795068"
+        "segment_return": "0.07678652"
       },
       {
         "close": "446.899",
         "cumulative_return": "0.07678652",
-        "daily_return": "-0.00251993",
+        "daily_return": "0",
         "data_status": "OK",
         "date": "2022-01-01",
         "segment_id": 1,
@@ -15975,13 +15975,22 @@
         "date": "2026-08-06",
         "segment_id": 1,
         "segment_return": "0.85181682"
+      },
+      {
+        "close": "773.26",
+        "cumulative_return": "0.86314129",
+        "daily_return": "0.00611533",
+        "data_status": "OK",
+        "date": "2026-08-07",
+        "segment_id": 1,
+        "segment_return": "0.86314129"
       }
     ],
     "symbol": "SPY"
   },
   "currency": "USD",
-  "data_as_of": "2026-08-06T20:00:00Z",
-  "generated_at": "2026-08-06T21:01:01.726750Z",
+  "data_as_of": "2026-08-07T20:00:00Z",
+  "generated_at": "2026-08-07T21:00:13.227986Z",
   "portfolios": {
     "live": {
       "cash": "171.61",
@@ -17251,48 +17260,48 @@
           "segment_return": "-0.00084688"
         },
         {
-          "cash": "4154.73",
+          "cash": "7546.08",
           "cumulative_return": null,
-          "daily_return": "0",
+          "daily_return": "-0.00311422",
           "data_status": "OK",
           "date": "2021-12-31",
           "external_flow": "0",
           "missing_symbols": [],
-          "nav": "26416.7789521",
-          "pnl": "-552.2210479",
+          "nav": "26334.5112226",
+          "pnl": "-634.4887774",
           "segment_id": 2,
-          "segment_return": "-0.00084688"
+          "segment_return": "-0.00395846"
         },
         {
-          "cash": "4154.73",
+          "cash": "7546.08",
           "cumulative_return": null,
-          "daily_return": "-0.00556532",
+          "daily_return": "0",
           "data_status": "OK",
           "date": "2022-01-01",
           "external_flow": "0",
           "missing_symbols": [],
-          "nav": "26269.7612226",
-          "pnl": "-699.2387774",
+          "nav": "26334.5112226",
+          "pnl": "-634.4887774",
           "segment_id": 2,
-          "segment_return": "-0.00640749"
+          "segment_return": "-0.00395846"
         },
         {
-          "cash": "4154.73",
+          "cash": "7546.08",
           "cumulative_return": null,
           "daily_return": "0",
           "data_status": "OK",
           "date": "2022-01-02",
           "external_flow": "0",
           "missing_symbols": [],
-          "nav": "26269.7612226",
-          "pnl": "-699.2387774",
+          "nav": "26334.5112226",
+          "pnl": "-634.4887774",
           "segment_id": 2,
-          "segment_return": "-0.00640749"
+          "segment_return": "-0.00395846"
         },
         {
           "cash": "6666.28",
           "cumulative_return": null,
-          "daily_return": "0.01050238",
+          "daily_return": "0.00801781",
           "data_status": "OK",
           "date": "2022-01-03",
           "external_flow": "0",
@@ -17300,7 +17309,7 @@
           "nav": "26545.6562124",
           "pnl": "-423.3437876",
           "segment_id": 2,
-          "segment_return": "0.0040276"
+          "segment_return": "0.00402761"
         },
         {
           "cash": "5355.13",
@@ -17313,7 +17322,7 @@
           "nav": "26320.4799527",
           "pnl": "-648.5200473",
           "segment_id": 2,
-          "segment_return": "-0.00448916"
+          "segment_return": "-0.00448915"
         },
         {
           "cash": "8767.59",
@@ -17326,7 +17335,7 @@
           "nav": "26283.6514246",
           "pnl": "-685.3485754",
           "segment_id": 2,
-          "segment_return": "-0.00588211"
+          "segment_return": "-0.0058821"
         },
         {
           "cash": "1365.59",
@@ -17339,7 +17348,7 @@
           "nav": "26019.6942848",
           "pnl": "-949.3057152",
           "segment_id": 2,
-          "segment_return": "-0.01586568"
+          "segment_return": "-0.01586567"
         },
         {
           "cash": "525.59",
@@ -17352,7 +17361,7 @@
           "nav": "25731.0459429",
           "pnl": "-1237.9540571",
           "segment_id": 2,
-          "segment_return": "-0.02678313"
+          "segment_return": "-0.02678312"
         },
         {
           "cash": "525.59",
@@ -17365,7 +17374,7 @@
           "nav": "25731.0459429",
           "pnl": "-1237.9540571",
           "segment_id": 2,
-          "segment_return": "-0.02678313"
+          "segment_return": "-0.02678312"
         },
         {
           "cash": "525.59",
@@ -17378,7 +17387,7 @@
           "nav": "25731.0459429",
           "pnl": "-1237.9540571",
           "segment_id": 2,
-          "segment_return": "-0.02678313"
+          "segment_return": "-0.02678312"
         },
         {
           "cash": "525.59",
@@ -17391,7 +17400,7 @@
           "nav": "25827.7390493",
           "pnl": "-1141.2609507",
           "segment_id": 2,
-          "segment_return": "-0.02312594"
+          "segment_return": "-0.02312593"
         },
         {
           "cash": "3301.77",
@@ -17404,7 +17413,7 @@
           "nav": "26029.1452118",
           "pnl": "-939.8547882",
           "segment_id": 2,
-          "segment_return": "-0.01550822"
+          "segment_return": "-0.01550821"
         },
         {
           "cash": "5921.75",
@@ -17417,7 +17426,7 @@
           "nav": "25924.6810917",
           "pnl": "-1044.3189083",
           "segment_id": 2,
-          "segment_return": "-0.01945933"
+          "segment_return": "-0.01945932"
         },
         {
           "cash": "5921.75",
@@ -17430,7 +17439,7 @@
           "nav": "25501.487601",
           "pnl": "-1467.512399",
           "segment_id": 2,
-          "segment_return": "-0.03546564"
+          "segment_return": "-0.03546563"
         },
         {
           "cash": "2905.75",
@@ -17443,7 +17452,7 @@
           "nav": "25621.0692013",
           "pnl": "-1347.9307987",
           "segment_id": 2,
-          "segment_return": "-0.03094275"
+          "segment_return": "-0.03094274"
         },
         {
           "cash": "2905.75",
@@ -17456,7 +17465,7 @@
           "nav": "25621.0692013",
           "pnl": "-1347.9307987",
           "segment_id": 2,
-          "segment_return": "-0.03094275"
+          "segment_return": "-0.03094274"
         },
         {
           "cash": "2905.75",
@@ -17469,7 +17478,7 @@
           "nav": "25621.0692013",
           "pnl": "-1347.9307987",
           "segment_id": 2,
-          "segment_return": "-0.03094275"
+          "segment_return": "-0.03094274"
         },
         {
           "cash": "2905.75",
@@ -17482,7 +17491,7 @@
           "nav": "25621.0692013",
           "pnl": "-1347.9307987",
           "segment_id": 2,
-          "segment_return": "-0.03094275"
+          "segment_return": "-0.03094274"
         },
         {
           "cash": "2147.77",
@@ -17495,7 +17504,7 @@
           "nav": "25408.4169994",
           "pnl": "-1560.5830006",
           "segment_id": 2,
-          "segment_return": "-0.03898583"
+          "segment_return": "-0.03898582"
         },
         {
           "cash": "2091.76",
@@ -17508,7 +17517,7 @@
           "nav": "25096.5927123",
           "pnl": "-1872.4072877",
           "segment_id": 2,
-          "segment_return": "-0.05077986"
+          "segment_return": "-0.05077985"
         },
         {
           "cash": "2091.76",
@@ -17521,7 +17530,7 @@
           "nav": "24786.2764556",
           "pnl": "-2182.7235444",
           "segment_id": 2,
-          "segment_return": "-0.06251685"
+          "segment_return": "-0.06251684"
         },
         {
           "cash": "1.76",
@@ -17534,7 +17543,7 @@
           "nav": "24338.2271139",
           "pnl": "-2630.7728861",
           "segment_id": 2,
-          "segment_return": "-0.07946327"
+          "segment_return": "-0.07946326"
         },
         {
           "cash": "1.76",
@@ -17547,7 +17556,7 @@
           "nav": "24338.2271139",
           "pnl": "-2630.7728861",
           "segment_id": 2,
-          "segment_return": "-0.07946327"
+          "segment_return": "-0.07946326"
         },
         {
           "cash": "1.76",
@@ -17560,7 +17569,7 @@
           "nav": "24338.2271139",
           "pnl": "-2630.7728861",
           "segment_id": 2,
-          "segment_return": "-0.07946327"
+          "segment_return": "-0.07946326"
         },
         {
           "cash": "1.76",
@@ -17573,7 +17582,7 @@
           "nav": "24415.5277947",
           "pnl": "-2553.4722053",
           "segment_id": 2,
-          "segment_return": "-0.07653955"
+          "segment_return": "-0.07653954"
         },
         {
           "cash": "1.76",
@@ -17586,7 +17595,7 @@
           "nav": "24249.7173526",
           "pnl": "-2719.2826474",
           "segment_id": 2,
-          "segment_return": "-0.08281095"
+          "segment_return": "-0.08281094"
         },
         {
           "cash": "13396.67",
@@ -17599,7 +17608,7 @@
           "nav": "24162.6962736",
           "pnl": "-2806.3037264",
           "segment_id": 2,
-          "segment_return": "-0.08610232"
+          "segment_return": "-0.08610231"
         },
         {
           "cash": "13396.67",
@@ -17612,7 +17621,7 @@
           "nav": "24108.1314074",
           "pnl": "-2860.8685926",
           "segment_id": 2,
-          "segment_return": "-0.08816611"
+          "segment_return": "-0.0881661"
         },
         {
           "cash": "12066.67",
@@ -17625,7 +17634,7 @@
           "nav": "24419.8910606",
           "pnl": "-2549.1089394",
           "segment_id": 2,
-          "segment_return": "-0.07637453"
+          "segment_return": "-0.07637452"
         },
         {
           "cash": "12066.67",
@@ -17638,7 +17647,7 @@
           "nav": "24419.8910606",
           "pnl": "-2549.1089394",
           "segment_id": 2,
-          "segment_return": "-0.07637453"
+          "segment_return": "-0.07637452"
         },
         {
           "cash": "12066.67",
@@ -17651,7 +17660,7 @@
           "nav": "24419.8910606",
           "pnl": "-2549.1089394",
           "segment_id": 2,
-          "segment_return": "-0.07637453"
+          "segment_return": "-0.07637452"
         },
         {
           "cash": "10466.67",
@@ -17664,7 +17673,7 @@
           "nav": "24758.0925239",
           "pnl": "-2210.9074761",
           "segment_id": 2,
-          "segment_return": "-0.06358284"
+          "segment_return": "-0.06358283"
         },
         {
           "cash": "10466.67",
@@ -17677,7 +17686,7 @@
           "nav": "24830.4257609",
           "pnl": "-2138.5742391",
           "segment_id": 2,
-          "segment_return": "-0.060847"
+          "segment_return": "-0.06084699"
         },
         {
           "cash": "7378.67",
@@ -17690,7 +17699,7 @@
           "nav": "25022.7646316",
           "pnl": "-1946.2353684",
           "segment_id": 2,
-          "segment_return": "-0.05357223"
+          "segment_return": "-0.05357222"
         },
         {
           "cash": "7378.67",
@@ -17703,7 +17712,7 @@
           "nav": "24742.2543629",
           "pnl": "-2226.7456371",
           "segment_id": 2,
-          "segment_return": "-0.06418187"
+          "segment_return": "-0.06418186"
         },
         {
           "cash": "4391.17",
@@ -17716,7 +17725,7 @@
           "nav": "24756.5481212",
           "pnl": "-2212.4518788",
           "segment_id": 2,
-          "segment_return": "-0.06364124"
+          "segment_return": "-0.06364123"
         },
         {
           "cash": "4391.17",
@@ -17729,7 +17738,7 @@
           "nav": "24756.5481212",
           "pnl": "-2212.4518788",
           "segment_id": 2,
-          "segment_return": "-0.06364124"
+          "segment_return": "-0.06364123"
         },
         {
           "cash": "4391.17",
@@ -17742,7 +17751,7 @@
           "nav": "24756.5481212",
           "pnl": "-2212.4518788",
           "segment_id": 2,
-          "segment_return": "-0.06364124"
+          "segment_return": "-0.06364123"
         },
         {
           "cash": "4391.17",
@@ -17755,7 +17764,7 @@
           "nav": "24731.4313796",
           "pnl": "-2237.5686204",
           "segment_id": 2,
-          "segment_return": "-0.06459122"
+          "segment_return": "-0.06459121"
         },
         {
           "cash": "4391.17",
@@ -17768,7 +17777,7 @@
           "nav": "24946.0723719",
           "pnl": "-2022.9276281",
           "segment_id": 2,
-          "segment_return": "-0.05647293"
+          "segment_return": "-0.05647292"
         },
         {
           "cash": "4391.17",
@@ -17781,7 +17790,7 @@
           "nav": "25165.8472167",
           "pnl": "-1803.1527833",
           "segment_id": 2,
-          "segment_return": "-0.04816046"
+          "segment_return": "-0.04816045"
         },
         {
           "cash": "4395.79",
@@ -17794,7 +17803,7 @@
           "nav": "24814.0762458",
           "pnl": "-2154.9237542",
           "segment_id": 2,
-          "segment_return": "-0.06146538"
+          "segment_return": "-0.06146537"
         },
         {
           "cash": "2962.79",
@@ -17807,7 +17816,7 @@
           "nav": "24435.4748114",
           "pnl": "-2533.5251886",
           "segment_id": 2,
-          "segment_return": "-0.0757851"
+          "segment_return": "-0.07578509"
         },
         {
           "cash": "2962.79",
@@ -17820,7 +17829,7 @@
           "nav": "24435.4748114",
           "pnl": "-2533.5251886",
           "segment_id": 2,
-          "segment_return": "-0.0757851"
+          "segment_return": "-0.07578509"
         },
         {
           "cash": "2962.79",
@@ -17833,7 +17842,7 @@
           "nav": "24435.4748114",
           "pnl": "-2533.5251886",
           "segment_id": 2,
-          "segment_return": "-0.0757851"
+          "segment_return": "-0.07578509"
         },
         {
           "cash": "2962.79",
@@ -17846,7 +17855,7 @@
           "nav": "24432.7585622",
           "pnl": "-2536.2414378",
           "segment_id": 2,
-          "segment_return": "-0.07588784"
+          "segment_return": "-0.07588783"
         },
         {
           "cash": "1331.88",
@@ -17859,7 +17868,7 @@
           "nav": "24894.328331",
           "pnl": "-2074.671669",
           "segment_id": 2,
-          "segment_return": "-0.05843004"
+          "segment_return": "-0.05843003"
         },
         {
           "cash": "71.92",
@@ -17872,7 +17881,7 @@
           "nav": "24985.6043629",
           "pnl": "-1983.3956371",
           "segment_id": 2,
-          "segment_return": "-0.05497774"
+          "segment_return": "-0.05497773"
         },
         {
           "cash": "71.92",
@@ -17885,7 +17894,7 @@
           "nav": "24541.6968966",
           "pnl": "-2427.3031034",
           "segment_id": 2,
-          "segment_return": "-0.07176751"
+          "segment_return": "-0.0717675"
         },
         {
           "cash": "71.92",
@@ -17898,7 +17907,7 @@
           "nav": "24364.7052599",
           "pnl": "-2604.2947401",
           "segment_id": 2,
-          "segment_return": "-0.0784618"
+          "segment_return": "-0.07846179"
         },
         {
           "cash": "71.92",
@@ -17911,7 +17920,7 @@
           "nav": "24364.7052599",
           "pnl": "-2604.2947401",
           "segment_id": 2,
-          "segment_return": "-0.0784618"
+          "segment_return": "-0.07846179"
         },
         {
           "cash": "71.92",
@@ -17924,7 +17933,7 @@
           "nav": "24364.7052599",
           "pnl": "-2604.2947401",
           "segment_id": 2,
-          "segment_return": "-0.0784618"
+          "segment_return": "-0.07846179"
         },
         {
           "cash": "71.92",
@@ -17937,7 +17946,7 @@
           "nav": "24364.7052599",
           "pnl": "-2604.2947401",
           "segment_id": 2,
-          "segment_return": "-0.0784618"
+          "segment_return": "-0.07846179"
         },
         {
           "cash": "71.92",
@@ -17950,7 +17959,7 @@
           "nav": "24174.0214652",
           "pnl": "-2794.9785348",
           "segment_id": 2,
-          "segment_return": "-0.08567397"
+          "segment_return": "-0.08567396"
         },
         {
           "cash": "71.92",
@@ -17963,7 +17972,7 @@
           "nav": "23837.4339411",
           "pnl": "-3131.5660589",
           "segment_id": 2,
-          "segment_return": "-0.09840461"
+          "segment_return": "-0.0984046"
         },
         {
           "cash": "71.92",
@@ -17976,7 +17985,7 @@
           "nav": "24064.9973087",
           "pnl": "-2904.0026913",
           "segment_id": 2,
-          "segment_return": "-0.08979756"
+          "segment_return": "-0.08979755"
         },
         {
           "cash": "71.92",
@@ -17989,7 +17998,7 @@
           "nav": "24574.0331747",
           "pnl": "-2394.9668253",
           "segment_id": 2,
-          "segment_return": "-0.07054447"
+          "segment_return": "-0.07054446"
         },
         {
           "cash": "71.92",
@@ -18002,7 +18011,7 @@
           "nav": "24574.0331747",
           "pnl": "-2394.9668253",
           "segment_id": 2,
-          "segment_return": "-0.07054447"
+          "segment_return": "-0.07054446"
         },
         {
           "cash": "71.92",
@@ -18015,7 +18024,7 @@
           "nav": "24574.0331747",
           "pnl": "-2394.9668253",
           "segment_id": 2,
-          "segment_return": "-0.07054447"
+          "segment_return": "-0.07054446"
         },
         {
           "cash": "71.92",
@@ -18028,7 +18037,7 @@
           "nav": "24485.4907416",
           "pnl": "-2483.5092584",
           "segment_id": 2,
-          "segment_return": "-0.07389338"
+          "segment_return": "-0.07389337"
         },
         {
           "cash": "2271.92",
@@ -18041,7 +18050,7 @@
           "nav": "26424.8966354",
           "pnl": "-2744.1033646",
           "segment_id": 2,
-          "segment_return": "-0.08293717"
+          "segment_return": "-0.08293716"
         },
         {
           "cash": "2271.92",
@@ -18054,7 +18063,7 @@
           "nav": "26850.506006",
           "pnl": "-2318.493994",
           "segment_id": 2,
-          "segment_return": "-0.06816661"
+          "segment_return": "-0.0681666"
         },
         {
           "cash": "2271.92",
@@ -18067,7 +18076,7 @@
           "nav": "26809.4411398",
           "pnl": "-2359.5588602",
           "segment_id": 2,
-          "segment_return": "-0.06959175"
+          "segment_return": "-0.06959174"
         },
         {
           "cash": "62.82",
@@ -18080,7 +18089,7 @@
           "nav": "26599.3212554",
           "pnl": "-2569.6787446",
           "segment_id": 2,
-          "segment_return": "-0.07688385"
+          "segment_return": "-0.07688384"
         },
         {
           "cash": "62.82",
@@ -18093,7 +18102,7 @@
           "nav": "26599.3212554",
           "pnl": "-2569.6787446",
           "segment_id": 2,
-          "segment_return": "-0.07688385"
+          "segment_return": "-0.07688384"
         },
         {
           "cash": "62.82",
@@ -18106,7 +18115,7 @@
           "nav": "26599.3212554",
           "pnl": "-2569.6787446",
           "segment_id": 2,
-          "segment_return": "-0.07688385"
+          "segment_return": "-0.07688384"
         },
         {
           "cash": "62.82",
@@ -18119,7 +18128,7 @@
           "nav": "26001.9368591",
           "pnl": "-3167.0631409",
           "segment_id": 2,
-          "segment_return": "-0.09761577"
+          "segment_return": "-0.09761576"
         },
         {
           "cash": "62.82",
@@ -18132,7 +18141,7 @@
           "nav": "25726.181037",
           "pnl": "-3442.818963",
           "segment_id": 2,
-          "segment_return": "-0.10718574"
+          "segment_return": "-0.10718573"
         },
         {
           "cash": "62.82",
@@ -18145,7 +18154,7 @@
           "nav": "26373.326599",
           "pnl": "-2795.673401",
           "segment_id": 2,
-          "segment_return": "-0.08472687"
+          "segment_return": "-0.08472686"
         },
         {
           "cash": "62.82",
@@ -18158,7 +18167,7 @@
           "nav": "26132.1450565",
           "pnl": "-3036.8549435",
           "segment_id": 2,
-          "segment_return": "-0.09309695"
+          "segment_return": "-0.09309694"
         },
         {
           "cash": "62.82",
@@ -18171,7 +18180,7 @@
           "nav": "25797.1236296",
           "pnl": "-3371.8763704",
           "segment_id": 2,
-          "segment_return": "-0.1047237"
+          "segment_return": "-0.10472369"
         },
         {
           "cash": "62.82",
@@ -18184,7 +18193,7 @@
           "nav": "25797.1236296",
           "pnl": "-3371.8763704",
           "segment_id": 2,
-          "segment_return": "-0.1047237"
+          "segment_return": "-0.10472369"
         },
         {
           "cash": "62.82",
@@ -18197,7 +18206,7 @@
           "nav": "25797.1236296",
           "pnl": "-3371.8763704",
           "segment_id": 2,
-          "segment_return": "-0.1047237"
+          "segment_return": "-0.10472369"
         },
         {
           "cash": "62.82",
@@ -18210,7 +18219,7 @@
           "nav": "25652.6189154",
           "pnl": "-3516.3810846",
           "segment_id": 2,
-          "segment_return": "-0.10973866"
+          "segment_return": "-0.10973865"
         },
         {
           "cash": "62.82",
@@ -18223,7 +18232,7 @@
           "nav": "26285.5324425",
           "pnl": "-2883.4675575",
           "segment_id": 2,
-          "segment_return": "-0.08777371"
+          "segment_return": "-0.0877737"
         },
         {
           "cash": "62.82",
@@ -18236,7 +18245,7 @@
           "nav": "26775.7702781",
           "pnl": "-2393.2297219",
           "segment_id": 2,
-          "segment_return": "-0.07076025"
+          "segment_return": "-0.07076024"
         },
         {
           "cash": "62.82",
@@ -18249,7 +18258,7 @@
           "nav": "27088.2005971",
           "pnl": "-2080.7994029",
           "segment_id": 2,
-          "segment_return": "-0.05991751"
+          "segment_return": "-0.0599175"
         },
         {
           "cash": "62.82",
@@ -18262,7 +18271,7 @@
           "nav": "27409.0457459",
           "pnl": "-1759.9542541",
           "segment_id": 2,
-          "segment_return": "-0.04878274"
+          "segment_return": "-0.04878273"
         },
         {
           "cash": "62.82",
@@ -18275,7 +18284,7 @@
           "nav": "27409.0457459",
           "pnl": "-1759.9542541",
           "segment_id": 2,
-          "segment_return": "-0.04878274"
+          "segment_return": "-0.04878273"
         },
         {
           "cash": "62.82",
@@ -18288,7 +18297,7 @@
           "nav": "27409.0457459",
           "pnl": "-1759.9542541",
           "segment_id": 2,
-          "segment_return": "-0.04878274"
+          "segment_return": "-0.04878273"
         },
         {
           "cash": "62.82",
@@ -18301,7 +18310,7 @@
           "nav": "27509.2359921",
           "pnl": "-1659.7640079",
           "segment_id": 2,
-          "segment_return": "-0.04530569"
+          "segment_return": "-0.04530568"
         },
         {
           "cash": "62.82",
@@ -18314,7 +18323,7 @@
           "nav": "27814.6945877",
           "pnl": "-1354.3054123",
           "segment_id": 2,
-          "segment_return": "-0.0347049"
+          "segment_return": "-0.03470489"
         },
         {
           "cash": "62.82",
@@ -18327,7 +18336,7 @@
           "nav": "27637.9288523",
           "pnl": "-1531.0711477",
           "segment_id": 2,
-          "segment_return": "-0.04083947"
+          "segment_return": "-0.04083946"
         },
         {
           "cash": "62.82",
@@ -18340,7 +18349,7 @@
           "nav": "28041.7465862",
           "pnl": "-1127.2534138",
           "segment_id": 2,
-          "segment_return": "-0.02682518"
+          "segment_return": "-0.02682517"
         },
         {
           "cash": "62.82",
@@ -18353,7 +18362,7 @@
           "nav": "28183.3724372",
           "pnl": "-985.6275628",
           "segment_id": 2,
-          "segment_return": "-0.02191012"
+          "segment_return": "-0.02191011"
         },
         {
           "cash": "62.82",
@@ -18366,7 +18375,7 @@
           "nav": "28183.3724372",
           "pnl": "-985.6275628",
           "segment_id": 2,
-          "segment_return": "-0.02191012"
+          "segment_return": "-0.02191011"
         },
         {
           "cash": "62.82",
@@ -18379,7 +18388,7 @@
           "nav": "28183.3724372",
           "pnl": "-985.6275628",
           "segment_id": 2,
-          "segment_return": "-0.02191012"
+          "segment_return": "-0.02191011"
         },
         {
           "cash": "62.82",
@@ -18392,7 +18401,7 @@
           "nav": "28342.3677669",
           "pnl": "-826.6322331",
           "segment_id": 2,
-          "segment_return": "-0.01639227"
+          "segment_return": "-0.01639226"
         },
         {
           "cash": "93.61",
@@ -18405,7 +18414,7 @@
           "nav": "28703.0530099",
           "pnl": "-465.9469901",
           "segment_id": 2,
-          "segment_return": "-0.00387487"
+          "segment_return": "-0.00387486"
         },
         {
           "cash": "93.61",
@@ -18418,7 +18427,7 @@
           "nav": "28632.5005115",
           "pnl": "-536.4994885",
           "segment_id": 2,
-          "segment_return": "-0.00632336"
+          "segment_return": "-0.00632335"
         },
         {
           "cash": "93.61",
@@ -18431,7 +18440,7 @@
           "nav": "28212.3407427",
           "pnl": "-956.6592573",
           "segment_id": 2,
-          "segment_return": "-0.0209048"
+          "segment_return": "-0.02090479"
         },
         {
           "cash": "93.61",
@@ -18444,7 +18453,7 @@
           "nav": "28260.1648992",
           "pnl": "-908.8351008",
           "segment_id": 2,
-          "segment_return": "-0.01924509"
+          "segment_return": "-0.01924508"
         },
         {
           "cash": "93.61",
@@ -18457,7 +18466,7 @@
           "nav": "28260.1648992",
           "pnl": "-908.8351008",
           "segment_id": 2,
-          "segment_return": "-0.01924509"
+          "segment_return": "-0.01924508"
         },
         {
           "cash": "93.61",
@@ -18470,7 +18479,7 @@
           "nav": "28260.1648992",
           "pnl": "-908.8351008",
           "segment_id": 2,
-          "segment_return": "-0.01924509"
+          "segment_return": "-0.01924508"
         },
         {
           "cash": "93.61",
@@ -18483,7 +18492,7 @@
           "nav": "28525.0483535",
           "pnl": "-643.9516465",
           "segment_id": 2,
-          "segment_return": "-0.01005244"
+          "segment_return": "-0.01005243"
         },
         {
           "cash": "93.61",
@@ -18496,7 +18505,7 @@
           "nav": "28273.0244646",
           "pnl": "-895.9755354",
           "segment_id": 2,
-          "segment_return": "-0.0187988"
+          "segment_return": "-0.01879879"
         },
         {
           "cash": "93.61",
@@ -18509,7 +18518,7 @@
           "nav": "28228.8627626",
           "pnl": "-940.1372374",
           "segment_id": 2,
-          "segment_return": "-0.02033141"
+          "segment_return": "-0.0203314"
         },
         {
           "cash": "93.61",
@@ -18522,7 +18531,7 @@
           "nav": "28496.9882443",
           "pnl": "-672.0117557",
           "segment_id": 2,
-          "segment_return": "-0.01102625"
+          "segment_return": "-0.01102624"
         },
         {
           "cash": "1193.61",
@@ -18535,7 +18544,7 @@
           "nav": "29544.9659343",
           "pnl": "-724.0340657",
           "segment_id": 2,
-          "segment_return": "-0.01276456"
+          "segment_return": "-0.01276455"
         },
         {
           "cash": "1193.61",
@@ -18548,7 +18557,7 @@
           "nav": "29544.9659343",
           "pnl": "-724.0340657",
           "segment_id": 2,
-          "segment_return": "-0.01276456"
+          "segment_return": "-0.01276455"
         },
         {
           "cash": "1193.61",
@@ -18561,7 +18570,7 @@
           "nav": "29544.9659343",
           "pnl": "-724.0340657",
           "segment_id": 2,
-          "segment_return": "-0.01276456"
+          "segment_return": "-0.01276455"
         },
         {
           "cash": "8951.57",
@@ -18574,7 +18583,7 @@
           "nav": "29200.038164",
           "pnl": "-1068.961836",
           "segment_id": 2,
-          "segment_return": "-0.02429021"
+          "segment_return": "-0.0242902"
         },
         {
           "cash": "8951.57",
@@ -18587,7 +18596,7 @@
           "nav": "29044.2999452",
           "pnl": "-1224.7000548",
           "segment_id": 2,
-          "segment_return": "-0.02949415"
+          "segment_return": "-0.02949414"
         },
         {
           "cash": "4987.33",
@@ -39131,6 +39140,19 @@
           "pnl": "24813.015432",
           "segment_id": 4,
           "segment_return": "-0.03501364"
+        },
+        {
+          "cash": "171.61",
+          "cumulative_return": null,
+          "daily_return": "0.00945235",
+          "data_status": "OK",
+          "date": "2026-08-07",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "101599.3755573",
+          "pnl": "25764.3755573",
+          "segment_id": 4,
+          "segment_return": "-0.02589225"
         }
       ],
       "data_status": "OK",
@@ -39139,86 +39161,86 @@
           "avg_cost": "1042.549411764705882352941176",
           "contract_multiplier": "1",
           "cost_basis": "17723.34",
-          "current_price": "881.47",
+          "current_price": "877.57",
           "instrument_id": "EQUITY:MU",
           "instrument_name": "Micron Technology, Inc.",
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-08-06T20:00:00Z",
-          "market_value": "14984.99",
+          "market_price_as_of": "2026-08-07T20:00:00Z",
+          "market_value": "14918.69",
           "quote_status": "OK",
           "quote_symbol": "MU",
           "shares": "17",
           "symbol": "MU",
-          "unrealized_pnl": "-2738.35",
-          "unrealized_pnl_pct": "-0.1545053"
+          "unrealized_pnl": "-2804.65",
+          "unrealized_pnl_pct": "-0.15824613"
         },
         {
           "avg_cost": "210.36",
           "contract_multiplier": "1",
           "cost_basis": "2103.6",
-          "current_price": "218.99",
+          "current_price": "223.96",
           "instrument_id": "EQUITY:NVDA",
           "instrument_name": "NVIDIA Corporation",
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-08-06T20:00:00Z",
-          "market_value": "2189.9",
+          "market_price_as_of": "2026-08-07T20:00:00Z",
+          "market_value": "2239.6",
           "quote_status": "OK",
           "quote_symbol": "NVDA",
           "shares": "10",
           "symbol": "NVDA",
-          "unrealized_pnl": "86.3",
-          "unrealized_pnl_pct": "0.04102491"
+          "unrealized_pnl": "136",
+          "unrealized_pnl_pct": "0.06465107"
         },
         {
           "avg_cost": "170",
           "contract_multiplier": "1",
           "cost_basis": "1700",
-          "current_price": "143.53",
+          "current_price": "137.91",
           "instrument_id": "EQUITY:SKHY",
           "instrument_name": "SK hynix Inc. ADR",
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-08-06T20:00:00Z",
-          "market_value": "1435.3",
+          "market_price_as_of": "2026-08-07T20:00:00Z",
+          "market_value": "1379.1",
           "quote_status": "OK",
           "quote_symbol": "SKHY",
           "shares": "10",
           "symbol": "SKHY",
-          "unrealized_pnl": "-264.7",
-          "unrealized_pnl_pct": "-0.15570588"
+          "unrealized_pnl": "-320.9",
+          "unrealized_pnl_pct": "-0.18876471"
         },
         {
           "avg_cost": "170",
           "contract_multiplier": "1",
           "cost_basis": "5100",
-          "current_price": "114.92",
+          "current_price": "133.11",
           "instrument_id": "EQUITY:SPCX",
           "instrument_name": "Space Exploration Technologies Corp.",
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-08-06T20:00:00Z",
-          "market_value": "3447.6",
+          "market_price_as_of": "2026-08-07T20:00:00Z",
+          "market_value": "3993.3",
           "quote_status": "OK",
           "quote_symbol": "SPCX",
           "shares": "30",
           "symbol": "SPCX",
-          "unrealized_pnl": "-1652.4",
-          "unrealized_pnl_pct": "-0.324"
+          "unrealized_pnl": "-1106.7",
+          "unrealized_pnl_pct": "-0.217"
         },
         {
           "avg_cost": "463.4829702077160744329220281",
           "contract_multiplier": "1",
           "cost_basis": "51452",
-          "current_price": "706.4",
+          "current_price": "710.71",
           "instrument_id": "ETF:VOO",
           "instrument_name": "Vanguard S&P 500 ETF",
           "instrument_type": "ETF",
-          "market_price_as_of": "2026-08-06T20:00:00Z",
-          "market_value": "78418.615432",
+          "market_price_as_of": "2026-08-07T20:00:00Z",
+          "market_value": "78897.0755573",
           "quote_status": "OK",
           "quote_symbol": "VOO",
           "shares": "111.01163",
           "symbol": "VOO",
-          "unrealized_pnl": "26966.615432",
-          "unrealized_pnl_pct": "0.52411209"
+          "unrealized_pnl": "27445.0755573",
+          "unrealized_pnl_pct": "0.53341125"
         }
       ],
       "initial_cash": "0",
@@ -39230,8 +39252,8 @@
         "performance_effective_date": "2026-06-02",
         "performance_scope": "LATEST_COMPLETE_SEGMENT",
         "realized_pnl": "623.75",
-        "sharpe_ratio": "-0.64519977",
-        "total_return": "-0.03501364",
+        "sharpe_ratio": "-0.43407899",
+        "total_return": "-0.02589225",
         "win_rate": "0.75238095"
       },
       "realized_pnl_per_trade": [
@@ -58104,7 +58126,7 @@
       ]
     },
     "paper": {
-      "cash": "56291.4981",
+      "cash": "59801.8931",
       "daily": [
         {
           "cash": "99970.432",
@@ -58391,6 +58413,19 @@
           "pnl": "-737.3819",
           "segment_id": 1,
           "segment_return": "-0.00708023"
+        },
+        {
+          "cash": "59801.8931",
+          "cumulative_return": "-0.00687762",
+          "daily_return": "0.00020405",
+          "data_status": "OK",
+          "date": "2026-08-07",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "99282.8731",
+          "pnl": "-717.1269",
+          "segment_id": 1,
+          "segment_return": "-0.00687762"
         }
       ],
       "data_status": "OK",
@@ -58399,52 +58434,52 @@
           "avg_cost": "278.285",
           "contract_multiplier": "1",
           "cost_basis": "17253.67",
-          "current_price": "272.26",
+          "current_price": "274.48",
           "instrument_id": "AMZN",
           "instrument_name": null,
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-08-06T20:00:00Z",
-          "market_value": "16880.12",
+          "market_price_as_of": "2026-08-07T20:00:00Z",
+          "market_value": "17017.76",
           "quote_status": "OK",
           "quote_symbol": "AMZN",
           "shares": "62",
           "symbol": "AMZN",
-          "unrealized_pnl": "-373.55",
-          "unrealized_pnl_pct": "-0.02165047"
+          "unrealized_pnl": "-235.91",
+          "unrealized_pnl_pct": "-0.01367303"
         },
         {
           "avg_cost": "362.125",
           "contract_multiplier": "1",
           "cost_basis": "13760.75",
-          "current_price": "357.75",
+          "current_price": "354.3",
           "instrument_id": "GOOGL",
           "instrument_name": null,
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-08-06T20:00:00Z",
-          "market_value": "13594.5",
+          "market_price_as_of": "2026-08-07T20:00:00Z",
+          "market_value": "13463.4",
           "quote_status": "OK",
           "quote_symbol": "GOOGL",
           "shares": "38",
           "symbol": "GOOGL",
-          "unrealized_pnl": "-166.25",
-          "unrealized_pnl_pct": "-0.01208146"
+          "unrealized_pnl": "-297.35",
+          "unrealized_pnl_pct": "-0.02160856"
         },
         {
           "avg_cost": "455.59",
           "contract_multiplier": "1",
-          "cost_basis": "11389.75",
-          "current_price": "499.86",
+          "cost_basis": "8200.62",
+          "current_price": "499.99",
           "instrument_id": "MSFT",
           "instrument_name": null,
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-08-06T20:00:00Z",
-          "market_value": "12496.5",
+          "market_price_as_of": "2026-08-07T20:00:00Z",
+          "market_value": "8999.82",
           "quote_status": "OK",
           "quote_symbol": "MSFT",
-          "shares": "25",
+          "shares": "18",
           "symbol": "MSFT",
-          "unrealized_pnl": "1106.75",
-          "unrealized_pnl_pct": "0.0971707"
+          "unrealized_pnl": "799.2",
+          "unrealized_pnl_pct": "0.09745605"
         }
       ],
       "initial_cash": "100000",
@@ -58455,9 +58490,9 @@
         "max_drawdown": "-0.01653717",
         "performance_effective_date": "2026-07-16",
         "performance_scope": "FULL_HISTORY",
-        "realized_pnl": "-1304.3319",
+        "realized_pnl": "-983.0669",
         "sharpe_ratio": null,
-        "total_return": "-0.00708023",
+        "total_return": "-0.00687762",
         "win_rate": "0.43243243"
       },
       "realized_pnl_per_trade": [
@@ -59708,9 +59743,59 @@
           "price": "489.225",
           "shares": "10",
           "symbol": "MSFT"
+        },
+        {
+          "contract_multiplier": "1",
+          "cumulative_pnl": "-983.0669",
+          "event_id": "paper-swing-v2-68be61c565c3418fbce8adb783c31512",
+          "fee": "0",
+          "instrument_id": "MSFT",
+          "instrument_name": null,
+          "instrument_type": "EQUITY",
+          "matches": [
+            {
+              "buy_event_id": "paper-swing-v2-937d4ebaae2c40a1b71b1759e9d779cf",
+              "buy_fee": "0",
+              "buy_price": "455.59",
+              "buy_settlement_adjustment": "0",
+              "contract_multiplier": "1",
+              "cost": "3189.13",
+              "instrument_id": "MSFT",
+              "pnl": "321.265",
+              "proceeds": "3510.395",
+              "sell_fee": "0",
+              "sell_price": "501.485",
+              "sell_settlement_adjustment": "0",
+              "shares": "7"
+            }
+          ],
+          "occurred_at": "2026-08-07T19:45:08.911015Z",
+          "pnl": "321.265",
+          "pnl_pct": "0.10073751",
+          "price": "501.485",
+          "shares": "7",
+          "symbol": "MSFT"
         }
       ],
       "recent_trades": [
+        {
+          "action": "SELL",
+          "created_at": "2026-08-07T19:45:08.911015Z",
+          "cumulative_pnl": "-983.0669",
+          "event_id": "paper-swing-v2-68be61c565c3418fbce8adb783c31512",
+          "fee": "0",
+          "ledger_seq": 85,
+          "occurred_at": "2026-08-07T19:45:08.911015Z",
+          "pnl": "321.265",
+          "pnl_pct": "0.10073751",
+          "portfolio": "paper",
+          "price": "501.485",
+          "reason": "部份止賺#2 +10.1% (沽 30%)",
+          "shares": "7",
+          "source": "swing-trader",
+          "strategy": "swing-v2",
+          "symbol": "MSFT"
+        },
         {
           "action": "BUY",
           "created_at": "2026-08-05T19:45:35.085033Z",
@@ -61031,8 +61116,8 @@
       ]
     }
   },
-  "prices_as_of": "2026-08-06T20:00:00Z",
-  "revision": 39277,
+  "prices_as_of": "2026-08-07T20:00:00Z",
+  "revision": 39310,
   "schema_version": 4,
   "source_head": {
     "live": {
@@ -61041,14 +61126,14 @@
       "last_event_id": "live-option-identity-void-2653fd0e9463ca242c6a5bf6"
     },
     "market": {
-      "count": 38520,
-      "hash": "7507f83243dc154d01012ecadd1dbc966c569e24b8e5dcfea0a5153b7e14b414",
-      "last_event_id": "market-quote-2026-08-06-spy-fdc5ea86"
+      "count": 38552,
+      "hash": "80e6c2912cd3dee22aed15c00053147510d7fd7939c3f5dc21e6118f72888ccb",
+      "last_event_id": "market-benchmark-2026-08-07-spy"
     },
     "paper": {
-      "count": 84,
-      "hash": "2fdd2070c13a3aa8f15827d342633b46361b49254badc3f2bef419f372fe73c4",
-      "last_event_id": "paper-swing-v2-ad296221da054471942a79e130f7e05e"
+      "count": 85,
+      "hash": "0ae53548f9672996c6aecf78c62fd67a1cf840f886114997ae7e40ee00d4511e",
+      "last_event_id": "paper-swing-v2-68be61c565c3418fbce8adb783c31512"
     }
   },
   "warnings": [
