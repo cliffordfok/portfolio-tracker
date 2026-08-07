@@ -22,9 +22,9 @@ if str(BACKEND_ROOT) not in sys.path:
 from portfolio_tracker.market_time import (
     NEW_YORK_NAME,
     is_nyse_early_close,
+    is_nyse_session,
     new_york_local,
 )
-from portfolio_tracker.snapshot import is_nyse_session
 
 
 TARGET_TIME = time(15, 45)

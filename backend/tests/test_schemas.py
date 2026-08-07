@@ -10,6 +10,7 @@ from portfolio_tracker.schemas import (
     normalize_event,
     validate_event,
     validate_intake_instrument_identity,
+    validate_market_event_intake,
 )
 
 from .helpers import candidate
@@ -459,6 +460,52 @@ class SchemaTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValidationError, "real calendar date"):
             validate_event(value)
+
+    def test_market_intake_rejects_non_session_and_future_session(self) -> None:
+        value = candidate(
+            "QUOTE",
+            portfolio="market",
+            event_id="market-quote-session-gate",
+            occurred_at="2024-01-05T21:00:00Z",
+            symbol="AAPL",
+            close="100",
+            session_date="2024-01-06",
+        )
+        for session_date in ("2024-01-06", "2024-01-07", "2024-01-15"):
+            with self.subTest(session_date=session_date):
+                with self.assertRaisesRegex(
+                    ValidationError,
+                    "NYSE trading session",
+                ):
+                    validate_market_event_intake(
+                        {**value, "session_date": session_date},
+                        now=datetime(2024, 1, 16, 21, 0, tzinfo=UTC),
+                    )
+
+        with self.assertRaisesRegex(
+            ValidationError,
+            "latest completed NYSE session",
+        ):
+            validate_market_event_intake(
+                {**value, "session_date": "2024-01-08"},
+                now=datetime(2024, 1, 5, 21, 0, tzinfo=UTC),
+            )
+
+    def test_market_intake_accepts_a_completed_historical_session(self) -> None:
+        value = candidate(
+            "BENCHMARK_CLOSE",
+            portfolio="market",
+            event_id="market-benchmark-completed-session",
+            occurred_at="2024-01-02T21:00:00Z",
+            symbol="SPY",
+            close="470",
+            session_date="2024-01-02",
+        )
+
+        validate_market_event_intake(
+            value,
+            now=datetime(2024, 1, 8, 21, 0, tzinfo=UTC),
+        )
 
     def test_demo_seed_events_follow_master_schema(self) -> None:
         for value in portfolio_events() + market_events():
