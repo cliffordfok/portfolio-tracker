@@ -216,6 +216,7 @@ def _audit_publication(
 def _audit_backup(
     root: Path,
     *,
+    current_heads: dict[str, dict[str, Any]],
     require_backup: bool,
     warnings: list[str],
 ) -> dict[str, Any]:
@@ -236,6 +237,7 @@ def _audit_backup(
     ledgers = manifest.get("ledgers")
     if not isinstance(ledgers, dict):
         raise PortfolioError("backup manifest has no ledger records")
+    outdated_ledgers: list[str] = []
     for portfolio in PORTFOLIOS:
         record = ledgers.get(portfolio)
         path = latest / f"{portfolio}.jsonl"
@@ -246,10 +248,21 @@ def _audit_backup(
             raise PortfolioError(f"{portfolio} backup byte count does not match")
         if record.get("sha256") != hashlib.sha256(content).hexdigest():
             raise PortfolioError(f"{portfolio} backup hash does not match")
+        if record.get("sha256") != current_heads[portfolio]["hash"]:
+            outdated_ledgers.append(portfolio)
+
+    if outdated_ledgers:
+        names = ", ".join(outdated_ledgers)
+        message = f"latest verified backup is outdated for ledgers: {names}"
+        if require_backup:
+            raise PortfolioError(message)
+        warnings.append(message)
 
     return {
         "verified": True,
+        "current": not outdated_ledgers,
         "backup_id": manifest.get("backup_id", latest.name),
+        "outdated_ledgers": outdated_ledgers,
     }
 
 
@@ -303,6 +316,13 @@ def audit_runtime(
             require_paper_initialized=require_paper_initialized,
             require_live_uninitialized=require_live_uninitialized,
         )
+        current_heads = {
+            portfolio: _source_head(
+                store.path_for(portfolio),
+                events_by_portfolio[portfolio],
+            )
+            for portfolio in PORTFOLIOS
+        }
 
     publication = _audit_publication(
         root_path,
@@ -313,6 +333,7 @@ def audit_runtime(
     )
     backup = _audit_backup(
         root_path,
+        current_heads=current_heads,
         require_backup=require_backup,
         warnings=warnings,
     )
