@@ -25,7 +25,7 @@ from portfolio_tracker.decimal_utils import input_price
 from portfolio_tracker.ledger import LedgerStore
 from portfolio_tracker.market_time import new_york_close_utc, new_york_local
 from portfolio_tracker.schemas import validate_event
-from portfolio_tracker.snapshot import is_nyse_session
+from portfolio_tracker.market_time import is_nyse_session
 
 
 class MissingQuoteError(ValueError):

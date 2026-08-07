@@ -10,6 +10,7 @@ from typing import Any, Mapping
 
 from .decimal_utils import input_price, input_shares, money
 from .errors import ValidationError
+from .market_time import is_nyse_session, latest_completed_nyse_session
 
 PORTFOLIOS = {"paper", "live", "market"}
 ECONOMIC_ACTIONS = {
@@ -511,6 +512,32 @@ def validate_event(
             date.fromisoformat(event["session_date"])
         except ValueError as exc:
             raise ValidationError("session_date must be a real calendar date") from exc
+
+
+def validate_market_event_intake(
+    event: Mapping[str, Any],
+    *,
+    now: datetime | None = None,
+) -> None:
+    """Reject new market facts for non-sessions or sessions not yet closed."""
+
+    if event.get("action") not in MARKET_ACTIONS:
+        return
+    value = event.get("session_date")
+    if not isinstance(value, str) or not DATE_RE.fullmatch(value):
+        raise ValidationError("session_date must use YYYY-MM-DD")
+    try:
+        session = date.fromisoformat(value)
+    except ValueError as exc:
+        raise ValidationError("session_date must be a real calendar date") from exc
+    if not is_nyse_session(session):
+        raise ValidationError("session_date must be an NYSE trading session")
+    latest = latest_completed_nyse_session(now or datetime.now(UTC))
+    if session > latest:
+        raise ValidationError(
+            "session_date must not be later than the latest completed "
+            f"NYSE session ({latest.isoformat()})"
+        )
 
 
 def _decimal_string(value: Any, *, field: str) -> str:

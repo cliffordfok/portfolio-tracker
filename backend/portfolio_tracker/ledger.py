@@ -14,7 +14,11 @@ from typing import Any
 from .errors import ConflictError, LedgerCorruptionError
 from .replay import replay_portfolio
 from .resolver import resolve_effective_events
-from .schemas import normalize_event, validate_event
+from .schemas import (
+    normalize_event,
+    validate_event,
+    validate_market_event_intake,
+)
 
 
 _BINARY = getattr(os, "O_BINARY", 0)
@@ -405,6 +409,7 @@ class LedgerStore:
             results: list[dict[str, Any]] = []
             pending_appends: list[dict[str, Any]] = []
             affected_portfolios: set[str] = set()
+            intake_now = datetime.now(UTC)
 
             for normalized_candidate in normalized_candidates:
                 event_id = normalized_candidate["event_id"]
@@ -420,6 +425,10 @@ class LedgerStore:
                         f"{event_id}"
                     )
 
+                validate_market_event_intake(
+                    normalized_candidate,
+                    now=intake_now,
+                )
                 portfolio = normalized_candidate["portfolio"]
                 stored = deepcopy(normalized_candidate)
                 stored["ledger_seq"] = next_sequences[portfolio]

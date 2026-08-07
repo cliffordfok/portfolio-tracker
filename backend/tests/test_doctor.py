@@ -251,7 +251,90 @@ class DoctorTests(unittest.TestCase):
         self.assertTrue(report["snapshot"]["current"])
         self.assertTrue(report["publication"]["published"])
         self.assertTrue(report["backup"]["verified"])
+        self.assertTrue(report["backup"]["current"])
         self.assertEqual(report["warnings"], [])
+
+    def test_require_backup_rejects_a_missing_backup(self) -> None:
+        self.initialize()
+
+        with self.assertRaisesRegex(PortfolioError, "backup is required"):
+            audit_runtime(self.root, require_backup=True)
+
+    def test_require_backup_still_rejects_corrupt_backup_bytes(self) -> None:
+        self.initialize()
+        manifest = backup_ledgers(self.root)
+        backup_path = (
+            self.root
+            / "backups"
+            / manifest["backup_id"]
+            / "paper.jsonl"
+        )
+        backup_path.write_bytes(backup_path.read_bytes() + b"corrupt")
+
+        with self.assertRaisesRegex(PortfolioError, "byte count does not match"):
+            audit_runtime(self.root, require_backup=True)
+
+    def test_require_backup_rejects_a_verified_but_outdated_backup(self) -> None:
+        self.initialize()
+        backup_ledgers(self.root)
+        self.store.append(
+            candidate(
+                "CASH_FLOW",
+                portfolio="paper",
+                event_id="paper-cash-after-backup",
+                occurred_at="2024-01-02T15:00:00Z",
+                amount="1",
+            )
+        )
+
+        with self.assertRaisesRegex(
+            PortfolioError,
+            "outdated for ledgers: paper",
+        ):
+            audit_runtime(self.root, require_backup=True)
+
+    def test_outdated_backup_is_a_warning_when_not_required(self) -> None:
+        self.initialize()
+        backup_ledgers(self.root)
+        self.store.append(
+            candidate(
+                "CASH_FLOW",
+                portfolio="paper",
+                event_id="paper-cash-after-backup",
+                occurred_at="2024-01-02T15:00:00Z",
+                amount="1",
+            )
+        )
+
+        report = audit_runtime(self.root)
+
+        self.assertTrue(report["backup"]["verified"])
+        self.assertFalse(report["backup"]["current"])
+        self.assertEqual(report["backup"]["outdated_ledgers"], ["paper"])
+        self.assertIn(
+            "latest verified backup is outdated for ledgers: paper",
+            report["warnings"],
+        )
+
+    def test_new_backup_restores_current_backup_acceptance(self) -> None:
+        self.initialize()
+        backup_ledgers(self.root)
+        self.store.append(
+            candidate(
+                "CASH_FLOW",
+                portfolio="paper",
+                event_id="paper-cash-after-backup",
+                occurred_at="2024-01-02T15:00:00Z",
+                amount="1",
+            )
+        )
+        backup_ledgers(self.root)
+
+        report = audit_runtime(self.root, require_backup=True)
+
+        self.assertTrue(report["backup"]["verified"])
+        self.assertTrue(report["backup"]["current"])
+        self.assertEqual(report["backup"]["outdated_ledgers"], [])
 
     def test_require_published_rejects_an_unresolved_attempt(self) -> None:
         self.initialize()

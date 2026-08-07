@@ -148,6 +148,64 @@ class LedgerTests(unittest.TestCase):
         self.assertEqual(retry["duplicates"], 3)
         self.assertFalse((self.root / "state" / "rebuild.pending").exists())
 
+    def test_invalid_later_market_session_causes_zero_writes(self) -> None:
+        valid = candidate(
+            "QUOTE",
+            portfolio="market",
+            event_id="market-valid-session",
+            occurred_at="2024-01-02T21:00:00Z",
+            symbol="AAPL",
+            close="100",
+            session_date="2024-01-02",
+        )
+        invalid = candidate(
+            "QUOTE",
+            portfolio="market",
+            event_id="market-weekend-session",
+            occurred_at="2024-01-06T21:00:00Z",
+            symbol="MSFT",
+            close="200",
+            session_date="2024-01-06",
+        )
+
+        with self.assertRaisesRegex(ValidationError, "NYSE trading session"):
+            self.store.append_many([valid, invalid])
+
+        self.assertEqual(self.store.read("market"), [])
+        self.assertFalse((self.root / "state" / "rebuild.pending").exists())
+
+    def test_legacy_invalid_session_retry_remains_idempotent(self) -> None:
+        legacy = candidate(
+            "QUOTE",
+            portfolio="market",
+            event_id="market-legacy-weekend-session",
+            occurred_at="2024-01-06T21:00:00Z",
+            symbol="AAPL",
+            close="100",
+            session_date="2024-01-06",
+        )
+        stored = {**legacy, "ledger_seq": 1}
+        path = self.store.path_for("market")
+        path.parent.mkdir(parents=True)
+        path.write_text(
+            json.dumps(stored, separators=(",", ":")) + "\n",
+            encoding="utf-8",
+        )
+
+        self.assertEqual(self.store.read("market"), [stored])
+        result = self.store.append(legacy)
+        self.assertEqual(result["status"], "duplicate")
+        self.assertEqual(self.store.read("market"), [stored])
+
+        valid = {
+            **legacy,
+            "event_id": "market-valid-session-after-legacy",
+            "occurred_at": "2024-01-08T21:00:00Z",
+            "session_date": "2024-01-08",
+        }
+        self.assertEqual(self.store.append(valid)["status"], "appended")
+        self.assertEqual(build_snapshot(self.root)["revision"], 2)
+
     def test_partial_batch_never_rebuilds_until_stable_retry_completes_it(
         self,
     ) -> None:

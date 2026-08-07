@@ -8,7 +8,8 @@ from pathlib import Path
 from typing import Any
 
 from portfolio_tracker.ledger import LedgerStore, atomic_write_json
-from portfolio_tracker.snapshot import build_snapshot, nyse_sessions
+from portfolio_tracker.market_time import nyse_sessions
+from portfolio_tracker.snapshot import build_snapshot
 
 
 PRICE_ANCHORS = [
