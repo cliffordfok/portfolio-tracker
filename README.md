@@ -383,9 +383,6 @@ JSON
 `quote-batch` 會先按 session 驗證每個
 `(action, instrument_id 或 symbol, session_date)` 唯一，而且每個 session
 剛好有一個 SPY benchmark。任何較後 session 無效時，較前 session 亦不會寫入。
-所有新 market event 的 `session_date` 必須是已完成的 NYSE 交易日；週末、
-假期、當日未收市及未來 session 都會 fail closed。既有完全相同 event retry
-仍按 stable event ID 成為 no-op。
 全部通過後才會在同一把 global ledger lock 下寫入，最後只
 rebuild／request publish 一次。
 同一批資料 retry 會按 stable event ID 成為 no-op。如果程序在 batch 中途
@@ -443,7 +440,17 @@ Migration 會逐筆配對原有 SPCX BUY，並必須證明現金、買入資金�
 CBRS 上市後身份及 SK hynix when-issued ticker 轉換亦使用獨立 append-only
 migration：
 
-�M��G����ƭyկ�入的 deterministic payload，再
+```bash
+python3 scripts/repair_instrument_identities.py \
+  --root /data/portfolio \
+  --check-only
+
+python3 scripts/repair_instrument_identities.py \
+  --root /data/portfolio \
+  --apply
+```
+
+它會把五筆 `PRIVATE:CEREBR�om�G����ƭy�入的 deterministic payload，再
 只補寫餘下事件。
 
 新 Live 寫入會執行 current-identity gate：2026-07-13 起拒絕 `SKHYV`；
