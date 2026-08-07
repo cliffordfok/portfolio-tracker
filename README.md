@@ -450,7 +450,11 @@ python3 scripts/repair_instrument_identities.py \
   --apply
 ```
 
-它會把五筆 `PRIVATE:CEREBR�om�G����ƭy�入的 deterministic payload，再
+它會把五筆 `PRIVATE:CEREBRAS` 交易逐筆改為 `EQUITY:CBRS`，把未平倉
+`EQUITY:SKHYV` 改為正式 `EQUITY:SKHY`，並以原有三筆 SKHYV 收市價建立
+SKHY quote alias。原事件只會被 VOID，不會覆寫或刪除。驗收必須證明現金、
+FIFO 損益、交易數量、CBRS 已平倉狀態、SKHY 股數及成本完全不變。若程序
+在 JSONL batch 中途終止，重跑會先核對已寫入的 deterministic payload，再
 只補寫餘下事件。
 
 新 Live 寫入會執行 current-identity gate：2026-07-13 起拒絕 `SKHYV`；
@@ -682,9 +686,7 @@ sudo -u portfolio /usr/bin/python3 -m portfolio_tracker.cli \
 ```
 
 `doctor` 只會輸出 event counts、revision、hash 狀態及 backup ID；唔會輸出
-持倉、交易內容或 token。使用 `--require-backup` 時，最新一份已驗證備份亦必須
-與目前三個 ledger 的 hash 完全一致；備份後如有新 event，需重新備份才會通過。
-全部通過後先啟用觸發器：
+持倉、交易內容或 token。全部通過後先啟用觸發器：
 
 ```bash
 sudo systemctl enable --now \
