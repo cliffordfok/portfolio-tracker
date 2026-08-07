@@ -402,4 +402,1049 @@ def validate_snapshot(snapshot: Any) -> None:
             }:
                 raise ValidationError(f"{name}.daily data_status is invalid")
             for field in (
-         ïo;¶‰Ëkºwµçe±ä¹…ÁÁ•¹ (€€€€€€€€€€€€€€€ì(€€€€€€€€€€€€€€€€€€€€‰‘…Ñ”ˆèÍ•ÍÍ¥½¸°(€€€€€€€€€€€€€€€€€€€€‰¹…Øˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€‰…Í ˆè…Í °(€€€€€€€€€€€€€€€€€€€€‰•áÑ•É¹…±}™±½Üˆè•áÑ•É¹…±}™±½Ü°(€€€€€€€€€€€€€€€€€€€€‰‘…¥±å}É•ÑÕÉ¸ˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€‰ÕµÕ±…Ñ¥Ù•}É•ÑÕÉ¸ˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€‰Í•µ•¹Ñ}¥ˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€‰Í•µ•¹Ñ}É•ÑÕÉ¸ˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€‰Á¹°ˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€‰‘…Ñ…}ÍÑ…ÑÕÌˆè€‰%9MU%%9Q}5I-Q}Qˆ°(€€€€€€€€€€€€€€€€€€€€‰µ¥ÍÍ¥¹}Íåµ‰½±Ìˆèµ¥ÍÍ¥¹}Íåµ‰½±Ì°(€€€€€€€€€€€€€€€ô(€€€€€€€€€€€€¤(€€€€€€€€€€€ÁÉ•Ù¥½ÕÍ}¹…Ø€ô9½¹”(€€€€€€€€€€€ÁÉ•Ù¥½ÕÍ}Í•µ•¹Ñ}É•ÑÕÉ¸€ô9½¹”(€€€€€€€€€€€…Á}Í••¸€ôQÉÕ”(€€€€€€€€€€€½¹Ñ¥¹Õ”((€€€€€€€µ…É­•Ñ}Ù…±Õ”€ôµ½¹•ä (€€€€€€€€€€€ÍÕ´ (€€€€€€€€€€€€€€€€ (€€€€€€€€€€€€€€€€€€€…µ½Õ¹Ñ}™½È (€€€€€€€€€€€€€€€€€€€€€€€ÅÕ…¹Ñ¥Ñä(€€€€€€€€€€€€€€€€€€€€€€€€¨Á½Í¥Ñ¥½¹}µ•Ñ…m¥¹ÍÑÉÕµ•¹Ñ}¥‘ul‰½¹ÑÉ…Ñ}µÕ±Ñ¥Á±¥•È‰t°(€€€€€€€€€€€€€€€€€€€€€€€}ÅÕ½Ñ•}™½É}‘…ä (€€€€€€€€€€€€€€€€€€€€€€€€€€€ÅÕ½Ñ•ÍmÁ½Í¥Ñ¥½¹}µ•Ñ…m¥¹ÍÑÉÕµ•¹Ñ}¥‘ul‰ÅÕ½Ñ•}­•ä‰ut°(€€€€€€€€€€€€€€€€€€€€€€€€€€€Í•ÍÍ¥½¸°(€€€€€€€€€€€€€€€€€€€€€€€€€€€Í•ÍÍ¥½¹}Í•Ğ°(€€€€€€€€€€€€€€€€€€€€€€€€¥l‰±½Í”‰t°(€€€€€€€€€€€€€€€€€€€€¤(€€€€€€€€€€€€€€€€€€€™½È¥¹ÍÑÉÕµ•¹Ñ}¥°ÅÕ…¹Ñ¥Ñä¥¸Á½Í¥Ñ¥½¹Ì¹¥Ñ•µÌ ¤(€€€€€€€€€€€€€€€€€€€¥˜ÅÕ…¹Ñ¥Ñä€ø€À(€€€€€€€€€€€€€€€€¤°(€€€€€€€€€€€€€€€iI<°(€€€€€€€€€€€€¤(€€€€€€€€¤(€€€€€€€¹…Ø€ôµ½¹•ä¡…Í €¬µ…É­•Ñ}Ù…±Õ”¤((€€€€€€€Á¹°€ôµ½¹•ä¡¹…Ø€´É•ÍÕ±Ğ¹¥¹¥Ñ¥…±}…Í €´ÕµÕ±…Ñ¥Ù•}•áÑ•É¹…±}™±½Ü¤(€€€€€€€¥˜ÁÉ•Ù¥½ÕÍ}¹…Ø¥Ì9½¹”è(€€€€€€€€€€€Í•µ•¹Ñ}¥€¬ô€Ä(€€€€€€€€€€€‘…¥±å}É•ÑÕÉ¸€ô9½¹”¥˜…Á}Í••¸•±Í”iI<(€€€€€€€€€€€Í•µ•¹Ñ}É•ÑÕÉ¸€ôiI<(€€€€€€€•±Í”è(€€€€€€€€€€€‘•¹½µ¥¹…Ñ½È€ôµ½¹•ä¡ÁÉ•Ù¥½ÕÍ}¹…Ø€¬•áÑ•É¹…±}™±½Ü¤(€€€€€€€€€€€¥˜‘•¹½µ¥¹…Ñ½È€ğô€Àè(€€€€€€€€€€€€€€€‘…¥±ä¹…ÁÁ•¹ (€€€€€€€€€€€€€€€€€€€ì(€€€€€€€€€€€€€€€€€€€€€€€€‰‘…Ñ”ˆèÍ•ÍÍ¥½¸°(€€€€€€€€€€€€€€€€€€€€€€€€‰¹…Øˆè¹…Ø°(€€€€€€€€€€€€€€€€€€€€€€€€‰…Í ˆè…Í °(€€€€€€€€€€€€€€€€€€€€€€€€‰•áÑ•É¹…±}™±½Üˆè•áÑ•É¹…±}™±½Ü°(€€€€€€€€€€€€€€€€€€€€€€€€‰‘…¥±å}É•ÑÕÉ¸ˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€€€€€‰ÕµÕ±…Ñ¥Ù•}É•ÑÕÉ¸ˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€€€€€‰Í•µ•¹Ñ}¥ˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€€€€€‰Í•µ•¹Ñ}É•ÑÕÉ¸ˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€€€€€‰Á¹°ˆèÁ¹°°(€€€€€€€€€€€€€€€€€€€€€€€€‰‘…Ñ…}ÍÑ…ÑÕÌˆè€‰%9MU%%9Q}Qˆ°(€€€€€€€€€€€€€€€€€€€€€€€€‰µ¥ÍÍ¥¹}Íåµ‰½±Ìˆèmt°(€€€€€€€€€€€€€€€€€€€ô(€€€€€€€€€€€€€€€€¤(€€€€€€€€€€€€€€€ÁÉ•Ù¥½ÕÍ}¹…Ø€ô9½¹”(€€€€€€€€€€€€€€€ÁÉ•Ù¥½ÕÍ}Í•µ•¹Ñ}É•ÑÕÉ¸€ô9½¹”(€€€€€€€€€€€€€€€…Á}Í••¸€ôQÉÕ”(€€€€€€€€€€€€€€€½¹Ñ¥¹Õ”(€€€€€€€€€€€‘…¥±å}É•ÑÕÉ¸€ôÁ•É•¹Ğ¡¹…Ø€¼‘•¹½µ¥¹…Ñ½È€´€Ä¤(€€€€€€€€€€€‰…Í”€ôÁÉ•Ù¥½ÕÍ}Í•µ•¹Ñ}É•ÑÕÉ¸¥˜ÁÉ•Ù¥½ÕÍ}Í•µ•¹Ñ}É•ÑÕÉ¸¥Ì¹½Ğ9½¹”•±Í”iI<(€€€€€€€€€€€Í•µ•¹Ñ}É•ÑÕÉ¸€ôÁ•É•¹Ğ  Ä€¬‰…Í”¤€¨€ Ä€¬‘…¥±å}É•ÑÕÉ¸¤€´€Ä¤((€€€€€€€ÕµÕ±…Ñ¥Ù•}É•ÑÕÉ¸€ô9½¹”¥˜…Á}Í••¸•±Í”Í•µ•¹Ñ}É•ÑÕÉ¸(€€€€€€€‘…¥±ä¹…ÁÁ•¹ (€€€€€€€€€€€ì(€€€€€€€€€€€€€€€€‰‘…Ñ”ˆèÍ•ÍÍ¥½¸°(€€€€€€€€€€€€€€€€‰¹…Øˆè¹…Ø°(€€€€€€€€€€€€€€€€‰…Í ˆè…Í °(€€€€€€€€€€€€€€€€‰•áÑ•É¹…±}™±½Üˆè•áÑ•É¹…±}™±½Ü°(€€€€€€€€€€€€€€€€‰‘…¥±å}É•ÑÕÉ¸ˆè‘…¥±å}É•ÑÕÉ¸°(€€€€€€€€€€€€€€€€‰ÕµÕ±…Ñ¥Ù•}É•ÑÕÉ¸ˆèÕµÕ±…Ñ¥Ù•}É•ÑÕÉ¸°(€€€€€€€€€€€€€€€€‰Í•µ•¹Ñ}¥ˆèÍ•µ•¹Ñ}¥°(€€€€€€€€€€€€€€€€‰Í•µ•¹Ñ}É•ÑÕÉ¸ˆèÍ•µ•¹Ñ}É•ÑÕÉ¸°(€€€€€€€€€€€€€€€€‰Á¹°ˆèÁ¹°°(€€€€€€€€€€€€€€€€‰‘…Ñ…}ÍÑ…ÑÕÌˆè€‰=,ˆ°(€€€€€€€€€€€€€€€€‰µ¥ÍÍ¥¹}Íåµ‰½±Ìˆèmt°(€€€€€€€€€€€ô(€€€€€€€€¤(€€€€€€€ÁÉ•Ù¥½ÕÍ}¹…Ø€ô¹…Ø(€€€€€€€ÁÉ•Ù¥½ÕÍ}Í•µ•¹Ñ}É•ÑÕÉ¸€ôÍ•µ•¹Ñ}É•ÑÕÉ¸((€€€É•ÑÕÉ¸‘…¥±ä(()‘•˜}‰•¹¡µ…É­}Í•É¥•Ì (€€€‰•¹¡µ…É¬è‘¥ÑmÍÑÈ°‘¥ÑmÍÑÈ°¹åut°(€€€‘…åÌè±¥ÍÑmÍÑÉt°(€€€Í•ÍÍ¥½¹Ìè±¥ÍÑmÍÑÉt°(¤€´ø±¥ÍÑm‘¥ÑmÍÑÈ°¹åutè(€€€Í•É¥•Ìè±¥ÍÑm‘¥ÑmÍÑÈ°¹åut€ômt(€€€Í•ÍÍ¥½¹}Í•Ğ€ôÍ•Ğ¡Í•ÍÍ¥½¹Ì¤(€€€ÁÉ•Ù¥½ÕÌè•¥µ…°ğ9½¹”€ô9½¹”(€€€Í•µ•¹Ñ}É•ÑÕÉ¸è•¥µ…°ğ9½¹”€ô9½¹”(€€€Í•µ•¹Ñ}¥€ô€À(€€€…Á}Í••¸€ô…±Í”(€€€™½ÈÍ•ÍÍ¥½¸¥¸‘…åÌè(€€€€€€€É•½É€ô}ÅÕ½Ñ•}™½É}‘…ä¡‰•¹¡µ…É¬°Í•ÍÍ¥½¸°Í•ÍÍ¥½¹}Í•Ğ¤(€€€€€€€¥˜É•½É¥Ì9½¹”è(€€€€€€€€€€€Í•É¥•Ì¹…ÁÁ•¹ (€€€€€€€€€€€€€€€ì(€€€€€€€€€€€€€€€€€€€€‰‘…Ñ”ˆèÍ•ÍÍ¥½¸°(€€€€€€€€€€€€€€€€€€€€‰±½Í”ˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€‰‘…¥±å}É•ÑÕÉ¸ˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€‰ÕµÕ±…Ñ¥Ù•}É•ÑÕÉ¸ˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€‰Í•µ•¹Ñ}¥ˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€‰Í•µ•¹Ñ}É•ÑÕÉ¸ˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€‰‘…Ñ…}ÍÑ…ÑÕÌˆè€‰%9MU%%9Q}5I-Q}Qˆ°(€€€€€€€€€€€€€€€ô(€€€€€€€€€€€€¤(€€€€€€€€€€€ÁÉ•Ù¥½ÕÌ€ô9½¹”(€€€€€€€€€€€Í•µ•¹Ñ}É•ÑÕÉ¸€ô9½¹”(€€€€€€€€€€€…Á}Í••¸€ôQÉÕ”(€€€€€€€€€€€½¹Ñ¥¹Õ”(€€€€€€€±½Í”€ôÉ•½É‘l‰±½Í”‰t(€€€€€€€¥˜ÁÉ•Ù¥½ÕÌ¥Ì9½¹”è(€€€€€€€€€€€Í•µ•¹Ñ}¥€¬ô€Ä(€€€€€€€€€€€‘…¥±å}É•ÑÕÉ¸€ô9½¹”(€€€€€€€€€€€Í•µ•¹Ñ}É•ÑÕÉ¸€ôiI<(€€€€€€€•±Í”è(€€€€€€€€€€€‘…¥±å}É•ÑÕÉ¸€ôÁ•É•¹Ğ¡±½Í”€¼ÁÉ•Ù¥½ÕÌ€´€Ä¤(€€€€€€€€€€€Í•µ•¹Ñ}É•ÑÕÉ¸€ôÁ•É•¹Ğ (€€€€€€€€€€€€€€€€ Ä€¬€¡Í•µ•¹Ñ}É•ÑÕÉ¸¥˜Í•µ•¹Ñ}É•ÑÕÉ¸¥Ì¹½Ğ9½¹”•±Í”iI<¤¤(€€€€€€€€€€€€€€€€¨€ Ä€¬‘…¥±å}É•ÑÕÉ¸¤(€€€€€€€€€€€€€€€€´€Ä(€€€€€€€€€€€€¤(€€€€€€€Í•É¥•Ì¹…ÁÁ•¹ (€€€€€€€€€€€ì(€€€€€€€€€€€€€€€€‰‘…Ñ”ˆèÍ•ÍÍ¥½¸°(€€€€€€€€€€€€€€€€‰±½Í”ˆè±½Í”°(€€€€€€€€€€€€€€€€‰‘…¥±å}É•ÑÕÉ¸ˆè‘…¥±å}É•ÑÕÉ¸°(€€€€€€€€€€€€€€€€‰ÕµÕ±…Ñ¥Ù•}É•ÑÕÉ¸ˆè9½¹”¥˜…Á}Í••¸•±Í”Í•µ•¹Ñ}É•ÑÕÉ¸°(€€€€€€€€€€€€€€€€‰Í•µ•¹Ñ}¥ˆèÍ•µ•¹Ñ}¥°(€€€€€€€€€€€€€€€€‰Í•µ•¹Ñ}É•ÑÕÉ¸ˆèÍ•µ•¹Ñ}É•ÑÕÉ¸°(€€€€€€€€€€€€€€€€‰‘…Ñ…}ÍÑ…ÑÕÌˆè€‰=,ˆ°(€€€€€€€€€€€ô(€€€€€€€€¤(€€€€€€€ÁÉ•Ù¥½ÕÌ€ô±½Í”(€€€É•ÑÕÉ¸Í•É¥•Ì(()‘•˜}Á½ÉÑ™½±¥½}…±•¹‘…È (€€€É•ÍÕ±ĞèI•Á±…åI•ÍÕ±Ğ°(€€€µ…É­•Ñ}Í•ÍÍ¥½¹Ìè±¥ÍÑmÍÑÉt°(¤€´øÑÕÁ±•m±¥ÍÑmÍÑÉt°±¥ÍÑmÍÑÉutè(€€€€ˆˆ‰	Õ¥±„Á½ÉÑ™½±¥¼µ±½…°…±•¹‘…È¸((€€€5…É­•ĞÍ•ÍÍ¥½¹Ì…É”Í¡…É•Í½ÕÉ”‘…Ñ„°‰ÕĞ„™ÕÑÕÉ”µ‘…Ñ•A…Á•È•Ù•¹ĞµÕÍĞ(€€€¹½Ğ•áÑ•¹1¥Ù”€¡½ÈÑ¡”‰•¹¡µ…É¬¤¥¹Ñ¼„Í•ÍÍ¥½¸™½Èİ¡¥ ¹¼ÅÕ½Ñ”•á¥ÍÑÌ¸(€€€… Á½ÉÑ™½±¥¼µ…ä•áÑ•¹½¹±ä¥ÑÌ½İ¸Ñ•Éµ¥¹…°Í•ÍÍ¥½¸¸(€€€€ˆˆˆ((€€€…¹‘¥‘…Ñ•Ì€ôÍ•Ğ¡µ…É­•Ñ}Í•ÍÍ¥½¹Ì¤(€€€…¹‘¥‘…Ñ•Ì¹ÕÁ‘…Ñ” (€€€€€€€}•Ù•¹Ñ}Í•ÍÍ¥½¹}…¹‘¥‘…Ñ”¡•Ù•¹Ğ¤(€€€€€€€™½È•Ù•¹Ğ¥¸É•ÍÕ±Ğ¹•™™•Ñ¥Ù•}•Ù•¹ÑÌ(€€€€¤(€€€¥˜¹½Ğ…¹‘¥‘…Ñ•Ìè(€€€€€€€É•ÑÕÉ¸mt°mt(€€€Í•ÍÍ¥½¹Ì€ô¹åÍ•}Í•ÍÍ¥½¹Ì (€€€€€€€‘…Ñ”¹™É½µ¥Í½™½Éµ…Ğ¡µ¥¸¡…¹‘¥‘…Ñ•Ì¤¤°(€€€€€€€‘…Ñ”¹™É½µ¥Í½™½Éµ…Ğ¡µ…à¡…¹‘¥‘…Ñ•Ì¤¤°(€€€€¤(€€€‘…åÌ€ô}…±•¹‘…É}‘…åÌ (€€€€€€€‘…Ñ”¹™É½µ¥Í½™½Éµ…Ğ¡Í•ÍÍ¥½¹ÍlÁt¤°(€€€€€€€‘…Ñ”¹™É½µ¥Í½™½Éµ…Ğ¡Í•ÍÍ¥½¹Íl´Åt¤°(€€€€¤(€€€É•ÑÕÉ¸Í•ÍÍ¥½¹Ì°‘…åÌ(()‘•˜}‰Õ¥±‘}Í¹…ÁÍ¡½Ñ}±½­• (€€€É½½Ñ}Á…Ñ èA…Ñ °(€€€ÍÑ½É”è1•‘•ÉMÑ½É”°(€€€€¨°(€€€½ÕÑÁÕĞèÍÑÈğA…Ñ ğ9½¹”€ô9½¹”°(€€€İÉ¥Ñ”è‰½½°€ôQÉÕ”°(€€€É•Á…¥É}É•½É‘Ìè±¥ÍÑm‘¥ÑmÍÑÈ°¹åutğ9½¹”€ô9½¹”°(¤€´ø‘¥ÑmÍÑÈ°¹åtè(€€€É•Á…¥ÉÌ€ôÉ•Á…¥É}É•½É‘Ì¥˜É•Á…¥É}É•½É‘Ì¥Ì¹½Ğ9½¹”•±Í”mt(€€€Á…Á•É}•Ù•¹ÑÌ€ôÍÑ½É”¹É•… (€€€€€€€€‰Á…Á•Èˆ°(€€€€€€€É•Á…¥É}Ñ…¥°õQÉÕ”°(€€€€€€€É•Á…¥É}É•½É‘ÌõÉ•Á…¥ÉÌ°(€€€€¤(€€€±¥Ù•}•Ù•¹ÑÌ€ôÍÑ½É”¹É•… (€€€€€€€€‰±¥Ù”ˆ°(€€€€€€€É•Á…¥É}Ñ…¥°õQÉÕ”°(€€€€€€€É•Á…¥É}É•½É‘ÌõÉ•Á…¥ÉÌ°(€€€€¤(€€€µ…É­•Ñ}•Ù•¹ÑÌ€ôÍÑ½É”¹É•… (€€€€€€€€‰µ…É­•Ğˆ°(€€€€€€€É•Á…¥É}Ñ…¥°õQÉÕ”°(€€€€€€€É•Á…¥É}É•½É‘ÌõÉ•Á…¥ÉÌ°(€€€€¤(€€€}…ÍÍ•ÉÑ}Á•¹‘¥¹}‰…Ñ¡}½µÁ±•Ñ” (€€€€€€€É½½Ñ}Á…Ñ °(€€€€€€€Á…Á•É}•Ù•¹ÑÌ€¬±¥Ù•}•Ù•¹ÑÌ€¬µ…É­•Ñ}•Ù•¹ÑÌ°(€€€€¤(€€€ÅÕ½Ñ•Ì°‰•¹¡µ…É¬°µ…É­•Ñ}Í•ÍÍ¥½¹Ì€ô}µ…É­•Ñ}‘…Ñ„¡µ…É­•Ñ}•Ù•¹ÑÌ¤(€€€É•Á±…å}É•ÍÕ±ÑÌ€ôì(€€€€€€€¹…µ”èÉ•Á±…å}Á½ÉÑ™½±¥¼¡•Ù•¹ÑÌ°Á½ÉÑ™½±¥¼õ¹…µ”¤(€€€€€€€™½È¹…µ”°•Ù•¹ÑÌ¥¸€  ‰Á…Á•Èˆ°Á…Á•É}•Ù•¹ÑÌ¤°€ ‰±¥Ù”ˆ°±¥Ù•}•Ù•¹ÑÌ¤¤(€€€€€€€¥˜•Ù•¹ÑÌ(€€€ô(€€€‰•¹¡µ…É­}‘…åÌ€ô€ (€€€€€€€}…±•¹‘…É}‘…åÌ (€€€€€€€€€€€‘…Ñ”¹™É½µ¥Í½™½Éµ…Ğ¡µ…É­•Ñ}Í•ÍÍ¥½¹ÍlÁt¤°(€€€€€€€€€€€‘…Ñ”¹™É½µ¥Í½™½Éµ…Ğ¡µ…É­•Ñ}Í•ÍÍ¥½¹Íl´Åt¤°(€€€€€€€€¤(€€€€€€€¥˜µ…É­•Ñ}Í•ÍÍ¥½¹Ì(€€€€€€€•±Í”mt(€€€€¤(€€€İ…É¹¥¹Ì€ôl(€€€€€€€€ (€€€€€€€€€€€˜‰íA…Ñ ¡É•Á…¥Él±•‘•Èt¤¹ÍÑ•µô±•‘•ÈÑ…¥°É•Á…¥É•ì€ˆ(€€€€€€€€€€€˜‰íÉ•Á…¥Él‰åÑ•Í}ÅÕ…É…¹Ñ¥¹•uô‰åÑ•ÌÅÕ…É…¹Ñ¥¹•ˆ(€€€€€€€€¤(€€€€€€€™½ÈÉ•Á…¥È¥¸É•Á…¥ÉÌ(€€€t(€€€Á½ÉÑ™½±¥½Ìè‘¥ÑmÍÑÈ°¹åt€ôíô((€€€™½È¹…µ”°•Ù•¹ÑÌ¥¸€  ‰Á…Á•Èˆ°Á…Á•É}•Ù•¹ÑÌ¤°€ ‰±¥Ù”ˆ°±¥Ù•}•Ù•¹ÑÌ¤¤è(€€€€€€€¥˜¹½Ğ•Ù•¹ÑÌè(€€€€€€€€€€€İ…É¹¥¹Ì¹…ÁÁ•¹¡˜‰í¹…µ•ôÁ½ÉÑ™½±¥¼¡…Ì¹¼•Ù•¹ÑÌˆ¤(€€€€€€€€€€€Á½ÉÑ™½±¥½Ím¹…µ•t€ôì(€€€€€€€€€€€€€€€€‰‘…Ñ…}ÍÑ…ÑÕÌˆè€‰9=}Qˆ°(€€€€€€€€€€€€€€€€‰¡½±‘¥¹Ìˆèmt°(€€€€€€€€€€€€€€€€‰É••¹Ñ}ÑÉ…‘•Ìˆèmt°(€€€€€€€€€€€€€€€€‰‘…¥±äˆèmt°(€€€€€€€€€€€€€€€€‰µ•ÑÉ¥Ìˆèì(€€€€€€€€€€€€€€€€€€€€‰‘…Ñ…}ÍÑ…ÑÕÌˆè€‰9=}Qˆ°(€€€€€€€€€€€€€€€€€€€€‰Á•É™½Éµ…¹•}•™™•Ñ¥Ù•}‘…Ñ”ˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€‰Á•É™½Éµ…¹•}Í½Á”ˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€‰Ñ½Ñ…±}É•ÑÕÉ¸ˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€‰É•…±¥é•‘}Á¹°ˆè€ˆÀˆ°(€€€€€€€€€€€€€€€€€€€€‰¥¹½µ•}•áÁ•¹Í”ˆè€ˆÀˆ°(€€€€€€€€€€€€€€€€€€€€‰İ¥¹}É…Ñ”ˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€‰±½Í•‘}•Á¥Í½‘•Ìˆè€À°(€€€€€€€€€€€€€€€€€€€€‰µ…á}‘É…İ‘½İ¸ˆè9½¹”°(€€€€€€€€€€€€€€€€€€€€‰Í¡…ÉÁ•}É…Ñ¥¼ˆè9½¹”°(€€€€€€€€€€€€€€€ô°(€€€€€€€€€€€ô(€€€€€€€€€€€½¹Ñ¥¹Õ”((€€€€€€€É•ÍÕ±Ğ€ôÉ•Á±…å}É•ÍÕ±ÑÍm¹…µ•t(€€€€€€€Á½ÉÑ™½±¥½}Í•ÍÍ¥½¹Ì°Á½ÉÑ™½±¥½}‘…åÌ€ô}Á½ÉÑ™½±¥½}…±•¹‘…È (€€€€€€€€€€€É•ÍÕ±Ğ°(€€€€€€€€€€€µ…É­•Ñ}Í•ÍÍ¥½¹Ì°(€€€€€€€€¤(€€€€€€€‘…¥±ä€ô}‘…¥±å}Í•É¥•Ì (€€€€€€€€€€€É•ÍÕ±Ğ°(€€€€€€€€€€€ÅÕ½Ñ•Ì°(€€€€€€€€€€€Á½ÉÑ™½±¥½}‘…åÌ°(€€€€€€€€€€€Á½ÉÑ™½±¥½}Í•ÍÍ¥½¹Ì°(€€€€€€€€¤(€€€€€€€±…ÍÑ}‘…ä€ôÁ½ÉÑ™½±¥½}‘…åÍl´Åt¥˜Á½ÉÑ™½±¥½}‘…åÌ•±Í”9½¹”(€€€€€€€¡½±‘¥¹Ì€ô}•¹É¥¡}¡½±‘¥¹Ì (€€€€€€€€€€€É•ÍÕ±Ğ°(€€€€€€€€€€€ÅÕ½Ñ•Ì°(€€€€€€€€€€€±…ÍÑ}‘…ä°(€€€€€€€€€€€Í•Ğ¡Á½ÉÑ™½±¥½}Í•ÍÍ¥½¹Ì¤°(€€€€€€€€¤(€€€€€€€µ•ÑÉ¥Ì€ô}µ•ÑÉ¥Ì¡‘…¥±ä°É•ÍÕ±Ğ¤(€€€€€€€¥˜µ•ÑÉ¥Íl‰‘…Ñ…}ÍÑ…ÑÕÌ‰t€„ô€‰=,ˆè(€€€€€€€€€€€İ…É¹¥¹Ì¹…ÁÁ•¹¡˜‰í¹…µ•ôÁ•É™½Éµ…¹”½¹Ñ…¥¹Ì¥¹½µÁ±•Ñ”µ…É­•Ğ‘…Ñ„ˆ¤(€€€€€€€•±¥˜µ•ÑÉ¥Íl‰Á•É™½Éµ…¹•}Í½Á”‰t€ôô€‰1QMQ}=5A1Q}M59Pˆè(€€€€€€€€€€€İ…É¹¥¹Ì¹…ÁÁ•¹ (€€€€€€€€€€€€€€€˜‰í¹…µ•ôÁ•É™½Éµ…¹”ÍÑ…ÉÑÌ…Ğ€ˆ(€€€€€€€€€€€€€€€˜‰íµ•ÑÉ¥ÍlÁ•É™½Éµ…¹•}•™™•Ñ¥Ù•}‘…Ñ”uô…™Ñ•È¥¹½µÁ±•Ñ”€ˆ(€€€€€€€€€€€€€€€€‰µ…É­•Ğ‘…Ñ„ˆ(€€€€€€€€€€€€¤(€€€€€€€Á½ÉÑ™½±¥½Ím¹…µ•t€ôì(€€€€€€€€€€€€‰‘…Ñ…}ÍÑ…ÑÕÌˆèµ•ÑÉ¥Íl‰‘…Ñ…}ÍÑ…ÑÕÌ‰t°(€€€€€€€€€€€€‰…Í ˆèÉ•ÍÕ±Ğ¹…Í °(€€€€€€€€€€€€‰¥¹¥Ñ¥…±}…Í ˆèÉ•ÍÕ±Ğ¹¥¹¥Ñ¥…±}…Í °(€€€€€€€€€€€€‰¡½±‘¥¹Ìˆè¡½±‘¥¹Ì°(€€€€€€€€€€€€‰É••¹Ñ}ÑÉ…‘•Ìˆè±¥ÍĞ¡É•Ù•ÉÍ•¡É•ÍÕ±Ğ¹ÑÉ…‘•}¡¥ÍÑ½Éä¤¤°(€€€€€€€€€€€€‰É•…±¥é•‘}Á¹±}Á•É}ÑÉ…‘”ˆèÉ•ÍÕ±Ğ¹É•…±¥é•‘}Á¹±}Á•É}ÑÉ…‘”°(€€€€€€€€€€€€‰‘…¥±äˆè‘…¥±ä°(€€€€€€€€€€€€‰µ•ÑÉ¥Ìˆèµ•ÑÉ¥Ì°(€€€€€€€ô((€€€Í½ÕÉ•}¡•…€ôì(€€€€€€€€‰Á…Á•Èˆè}Í½ÕÉ•}¡•…¡ÍÑ½É”¹Á…Ñ¡}™½È ‰Á…Á•Èˆ¤°Á…Á•É}•Ù•¹ÑÌ¤°(€€€€€€€€‰±¥Ù”ˆè}Í½ÕÉ•}¡•…¡ÍÑ½É”¹Á…Ñ¡}™½È ‰±¥Ù”ˆ¤°±¥Ù•}•Ù•¹ÑÌ¤°(€€€€€€€€‰µ…É­•Ğˆè}Í½ÕÉ•}¡•…¡ÍÑ½É”¹Á…Ñ¡}™½È ‰µ…É­•Ğˆ¤°µ…É­•Ñ}•Ù•¹ÑÌ¤°(€€€ô(€€€…±±}•Ù•¹ÑÌ€ôÁ…Á•É}•Ù•¹ÑÌ€¬±¥Ù•}•Ù•¹ÑÌ€¬µ…É­•Ñ}•Ù•¹ÑÌ(€€€±…Ñ•ÍÑ}•Ù•¹Ğ€ôµ…à (€€€€€€€…±±}•Ù•¹ÑÌ°(€€€€€€€­•äõ±…µ‰‘„•Ù•¹ĞèÁ…ÉÍ•}Ñ¥µ•ÍÑ…µÀ (€€€€€€€€€€€•Ù•¹Ñl‰½ÕÉÉ•‘}…Ğ‰t°(€€€€€€€€€€€™¥•±ô‰½ÕÉÉ•‘}…Ğˆ°(€€€€€€€€¤°(€€€€€€€‘•™…Õ±Ğõ9½¹”°(€€€€¤(€€€±…Ñ•ÍÑ}µ…É­•Ñ}•Ù•¹Ğ€ôµ…à (€€€€€€€µ…É­•Ñ}•Ù•¹ÑÌ°(€€€€€€€­•äõ±…µ‰‘„•Ù•¹ĞèÁ…ÉÍ•}Ñ¥µ•ÍÑ…µÀ (€€€€€€€€€€€•Ù•¹Ñl‰½ÕÉÉ•‘}…Ğ‰t°(€€€€€€€€€€€™¥•±ô‰½ÕÉÉ•‘}…Ğˆ°(€€€€€€€€¤°(€€€€€€€‘•™…Õ±Ğõ9½¹”°(€€€€¤(€€€±…Ñ•ÍÑ}•Ù•¹Ñ}Ñ¥µ”€ô±…Ñ•ÍÑ}•Ù•¹Ñl‰½ÕÉÉ•‘}…Ğ‰t¥˜±…Ñ•ÍÑ}•Ù•¹Ğ•±Í”9½¹”(€€€ÁÉ¥•Í}…Í}½˜€ô€ (€€€€€€€±…Ñ•ÍÑ}µ…É­•Ñ}•Ù•¹Ñl‰½ÕÉÉ•‘}…Ğ‰t¥˜±…Ñ•ÍÑ}µ…É­•Ñ}•Ù•¹Ğ•±Í”9½¹”(€€€€¤(€€€É•½É‘•‘}µ…É­•Ñ}Í•ÍÍ¥½¹Ì€ôÍ½ÉÑ• (€€€€€€€ì(€€€€€€€€€€€•Ù•¹Ñl‰Í•ÍÍ¥½¹}‘…Ñ”‰t(€€€€€€€€€€€™½È•Ù•¹Ğ¥¸µ…É­•Ñ}•Ù•¹ÑÌ(€€€€€€€€€€€¥˜•Ù•¹Ñl‰…Ñ¥½¸‰t¥¸ì‰EU=Qˆ°€‰	9!5I-}1=M‰ô(€€€€€€€ô(€€€€¤(€€€¥˜É•½É‘•‘}µ…É­•Ñ}Í•ÍÍ¥½¹Ìè(€€€€€€€±…Ñ•ÍÑ}½µÁ±•Ñ•€ô±…Ñ•ÍÑ}½µÁ±•Ñ•‘}¹åÍ•}Í•ÍÍ¥½¸¡‘…Ñ•Ñ¥µ”¹¹½Ü¡UQ¤¤(€€€€€€€•áÁ•Ñ•‘}Í•ÍÍ¥½¹Ì€ô¹åÍ•}Í•ÍÍ¥½¹Ì (€€€€€€€€€€€‘…Ñ”¹™É½µ¥Í½™½Éµ…Ğ¡É•½É‘•‘}µ…É­•Ñ}Í•ÍÍ¥½¹Íl´Åt¤(€€€€€€€€€€€€¬Ñ¥µ•‘•±Ñ„¡‘…åÌôÄ¤°(€€€€€€€€€€€±…Ñ•ÍÑ}½µÁ±•Ñ•°(€€€€€€€€¤(€€€€€€€¥˜±•¸¡•áÁ•Ñ•‘}Í•ÍÍ¥½¹Ì¤€ø€Äè(€€€€€€€€€€€İ…É¹¥¹Ì¹…ÁÁ•¹ ‰ÁÉ¥•Ì€ø€ÄÑÉ…‘¥¹œ‘…äÍÑ…±”ˆ¤(€€€É•Ù¥Í¥½¸€ôÍÕ´¡¡•…‘l‰½Õ¹Ğ‰t™½È¡•…¥¸Í½ÕÉ•}¡•…¹Ù…±Õ•Ì ¤¤(€€€Í¹…ÁÍ¡½Ğ€ô©Í½¹}Í…™” (€€€€€€€ì(€€€€€€€€€€€€‰Í¡•µ…}Ù•ÉÍ¥½¸ˆè€Ğ°(€€€€€€€€€€€€‰É•Ù¥Í¥½¸ˆèÉ•Ù¥Í¥½¸°(€€€€€€€€€€€€‰•¹•É…Ñ•‘}…Ğˆè‘…Ñ•Ñ¥µ”¹¹½Ü¡UQ¤¹¥Í½™½Éµ…Ğ ¤¹É•Á±…” ˆ¬ÀÀèÀÀˆ°€‰hˆ¤°(€€€€€€€€€€€€‰‘…Ñ…}…Í}½˜ˆè±…Ñ•ÍÑ}•Ù•¹Ñ}Ñ¥µ”°(€€€€€€€€€€€€‰ÁÉ¥•Í}…Í}½˜ˆèÁÉ¥•Í}…Í}½˜°(€€€€€€€€€€€€‰ÕÉÉ•¹äˆè€‰UMˆ°(€€€€€€€€€€€€‰Í½ÕÉ•}¡•…ˆèÍ½ÕÉ•}¡•…°(€€€€€€€€€€€€‰Á½ÉÑ™½±¥½ÌˆèÁ½ÉÑ™½±¥½Ì°(€€€€€€€€€€€€‰‰•¹¡µ…É¬ˆèì(€€€€€€€€€€€€€€€€‰Íåµ‰½°ˆè€‰MAdˆ°(€€€€€€€€€€€€€€€€‰‘…¥±äˆè}‰•¹¡µ…É­}Í•É¥•Ì (€€€€€€€€€€€€€€€€€€€‰•¹¡µ…É¬°(€€€€€€€€€€€€€€€€€€€‰•¹¡µ…É­}‘…åÌ°(€€€€€€€€€€€€€€€€€€€µ…É­•Ñ}Í•ÍÍ¥½¹Ì°(€€€€€€€€€€€€€€€€¤°(€€€€€€€€€€€ô°(€€€€€€€€€€€€‰İ…É¹¥¹Ìˆèİ…É¹¥¹Ì°(€€€€€€€ô(€€€€¤(€€€Ù…±¥‘…Ñ•}Í¹…ÁÍ¡½Ğ¡Í¹…ÁÍ¡½Ğ¤((€€€¥˜İÉ¥Ñ”è(€€€€€€€Ñ…É•Ğ€ôA…Ñ ¡½ÕÑÁÕĞ¤¥˜½ÕÑÁÕĞ•±Í”É½½Ñ}Á…Ñ €¼€‰Í¹…ÁÍ¡½ÑÌˆ€¼€‰Á½ÉÑ™½±¥¼µÍ¹…ÁÍ¡½Ğ¹©Í½¸ˆ(€€€€€€€…Ñ½µ¥}İÉ¥Ñ•}©Í½¸¡Ñ…É•Ğ°Í¹…ÁÍ¡½Ğ°µ½‘”ôÁ¼ØÀÀ¤(€€€É•ÑÕÉ¸Í¹…ÁÍ¡½Ğ(()‘•˜‰Õ¥±‘}Í¹…ÁÍ¡½Ğ (€€€É½½ĞèÍÑÈğA…Ñ °(€€€€¨°(€€€½ÕÑÁÕĞèÍÑÈğA…Ñ ğ9½¹”€ô9½¹”°(€€€İÉ¥Ñ”è‰½½°€ôQÉÕ”°(¤€´ø‘¥ÑmÍÑÈ°¹åtè(€€€€ˆˆ‰	Õ¥±½¹”½¹Í¥ÍÑ•¹ĞÁÕ‰±¥ŒÍ¹…ÁÍ¡½ĞÕ¹‘•ÈÑ¡”±½‰…°±•‘•È±½¬¸((€€€±•…É¥¹œÉ•‰Õ¥±¹Á•¹‘¥¹œİ¡¥±”Ñ¡”Í…µ”±½¬¥Ì¡•±ÁÉ•Ù•¹ÑÌ„½¹ÕÉÉ•¹Ğ(€€€…ÁÁ•¹™É½´¡…Ù¥¹œ¥ÑÌ¹•İ•ÈÉ•½Ù•Éäµ…É­•È…¥‘•¹Ñ…±±äÉ•µ½Ù•¸(€€€€ˆˆˆ((€€€É½½Ñ}Á…Ñ €ôA…Ñ ¡É½½Ğ¤(€€€ÍÑ½É”€ô1•‘•ÉMÑ½É”¡É½½Ñ}Á…Ñ ¤(€€€İ¥Ñ ¥±•1½¬¡ÍÑ½É”¹±½­}Á…Ñ ¤è(€€€€€€€Í¹…ÁÍ¡½Ğ€ô}‰Õ¥±‘}Í¹…ÁÍ¡½Ñ}±½­• (€€€€€€€€€€€É½½Ñ}Á…Ñ °(€€€€€€€€€€€ÍÑ½É”°(€€€€€€€€€€€½ÕÑÁÕĞõ½ÕÑÁÕĞ°(€€€€€€€€€€€İÉ¥Ñ”õİÉ¥Ñ”°(€€€€€€€€¤(€€€€€€€¥˜İÉ¥Ñ”è(€€€€€€€€€€€‘ÕÉ…‰±•}Õ¹±¥¹¬¡É½½Ñ}Á…Ñ €¼€‰ÍÑ…Ñ”ˆ€¼€‰É•‰Õ¥±¹Á•¹‘¥¹œˆ¤(€€€€€€€É•ÑÕÉ¸Í¹…ÁÍ¡½Ğ(()‘•˜‰Õ¥±‘}Í¹…ÁÍ¡½Ñ}¥™}¹••‘• (€€€É½½ĞèÍÑÈğA…Ñ °(€€€€¨°(€€€½ÕÑÁÕĞèÍÑÈğA…Ñ ğ9½¹”€ô9½¹”°(¤€´øÑÕÁ±•m‘¥ÑmÍÑÈ°¹åt°‰½½±tè(€€€€ˆˆ‰I•‰Õ¥±½¹±äİ¡•¸„±•‘•ÈÍ½ÕÉ”¡•…‘¥™™•ÉÌ™É½´Ñ¡”±…ÍĞÍ¹…ÁÍ¡½Ğ¸ˆˆˆ((€€€É½½Ñ}Á…Ñ €ôA…Ñ ¡É½½Ğ¤(€€€ÍÑ½É”€ô1•‘•ÉMÑ½É”¡É½½Ñ}Á…Ñ ¤(€€€Ñ…É•Ğ€ôA…Ñ ¡½ÕÑÁÕĞ¤¥˜½ÕÑÁÕĞ•±Í”É½½Ñ}Á…Ñ €¼€‰Í¹…ÁÍ¡½ÑÌˆ€¼€‰Á½ÉÑ™½±¥¼µÍ¹…ÁÍ¡½Ğ¹©Í½¸ˆ(€€€İ¥Ñ ¥±•1½¬¡ÍÑ½É”¹±½­}Á…Ñ ¤è(€€€€€€€É•Á…¥ÉÌè±¥ÍÑm‘¥ÑmÍÑÈ°¹åut€ômt(€€€€€€€Á…Á•É}•Ù•¹ÑÌ€ôÍÑ½É”¹É•… (€€€€€€€€€€€€‰Á…Á•Èˆ°(€€€€€€€€€€€É•Á…¥É}Ñ…¥°õQÉÕ”°(€€€€€€€€€€€É•Á…¥É}É•½É‘ÌõÉ•Á…¥ÉÌ°(€€€€€€€€¤(€€€€€€€±¥Ù•}•Ù•¹ÑÌ€ôÍÑ½É”¹É•… (€€€€€€€€€€€€‰±¥Ù”ˆ°(€€€€€€€€€€€É•Á…¥É}Ñ…¥°õQÉÕ”°(€€€€€€€€€€€É•Á…¥É}É•½É‘ÌõÉ•Á…¥ÉÌ°(€€€€€€€€¤(€€€€€€€µ…É­•Ñ}•Ù•¹ÑÌ€ôÍÑ½É”¹É•… (€€€€€€€€€€€€‰µ…É­•Ğˆ°(€€€€€€€€€€€É•Á…¥É}Ñ…¥°õQÉÕ”°(€€€€€€€€€€€É•Á…¥É}É•½É‘ÌõÉ•Á…¥ÉÌ°(€€€€€€€€¤(€€€€€€€ÕÉÉ•¹Ñ}¡•…‘Ì€ôì(€€€€€€€€€€€€‰Á…Á•Èˆè}Í½ÕÉ•}¡•…¡ÍÑ½É”¹Á…Ñ¡}™½È ‰Á…Á•Èˆ¤°Á…Á•É}•Ù•¹ÑÌ¤°(€€€€€€€€€€€€‰±¥Ù”ˆè}Í½ÕÉ•}¡•…¡ÍÑ½É”¹Á…Ñ¡}™½È ‰±¥Ù”ˆ¤°±¥Ù•}•Ù•¹ÑÌ¤°(€€€€€€€€€€€€‰µ…É­•Ğˆè}Í½ÕÉ•}¡•…¡ÍÑ½É”¹Á…Ñ¡}™½È ‰µ…É­•Ğˆ¤°µ…É­•Ñ}•Ù•¹ÑÌ¤°(€€€€€€€ô(€€€€€€€}…ÍÍ•ÉÑ}Á•¹‘¥¹}‰…Ñ¡}½µÁ±•Ñ” (€€€€€€€€€€€É½½Ñ}Á…Ñ °(€€€€€€€€€€€Á…Á•É}•Ù•¹ÑÌ€¬±¥Ù•}•Ù•¹ÑÌ€¬µ…É­•Ñ}•Ù•¹ÑÌ°(€€€€€€€€¤(€€€€€€€ÕÉÉ•¹Ğè‘¥ÑmÍÑÈ°¹åtğ9½¹”€ô9½¹”(€€€€€€€¥˜Ñ…É•Ğ¹•á¥ÍÑÌ ¤è(€€€€€€€€€€€ÑÉäè(€€€€€€€€€€€€€€€Á…ÉÍ•€ô©Í½¸¹±½…‘Ì¡Ñ…É•Ğ¹É•…‘}Ñ•áĞ¡•¹½‘¥¹œô‰ÕÑ˜´àˆ¤¤(€€€€€€€€€€€€€€€¥˜¥Í¥¹ÍÑ…¹”¡Á…ÉÍ•°‘¥Ğ¤è(€€€€€€€€€€€€€€€€€€€ÕÉÉ•¹Ğ€ôÁ…ÉÍ•(€€€€€€€€€€€•á•ÁĞ€¡=MÉÉ½È°©Í½¸¹)M=9•½‘•ÉÉ½È¤è(€€€€€€€€€€€€€€€ÕÉÉ•¹Ğ€ô9½¹”(€€€€€€€¥˜ÕÉÉ•¹Ğ¥Ì¹½Ğ9½¹”è(€€€€€€€€€€€ÑÉäè(€€€€€€€€€€€€€€€Ù…±¥‘…Ñ•}Í¹…ÁÍ¡½Ğ¡ÕÉÉ•¹Ğ¤(€€€€€€€€€€€•á•ÁĞY…±¥‘…Ñ¥½¹ÉÉ½Èè(€€€€€€€€€€€€€€€ÕÉÉ•¹Ğ€ô9½¹”(€€€€€€€ÍÑÉÕÑÕÉ…±±å}ÕÉÉ•¹Ğ€ô€ (€€€€€€€€€€€ÕÉÉ•¹Ğ¥Ì¹½Ğ9½¹”(€€€€€€€€€€€…¹ÕÉÉ•¹Ğ¹•Ğ ‰Í½ÕÉ•}¡•…ˆ¤€ôôÕÉÉ•¹Ñ}¡•…‘Ì(€€€€€€€€¤(€€€€€€€¥˜ÍÑÉÕÑÕÉ…±±å}ÕÉÉ•¹Ğ…¹¹½ĞÉ•Á…¥ÉÌè(€€€€€€€€€€€‘ÕÉ…‰±•}Õ¹±¥¹¬¡É½½Ñ}Á…Ñ €¼€‰ÍÑ…Ñ”ˆ€¼€‰É•‰Õ¥±¹Á•¹‘¥¹œˆ¤(€€€€€€€€€€€É•ÑÕÉ¸ÕÉÉ•¹Ğ°…±Í”((€€€€€€€Í¹…ÁÍ¡½Ğ€ô}‰Õ¥±‘}Í¹…ÁÍ¡½Ñ}±½­• (€€€€€€€€€€€É½½Ñ}Á…Ñ °(€€€€€€€€€€€ÍÑ½É”°(€€€€€€€€€€€½ÕÑÁÕĞõÑ…É•Ğ°(€€€€€€€€€€€İÉ¥Ñ”õQÉÕ”°(€€€€€€€€€€€É•Á…¥É}É•½É‘ÌõÉ•Á…¥ÉÌ°(€€€€€€€€¤(€€€€€€€‘ÕÉ…‰±•}Õ¹±¥¹¬¡É½½Ñ}Á…Ñ €¼€‰ÍÑ…Ñ”ˆ€¼€‰É•‰Õ¥±¹Á•¹‘¥¹œˆ¤(€€€€€€€É•ÑÕÉ¸Í¹…ÁÍ¡½Ğ°QÉÕ”(
+                "nav",
+                "cash",
+                "external_flow",
+                "daily_return",
+                "cumulative_return",
+                "segment_return",
+                "pnl",
+            ):
+                if field not in point:
+                    raise ValidationError(f"{name}.daily is missing {field}")
+                _snapshot_decimal_or_none(
+                    point[field],
+                    label=f"{name}.daily.{field}",
+                )
+            missing_symbols = point.get("missing_symbols")
+            if not isinstance(missing_symbols, list) or not all(
+                isinstance(symbol, str) and SYMBOL_RE.fullmatch(symbol)
+                for symbol in missing_symbols
+            ):
+                raise ValidationError(
+                    f"{name}.daily missing_symbols is invalid"
+                )
+            segment_id = point.get("segment_id")
+            if not (
+                segment_id is None
+                or (
+                    not isinstance(segment_id, bool)
+                    and isinstance(segment_id, int)
+                    and segment_id > 0
+                )
+            ):
+                raise ValidationError(
+                    f"{name}.daily segment_id is invalid"
+                )
+
+        metrics = portfolio.get("metrics")
+        if not isinstance(metrics, dict):
+            raise ValidationError(f"{name}.metrics must be an object")
+        if metrics.get("data_status") not in {
+            "OK",
+            "INSUFFICIENT_DATA",
+            "NO_DATA",
+        }:
+            raise ValidationError(f"{name}.metrics data_status is invalid")
+        for field in (
+            "total_return",
+            "realized_pnl",
+            "income_expense",
+            "win_rate",
+            "max_drawdown",
+            "sharpe_ratio",
+        ):
+            if field not in metrics:
+                raise ValidationError(
+                    f"{name}.metrics is missing {field}"
+                )
+            _snapshot_decimal_or_none(
+                metrics[field],
+                label=f"{name}.metrics.{field}",
+            )
+        closed_episodes = metrics.get("closed_episodes")
+        if (
+            isinstance(closed_episodes, bool)
+            or not isinstance(closed_episodes, int)
+            or closed_episodes < 0
+        ):
+            raise ValidationError(
+                f"{name}.metrics.closed_episodes is invalid"
+            )
+        has_effective_date = "performance_effective_date" in metrics
+        has_performance_scope = "performance_scope" in metrics
+        if has_effective_date != has_performance_scope:
+            raise ValidationError(
+                f"{name}.metrics performance metadata is incomplete"
+            )
+        if has_effective_date:
+            effective_date = metrics["performance_effective_date"]
+            performance_scope = metrics["performance_scope"]
+            if effective_date is not None:
+                _snapshot_date(
+                    effective_date,
+                    label=f"{name}.metrics.performance_effective_date",
+                )
+            if performance_scope not in {
+                None,
+                "FULL_HISTORY",
+                "LATEST_COMPLETE_SEGMENT",
+            }:
+                raise ValidationError(
+                    f"{name}.metrics.performance_scope is invalid"
+                )
+            if (effective_date is None) != (performance_scope is None):
+                raise ValidationError(
+                    f"{name}.metrics performance metadata is inconsistent"
+                )
+            if metrics["data_status"] == "OK" and effective_date is None:
+                raise ValidationError(
+                    f"{name}.metrics OK status requires an effective date"
+                )
+
+    benchmark = snapshot.get("benchmark")
+    if not isinstance(benchmark, dict) or benchmark.get("symbol") != "SPY":
+        raise ValidationError("portfolio snapshot benchmark must be SPY")
+    daily = benchmark.get("daily")
+    if not isinstance(daily, list):
+        raise ValidationError(
+            "portfolio snapshot benchmark.daily must be an array"
+        )
+    for point in daily:
+        if not isinstance(point, dict):
+            raise ValidationError(
+                "benchmark.daily entries must be objects"
+            )
+        _snapshot_date(point.get("date"), label="benchmark.daily.date")
+        if point.get("data_status") not in {
+            "OK",
+            "INSUFFICIENT_MARKET_DATA",
+        }:
+            raise ValidationError("benchmark.daily data_status is invalid")
+        for field in (
+            "close",
+            "daily_return",
+            "cumulative_return",
+            "segment_return",
+        ):
+            if field not in point:
+                raise ValidationError(f"benchmark.daily is missing {field}")
+            _snapshot_decimal_or_none(
+                point[field],
+                label=f"benchmark.daily.{field}",
+            )
+        segment_id = point.get("segment_id")
+        if not (
+            segment_id is None
+            or (
+                not isinstance(segment_id, bool)
+                and isinstance(segment_id, int)
+                and segment_id > 0
+            )
+        ):
+            raise ValidationError("benchmark.daily segment_id is invalid")
+
+
+def _calendar_days(start: date, end: date) -> list[str]:
+    days: list[str] = []
+    cursor = start
+    while cursor <= end:
+        days.append(cursor.isoformat())
+        cursor += timedelta(days=1)
+    return days
+
+
+def _nth_weekday(year: int, month: int, weekday: int, occurrence: int) -> date:
+    first = date(year, month, 1)
+    offset = (weekday - first.weekday()) % 7
+    return first + timedelta(days=offset + (occurrence - 1) * 7)
+
+
+def _new_york_local(utc_value: datetime) -> datetime:
+    """Convert UTC to America/New_York without requiring the tzdata wheel.
+
+    The fallback implements the post-2007 US DST rules used by every ledger
+    date supported by this project. Linux VPS hosts normally use ZoneInfo;
+    the fallback keeps Windows development deterministic and dependency-free.
+    """
+
+    if NEW_YORK is not None:
+        return utc_value.astimezone(NEW_YORK)
+    year = utc_value.year
+    dst_start_day = _nth_weekday(year, 3, 6, 2)  # second Sunday in March
+    dst_end_day = _nth_weekday(year, 11, 6, 1)  # first Sunday in November
+    dst_start_utc = datetime.combine(dst_start_day, time(7), tzinfo=UTC)
+    dst_end_utc = datetime.combine(dst_end_day, time(6), tzinfo=UTC)
+    offset = timedelta(hours=-4 if dst_start_utc <= utc_value < dst_end_utc else -5)
+    return (utc_value + offset).replace(tzinfo=None)
+
+
+def _source_head(path: Path, events: list[dict[str, Any]]) -> dict[str, Any]:
+    raw = path.read_bytes() if path.exists() else b""
+    return {
+        "count": len(events),
+        "last_event_id": events[-1]["event_id"] if events else None,
+        "hash": hashlib.sha256(raw).hexdigest(),
+    }
+
+
+def _market_data(
+    market_events: list[dict[str, Any]],
+) -> tuple[
+    dict[str, dict[str, dict[str, Any]]],
+    dict[str, dict[str, Any]],
+    list[str],
+]:
+    quotes: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
+    benchmark: dict[str, dict[str, Any]] = {}
+    for event in market_events:
+        session = event["session_date"]
+        record = {
+            "close": price(event["close"], field="close"),
+            "market_price_as_of": event["occurred_at"],
+            "source": event["source"],
+        }
+        if event["action"] == "QUOTE":
+            quote_key = event.get("instrument_id") or event["symbol"]
+            quotes[quote_key][session] = record
+        elif event["action"] == "BENCHMARK_CLOSE":
+            benchmark[session] = record
+    recorded_sessions = sorted(
+        set(benchmark) | {day for values in quotes.values() for day in values}
+    )
+    if recorded_sessions:
+        sessions = nyse_sessions(
+            date.fromisoformat(recorded_sessions[0]),
+            date.fromisoformat(recorded_sessions[-1]),
+        )
+    else:
+        sessions = []
+    return dict(quotes), benchmark, sessions
+
+
+def _assert_pending_batch_complete(
+    root: Path,
+    events: list[dict[str, Any]],
+) -> None:
+    """Never rebuild a snapshot from a partially durable ledger batch."""
+
+    marker_path = root / "state" / "rebuild.pending"
+    if not marker_path.exists():
+        return
+    try:
+        marker = json.loads(marker_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise BusinessInvariantError("rebuild.pending is invalid") from exc
+    if (
+        not isinstance(marker, dict)
+        or marker.get("requested_by") != "ledger-append-batch"
+    ):
+        return
+    expected = marker.get("event_ids")
+    if (
+        not isinstance(expected, list)
+        or not expected
+        or not all(isinstance(event_id, str) for event_id in expected)
+    ):
+        raise BusinessInvariantError("ledger batch marker is invalid")
+    durable_ids = {event["event_id"] for event in events}
+    missing = [event_id for event_id in expected if event_id not in durable_ids]
+    if missing:
+        raise BusinessInvariantError(
+            "incomplete ledger batch; retry the original stable event IDs: "
+            + ", ".join(missing)
+        )
+
+
+def _quote_for_day(
+    records: dict[str, dict[str, Any]],
+    day: str,
+    trading_sessions: set[str],
+) -> dict[str, Any] | None:
+    if day in trading_sessions:
+        return records.get(day)
+    eligible = [session for session in records if session < day]
+    return records[max(eligible)] if eligible else None
+
+
+def _event_session_candidate(event: dict[str, Any]) -> str:
+    occurred = parse_timestamp(event["occurred_at"], field="occurred_at")
+    local = _new_york_local(occurred)
+    session_day = local.date()
+    if (
+        local.timetz().replace(tzinfo=None) > MARKET_CLOSE
+        or not is_nyse_session(session_day)
+    ):
+        session_day += timedelta(days=1)
+        while not is_nyse_session(session_day):
+            session_day += timedelta(days=1)
+    return session_day.isoformat()
+
+
+def _session_for_event(event: dict[str, Any], sessions: list[str]) -> str | None:
+    if not sessions:
+        return None
+    session_text = _event_session_candidate(event)
+    index = bisect_left(sessions, session_text)
+    if index >= len(sessions) or sessions[index] != session_text:
+        return None
+    return sessions[index]
+
+
+def _position_quote_key(item: dict[str, Any]) -> str:
+    """Resolve a quote identity without reusing an underlying for derivatives.
+
+    Early imported OPTION/PRIVATE events carried a display-oriented
+    ``quote_symbol``. Treating that alias as a price source materially
+    misprices the instrument, so these identities always quote by their stable
+    instrument ID. Listed equities and ETFs may continue to use ticker aliases.
+    """
+
+    instrument_id = item.get("instrument_id") or item["symbol"]
+    if item.get("instrument_type") in {"OPTION", "PRIVATE"}:
+        return instrument_id
+    return item.get("quote_symbol") or instrument_id
+
+
+def _enrich_holdings(
+    result: ReplayResult,
+    quotes: dict[str, dict[str, dict[str, Any]]],
+    last_day: str | None,
+    trading_sessions: set[str],
+) -> list[dict[str, Any]]:
+    enriched: list[dict[str, Any]] = []
+    for holding in result.holdings:
+        symbol = holding["symbol"]
+        quote_key = _position_quote_key(holding)
+        current_quote = (
+            _quote_for_day(
+                quotes.get(quote_key, {}),
+                last_day,
+                trading_sessions,
+            )
+            if last_day
+            else None
+        )
+        current_price = current_quote["close"] if current_quote else None
+        market_value = (
+            amount_for(
+                holding["shares"] * holding["contract_multiplier"],
+                current_price,
+            )
+            if current_price is not None
+            else None
+        )
+        unrealized = (
+            money(market_value - holding["cost_basis"])
+            if market_value is not None
+            else None
+        )
+        enriched.append(
+            {
+                **holding,
+                "current_price": current_price,
+                "market_price_as_of": (
+                    current_quote["market_price_as_of"] if current_quote else None
+                ),
+                "quote_status": (
+                    "MANUAL"
+                    if current_quote
+                    and current_quote["source"] == "manual-quote"
+                    else "OK"
+                    if current_quote
+                    else "MISSING"
+                ),
+                "market_value": market_value,
+                "unrealized_pnl": unrealized,
+                "unrealized_pnl_pct": (
+                    percent(unrealized / holding["cost_basis"])
+                    if unrealized is not None and holding["cost_basis"] != 0
+                    else None
+                ),
+            }
+        )
+    return enriched
+
+
+def _metrics(
+    daily: list[dict[str, Any]], result: ReplayResult
+) -> dict[str, Any]:
+    performance_daily: list[dict[str, Any]] = []
+    performance_scope: str | None = None
+    performance_effective_date: str | None = None
+
+    if daily and daily[-1]["data_status"] == "OK":
+        latest_segment_id = daily[-1].get("segment_id")
+        if (
+            not isinstance(latest_segment_id, bool)
+            and isinstance(latest_segment_id, int)
+            and latest_segment_id > 0
+        ):
+            for item in reversed(daily):
+                if (
+                    item["data_status"] != "OK"
+                    or item.get("segment_id") != latest_segment_id
+                ):
+                    break
+                performance_daily.append(item)
+            performance_daily.reverse()
+        elif all(
+            item["data_status"] == "OK"
+            and item.get("cumulative_return") is not None
+            for item in daily
+        ):
+            # Compatibility for callers that provide the pre-segmentation
+            # in-memory shape. Generated snapshots always contain segment_id.
+            performance_daily = list(daily)
+
+    if performance_daily:
+        performance_effective_date = performance_daily[0]["date"]
+        performance_scope = (
+            "FULL_HISTORY"
+            if len(performance_daily) == len(daily)
+            else "LATEST_COMPLETE_SEGMENT"
+        )
+
+    valid_returns = [
+        item["daily_return"]
+        for item in performance_daily
+        if (
+            item["daily_return"] is not None
+            and is_nyse_session(date.fromisoformat(item["date"]))
+        )
+    ]
+    total_return = (
+        performance_daily[-1].get("segment_return")
+        if performance_daily
+        else None
+    )
+    if total_return is None and performance_daily:
+        total_return = performance_daily[-1].get("cumulative_return")
+    max_drawdown: Decimal | None = None
+    sharpe: Decimal | None = None
+
+    if performance_daily:
+        peak = Decimal("-1")
+        drawdowns: list[Decimal] = []
+        for item in performance_daily:
+            cumulative = item.get("segment_return")
+            if cumulative is None:
+                cumulative = item.get("cumulative_return")
+            if cumulative is None:
+                continue
+            peak = max(peak, cumulative)
+            drawdowns.append(percent((1 + cumulative) / (1 + peak) - 1))
+        max_drawdown = min(drawdowns) if drawdowns else ZERO
+        if len(valid_returns) >= 20:
+            count = Decimal(len(valid_returns))
+            mean = sum(valid_returns, ZERO) / count
+            variance = (
+                sum(((value - mean) ** 2 for value in valid_returns), ZERO)
+                / Decimal(len(valid_returns) - 1)
+            )
+            deviation = variance.sqrt()
+            if deviation:
+                annualized = mean / deviation * Decimal(252).sqrt()
+                sharpe = percent(annualized)
+
+    has_performance = bool(performance_daily)
+    return {
+        "data_status": "OK" if has_performance else "INSUFFICIENT_DATA",
+        "performance_effective_date": performance_effective_date,
+        "performance_scope": performance_scope,
+        "total_return": total_return if has_performance else None,
+        "realized_pnl": result.realized_pnl_total,
+        "income_expense": getattr(result, "income_expense_total", ZERO),
+        "win_rate": result.win_rate,
+        "closed_episodes": len(result.closed_episodes),
+        "max_drawdown": max_drawdown if has_performance else None,
+        "sharpe_ratio": sharpe if has_performance else None,
+    }
+
+
+def _daily_series(
+    result: ReplayResult,
+    quotes: dict[str, dict[str, dict[str, Any]]],
+    days: list[str],
+    sessions: list[str],
+) -> list[dict[str, Any]]:
+    if not sessions or not days:
+        return []
+
+    session_set = set(sessions)
+    events_by_session: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for event in result.effective_events:
+        session = _session_for_event(event, sessions)
+        if session is not None:
+            events_by_session[session].append(event)
+
+    cash = ZERO
+    positions: dict[str, Decimal] = defaultdict(lambda: ZERO)
+    position_meta: dict[str, dict[str, Any]] = {}
+    cumulative_external_flow = ZERO
+    previous_nav: Decimal | None = None
+    previous_segment_return: Decimal | None = None
+    segment_id = 0
+    gap_seen = False
+    daily: list[dict[str, Any]] = []
+
+    open_event = next(
+        event
+        for event in result.effective_events
+        if event["action"] == "PORTFOLIO_OPEN"
+    )
+    open_session = _session_for_event(open_event, sessions)
+    if open_session is None:
+        return []
+
+    for session in (day for day in days if day >= open_session):
+        external_flow = ZERO
+        for event in events_by_session.get(session, []):
+            action = event["action"]
+            if action == "PORTFOLIO_OPEN":
+                cash = money(event["initial_cash"], field="initial_cash")
+            elif action == "CASH_FLOW":
+                flow = money(event["amount"])
+                cash = money(cash + flow)
+                external_flow = money(external_flow + flow)
+                cumulative_external_flow = money(cumulative_external_flow + flow)
+            elif action == "INCOME_EXPENSE":
+                cash = money(cash + money(event["amount"]))
+            elif action == "BUY":
+                quantity = shares(event["shares"])
+                unit_price = price(event["price"])
+                fee = money(event.get("fee", 0), field="fee")
+                settlement_adjustment = money(
+                    event.get("settlement_adjustment", 0),
+                    field="settlement_adjustment",
+                )
+                instrument_id = event.get("instrument_id") or event["symbol"]
+                multiplier = shares(
+                    event.get("contract_multiplier", "1"),
+                    field="contract_multiplier",
+                )
+                position_meta[instrument_id] = {
+                    "symbol": event["symbol"],
+                    "quote_key": _position_quote_key(event),
+                    "contract_multiplier": multiplier,
+                }
+                positions[instrument_id] = shares(
+                    positions[instrument_id] + quantity
+                )
+                cash = money(
+                    cash
+                    - amount_for(quantity * multiplier, unit_price)
+                    - fee
+                    + settlement_adjustment
+                )
+            elif action == "SELL":
+                quantity = shares(event["shares"])
+                unit_price = price(event["price"])
+                fee = money(event.get("fee", 0), field="fee")
+                settlement_adjustment = money(
+                    event.get("settlement_adjustment", 0),
+                    field="settlement_adjustment",
+                )
+                instrument_id = event.get("instrument_id") or event["symbol"]
+                multiplier = shares(
+                    event.get("contract_multiplier", "1"),
+                    field="contract_multiplier",
+                )
+                position_meta.setdefault(
+                    instrument_id,
+                    {
+                        "symbol": event["symbol"],
+                        "quote_key": _position_quote_key(event),
+                        "contract_multiplier": multiplier,
+                    },
+                )
+                positions[instrument_id] = shares(
+                    positions[instrument_id] - quantity
+                )
+                cash = money(
+                    cash
+                    + amount_for(quantity * multiplier, unit_price)
+                    - fee
+                    + settlement_adjustment
+                )
+            elif action == "SPLIT":
+                instrument_id = event["instrument_id"]
+                ratio = (
+                    shares(event["numerator"], field="numerator")
+                    / shares(event["denominator"], field="denominator")
+                )
+                positions[instrument_id] = shares(
+                    positions[instrument_id] * ratio
+                )
+
+        missing_symbols = sorted(
+            {
+                position_meta[instrument_id]["symbol"]
+                for instrument_id, quantity in positions.items()
+                if quantity > 0
+                and _quote_for_day(
+                    quotes.get(
+                        position_meta[instrument_id]["quote_key"],
+                        {},
+                    ),
+                    session,
+                    session_set,
+                )
+                is None
+            }
+        )
+        if missing_symbols:
+            daily.append(
+                {
+                    "date": session,
+                    "nav": None,
+                    "cash": cash,
+                    "external_flow": external_flow,
+                    "daily_return": None,
+                    "cumulative_return": None,
+                    "segment_id": None,
+                    "segment_return": None,
+                    "pnl": None,
+                    "data_status": "INSUFFICIENT_MARKET_DATA",
+                    "missing_symbols": missing_symbols,
+                }
+            )
+            previous_nav = None
+            previous_segment_return = None
+            gap_seen = True
+            continue
+
+        market_value = money(
+            sum(
+                (
+                    amount_for(
+                        quantity
+                        * position_meta[instrument_id]["contract_multiplier"],
+                        _quote_for_day(
+                            quotes[position_meta[instrument_id]["quote_key"]],
+                            session,
+                            session_set,
+                        )["close"],
+                    )
+                    for instrument_id, quantity in positions.items()
+                    if quantity > 0
+                ),
+                ZERO,
+            )
+        )
+        nav = money(cash + market_value)
+
+        pnl = money(nav - result.initial_cash - cumulative_external_flow)
+        if previous_nav is None:
+            segment_id += 1
+            daily_return = None if gap_seen else ZERO
+            segment_return = ZERO
+        else:
+            denominator = money(previous_nav + external_flow)
+            if denominator <= 0:
+                daily.append(
+                    {
+                        "date": session,
+                        "nav": nav,
+                        "cash": cash,
+                        "external_flow": external_flow,
+                        "daily_return": None,
+                        "cumulative_return": None,
+                        "segment_id": None,
+                        "segment_return": None,
+                        "pnl": pnl,
+                        "data_status": "INSUFFICIENT_DATA",
+                        "missing_symbols": [],
+                    }
+                )
+                previous_nav = None
+                previous_segment_return = None
+                gap_seen = True
+                continue
+            daily_return = percent(nav / denominator - 1)
+            base = previous_segment_return if previous_segment_return is not None else ZERO
+            segment_return = percent((1 + base) * (1 + daily_return) - 1)
+
+        cumulative_return = None if gap_seen else segment_return
+        daily.append(
+            {
+                "date": session,
+                "nav": nav,
+                "cash": cash,
+                "external_flow": external_flow,
+                "daily_return": daily_return,
+                "cumulative_return": cumulative_return,
+                "segment_id": segment_id,
+                "segment_return": segment_return,
+                "pnl": pnl,
+                "data_status": "OK",
+                "missing_symbols": [],
+            }
+        )
+        previous_nav = nav
+        previous_segment_return = segment_return
+
+    return daily
+
+
+def _benchmark_series(
+    benchmark: dict[str, dict[str, Any]],
+    days: list[str],
+    sessions: list[str],
+) -> list[dict[str, Any]]:
+    series: list[dict[str, Any]] = []
+    session_set = set(sessions)
+    previous: Decimal | None = None
+    segment_return: Decimal | None = None
+    segment_id = 0
+    gap_seen = False
+    for session in days:
+        record = _quote_for_day(benchmark, session, session_set)
+        if record is None:
+            series.append(
+                {
+                    "date": session,
+                    "close": None,
+                    "daily_return": None,
+                    "cumulative_return": None,
+                    "segment_id": None,
+                    "segment_return": None,
+                    "data_status": "INSUFFICIENT_MARKET_DATA",
+                }
+            )
+            previous = None
+            segment_return = None
+            gap_seen = True
+            continue
+        close = record["close"]
+        if previous is None:
+            segment_id += 1
+            daily_return = None
+            segment_return = ZERO
+        else:
+            daily_return = percent(close / previous - 1)
+            segment_return = percent(
+                (1 + (segment_return if segment_return is not None else ZERO))
+                * (1 + daily_return)
+                - 1
+            )
+        series.append(
+            {
+                "date": session,
+                "close": close,
+                "daily_return": daily_return,
+                "cumulative_return": None if gap_seen else segment_return,
+                "segment_id": segment_id,
+                "segment_return": segment_return,
+                "data_status": "OK",
+            }
+        )
+        previous = close
+    return series
+
+
+def _portfolio_calendar(
+    result: ReplayResult,
+    market_sessions: list[str],
+) -> tuple[list[str], list[str]]:
+    """Build a portfolio-local calendar.
+
+    Market sessions are shared source data, but a future-dated Paper event must
+    not extend Live (or the benchmark) into a session for which no quote exists.
+    Each portfolio may extend only its own terminal session.
+    """
+
+    candidates = set(market_sessions)
+    candidates.update(
+        _event_session_candidate(event)
+        for event in result.effective_events
+    )
+    if not candidates:
+        return [], []
+    sessions = nyse_sessions(
+        date.fromisoformat(min(candidates)),
+        date.fromisoformat(max(candidates)),
+    )
+    days = _calendar_days(
+        date.fromisoformat(sessions[0]),
+        date.fromisoformat(sessions[-1]),
+    )
+    return sessions, days
+
+
+def _build_snapshot_locked(
+    root_path: Path,
+    store: LedgerStore,
+    *,
+    output: str | Path | None = None,
+    write: bool = True,
+    repair_records: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    repairs = repair_records if repair_records is not None else []
+    paper_events = store.read(
+        "paper",
+        repair_tail=True,
+        repair_records=repairs,
+    )
+    live_events = store.read(
+        "live",
+        repair_tail=True,
+        repair_records=repairs,
+    )
+    market_events = store.read(
+        "market",
+        repair_tail=True,
+        repair_records=repairs,
+    )
+    _assert_pending_batch_complete(
+        root_path,
+        paper_events + live_events + market_events,
+    )
+    quotes, benchmark, market_sessions = _market_data(market_events)
+    replay_results = {
+        name: replay_portfolio(events, portfolio=name)
+        for name, events in (("paper", paper_events), ("live", live_events))
+        if events
+    }
+    benchmark_days = (
+        _calendar_days(
+            date.fromisoformat(market_sessions[0]),
+            date.fromisoformat(market_sessions[-1]),
+        )
+        if market_sessions
+        else []
+    )
+    warnings = [
+        (
+            f"{Path(repair['ledger']).stem} ledger tail repaired; "
+            f"{repair['bytes_quarantined']} bytes quarantined"
+        )
+        for repair in repairs
+    ]
+    portfolios: dict[str, Any] = {}
+
+    for name, events in (("paper", paper_events), ("live", live_events)):
+        if not events:
+            warnings.append(f"{name} portfolio has no events")
+            portfolios[name] = {
+                "data_status": "NO_DATA",
+                "holdings": [],
+                "recent_trades": [],
+                "daily": [],
+                "metrics": {
+                    "data_status": "NO_DATA",
+                    "performance_effective_date": None,
+                    "performance_scope": None,
+                    "total_return": None,
+                    "realized_pnl": "0",
+                    "income_expense": "0",
+                    "win_rate": None,
+                    "closed_episodes": 0,
+                    "max_drawdown": None,
+                    "sharpe_ratio": None,
+                },
+            }
+            continue
+
+        result = replay_results[name]
+        portfolio_sessions, portfolio_days = _portfolio_calendar(
+            result,
+            market_sessions,
+        )
+        daily = _daily_series(
+            result,
+            quotes,
+            portfolio_days,
+            portfolio_sessions,
+        )
+        last_day = portfolio_days[-1] if portfolio_days else None
+        holdings = _enrich_holdings(
+            result,
+            quotes,
+            last_day,
+            set(portfolio_sessions),
+        )
+        metrics = _metrics(daily, result)
+        if metrics["data_status"] != "OK":
+            warnings.append(f"{name} performance contains incomplete market data")
+        elif metrics["performance_scope"] == "LATEST_COMPLETE_SEGMENT":
+            warnings.append(
+                f"{name} performance starts at "
+                f"{metrics['performance_effective_date']} after incomplete "
+                "market data"
+            )
+        portfolios[name] = {
+            "data_status": metrics["data_status"],
+            "cash": result.cash,
+            "initial_cash": result.initial_cash,
+            "holdings": holdings,
+            "recent_trades": list(reversed(result.trade_history)),
+            "realized_pnl_per_trade": result.realized_pnl_per_trade,
+            "daily": daily,
+            "metrics": metrics,
+        }
+
+    source_head = {
+        "paper": _source_head(store.path_for("paper"), paper_events),
+        "live": _source_head(store.path_for("live"), live_events),
+        "market": _source_head(store.path_for("market"), market_events),
+    }
+    all_events = paper_events + live_events + market_events
+    latest_event = max(
+        all_events,
+        key=lambda event: parse_timestamp(
+            event["occurred_at"],
+            field="occurred_at",
+        ),
+        default=None,
+    )
+    latest_market_event = max(
+        market_events,
+        key=lambda event: parse_timestamp(
+            event["occurred_at"],
+            field="occurred_at",
+        ),
+        default=None,
+    )
+    latest_event_time = latest_event["occurred_at"] if latest_event else None
+    prices_as_of = (
+        latest_market_event["occurred_at"] if latest_market_event else None
+    )
+    recorded_market_sessions = sorted(
+        {
+            event["session_date"]
+            for event in market_events
+            if event["action"] in {"QUOTE", "BENCHMARK_CLOSE"}
+        }
+    )
+    if recorded_market_sessions:
+        latest_completed = latest_completed_nyse_session(datetime.now(UTC))
+        expected_sessions = nyse_sessions(
+            date.fromisoformat(recorded_market_sessions[-1])
+            + timedelta(days=1),
+            latest_completed,
+        )
+        if len(expected_sessions) > 1:
+            warnings.append("prices > 1 trading day stale")
+    revision = sum(head["count"] for head in source_head.values())
+    snapshot = json_safe(
+        {
+            "schema_version": 4,
+            "revision": revision,
+            "generated_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+            "data_as_of": latest_event_time,
+            "prices_as_of": prices_as_of,
+            "currency": "USD",
+            "source_head": source_head,
+            "portfolios": portfolios,
+            "benchmark": {
+                "symbol": "SPY",
+                "daily": _benchmark_series(
+                    benchmark,
+                    benchmark_days,
+                    market_sessions,
+                ),
+            },
+            "warnings": warnings,
+        }
+    )
+    validate_snapshot(snapshot)
+
+    if write:
+        target = Path(output) if output else root_path / "snapshots" / "portfolio-snapshot.json"
+        atomic_write_json(target, snapshot, mode=0o600)
+    return snapshot
+
+
+def build_snapshot(
+    root: str | Path,
+    *,
+    output: str | Path | None = None,
+    write: bool = True,
+) -> dict[str, Any]:
+    """Build one consistent public snapshot under the global ledger lock.
+
+    Clearing rebuild.pending while the same lock is held prevents a concurrent
+    append from having its newer recovery marker accidentally removed.
+    """
+
+    root_path = Path(root)
+    store = LedgerStore(root_path)
+    with FileLock(store.lock_path):
+        snapshot = _build_snapshot_locked(
+            root_path,
+            store,
+            output=output,
+            write=write,
+        )
+        if write:
+            durable_unlink(root_path / "state" / "rebuild.pending")
+        return snapshot
+
+
+def build_snapshot_if_needed(
+    root: str | Path,
+    *,
+    output: str | Path | None = None,
+) -> tuple[dict[str, Any], bool]:
+    """Rebuild only when a ledger source head differs from the last snapshot."""
+
+    root_path = Path(root)
+    store = LedgerStore(root_path)
+    target = Path(output) if output else root_path / "snapshots" / "portfolio-snapshot.json"
+    with FileLock(store.lock_path):
+        repairs: list[dict[str, Any]] = []
+        paper_events = store.read(
+            "paper",
+            repair_tail=True,
+            repair_records=repairs,
+        )
+        live_events = store.read(
+            "live",
+            repair_tail=True,
+            repair_records=repairs,
+        )
+        market_events = store.read(
+            "market",
+            repair_tail=True,
+            repair_records=repairs,
+        )
+        current_heads = {
+            "paper": _source_head(store.path_for("paper"), paper_events),
+            "live": _source_head(store.path_for("live"), live_events),
+            "market": _source_head(store.path_for("market"), market_events),
+        }
+        _assert_pending_batch_complete(
+            root_path,
+            paper_events + live_events + market_events,
+        )
+        current: dict[str, Any] | None = None
+        if target.exists():
+            try:
+                parsed = json.loads(target.read_text(encoding="utf-8"))
+                if isinstance(parsed, dict):
+                    current = parsed
+            except (OSError, json.JSONDecodeError):
+                current = None
+        if current is not None:
+            try:
+                validate_snapshot(current)
+            except ValidationError:
+                current = None
+        structurally_current = (
+            current is not None
+            and current.get("source_head") == current_heads
+        )
+        if structurally_current and not repairs:
+            durable_unlink(root_path / "state" / "rebuild.pending")
+            return current, False
+
+        snapshot = _build_snapshot_locked(
+            root_path,
+            store,
+            output=target,
+            write=True,
+            repair_records=repairs,
+        )
+        durable_unlink(root_path / "state" / "rebuild.pending")
+        return snapshot, True
