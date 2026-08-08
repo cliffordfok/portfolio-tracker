@@ -145,6 +145,55 @@ class GitHubContentsClient:
             )
         raise PublicationError(f"cannot check data branch: GitHub returned {status}")
 
+    @staticmethod
+    def _lookup_is_retryable(status: int, headers: Mapping[str, str]) -> bool:
+        lowered = {key.lower(): value for key, value in headers.items()}
+        return status >= 500 or (
+            status in {403, 429}
+            and (
+                "retry-after" in lowered
+                or lowered.get("x-ratelimit-remaining") == "0"
+            )
+        )
+
+    @staticmethod
+    def _decode_base64_content(payload: Mapping[str, Any], *, label: str) -> bytes:
+        if payload.get("encoding") != "base64":
+            raise PublicationError(f"GitHub returned unsupported {label} encoding")
+        encoded_value = payload.get("content")
+        if not isinstance(encoded_value, str):
+            raise PublicationError(f"GitHub returned invalid {label} content")
+        try:
+            return base64.b64decode("".join(encoded_value.split()), validate=True)
+        except ValueError as exc:
+            raise PublicationError(f"GitHub returned invalid {label} content") from exc
+
+    @staticmethod
+    def _validate_size(payload: Mapping[str, Any], content: bytes, *, label: str) -> None:
+        size = payload.get("size")
+        if isinstance(size, int) and size != len(content):
+            raise PublicationError(f"GitHub returned mismatched {label} size")
+
+    def _get_blob_content(self, blob_sha: str) -> bytes:
+        encoded_sha = urllib.parse.quote(blob_sha, safe="")
+        status, headers, payload = self._request(
+            f"{self.base}/git/blobs/{encoded_sha}"
+        )
+        if self._lookup_is_retryable(status, headers):
+            raise NetworkFailure(
+                f"retryable blob lookup failure: {status}",
+                headers=headers,
+            )
+        if status != 200 or not isinstance(payload, dict):
+            raise PublicationError(
+                f"cannot read remote snapshot blob: GitHub returned {status}"
+            )
+        if payload.get("sha") != blob_sha:
+            raise PublicationError("GitHub returned mismatched snapshot blob SHA")
+        content = self._decode_base64_content(payload, label="snapshot blob")
+        self._validate_size(payload, content, label="snapshot blob")
+        return content
+
     def get_content(self) -> RemoteContent | None:
         encoded_path = urllib.parse.quote(self.path)
         query = urllib.parse.urlencode({"ref": self.branch})
@@ -153,29 +202,28 @@ class GitHubContentsClient:
         )
         if status == 404:
             return None
-        lowered = {key.lower(): value for key, value in headers.items()}
-        if status >= 500 or (
-            status in {403, 429}
-            and (
-                "retry-after" in lowered
-                or lowered.get("x-ratelimit-remaining") == "0"
-            )
-        ):
+        if self._lookup_is_retryable(status, headers):
             raise NetworkFailure(
                 f"retryable content lookup failure: {status}",
                 headers=headers,
             )
-        if status != 200 or not payload:
+        if status != 200 or not isinstance(payload, dict):
             raise PublicationError(f"cannot read remote snapshot: GitHub returned {status}")
         if payload.get("type") != "file":
             raise PublicationError("remote snapshot path is not a file")
-        try:
-            encoded = "".join(payload["content"].split())
-            content = base64.b64decode(encoded, validate=True)
-        except (KeyError, ValueError) as exc:
-            raise PublicationError("GitHub returned invalid snapshot content") from exc
+        blob_sha = payload.get("sha")
+        if not isinstance(blob_sha, str) or not blob_sha:
+            raise PublicationError("GitHub returned invalid snapshot blob SHA")
+        encoding = payload.get("encoding")
+        if encoding == "base64":
+            content = self._decode_base64_content(payload, label="snapshot")
+        elif encoding == "none":
+            content = self._get_blob_content(blob_sha)
+        else:
+            raise PublicationError("GitHub returned unsupported snapshot encoding")
+        self._validate_size(payload, content, label="snapshot")
         return RemoteContent(
-            blob_sha=payload["sha"],
+            blob_sha=blob_sha,
             content=content,
             commit_sha=self.branch_commit_sha,
         )
