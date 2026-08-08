@@ -409,11 +409,288 @@ class PublisherTests(unittest.TestCase):
         client._request = lambda url: (
             200,
             {},
-            {"type": "file", "sha": "blob-sha", "content": wrapped},
+            {
+                "type": "file",
+                "sha": "blob-sha",
+                "size": len(raw),
+                "encoding": "base64",
+                "content": wrapped,
+            },
         )
         remote = client.get_content()
         self.assertEqual(remote.content, raw)
         self.assertEqual(remote.commit_sha, "branch-commit")
+
+    def test_github_large_content_uses_git_blob_fallback(self) -> None:
+        client = GitHubContentsClient(
+            repository="owner/repo",
+            branch="portfolio-data",
+            path="portfolio-snapshot.json",
+            token="test-only",
+        )
+        raw = b"x" * (1024 * 1024 + 1)
+        encoded = base64.b64encode(raw).decode("ascii")
+        calls: list[str] = []
+
+        def request(url: str):
+            calls.append(url)
+            if "/contents/" in url:
+                return (
+                    200,
+                    {},
+                    {
+                        "type": "file",
+                        "sha": "large-blob-sha",
+                        "size": len(raw),
+                        "encoding": "none",
+                        "content": "",
+                    },
+                )
+            return (
+                200,
+                {},
+                {
+                    "sha": "large-blob-sha",
+                    "size": len(raw),
+                    "encoding": "base64",
+                    "content": encoded,
+                },
+            )
+
+        client._request = request
+        remote = client.get_content()
+
+        self.assertEqual(remote.content, raw)
+        self.assertEqual(remote.blob_sha, "large-blob-sha")
+        self.assertEqual(len(calls), 2)
+        self.assertIn("/git/blobs/large-blob-sha", calls[1])
+
+    def test_github_large_content_rejects_mismatched_blob_sha(self) -> None:
+        client = GitHubContentsClient(
+            repository="owner/repo",
+            branch="portfolio-data",
+            path="portfolio-snapshot.json",
+            token="test-only",
+        )
+
+        def request(url: str):
+            if "/contents/" in url:
+                return (
+                    200,
+                    {},
+                    {
+                        "type": "file",
+                        "sha": "expected-sha",
+                        "size": 1,
+                        "encoding": "none",
+                        "content": "",
+                    },
+                )
+            return (
+                200,
+                {},
+                {
+                    "sha": "different-sha",
+                    "size": 1,
+                    "encoding": "base64",
+                    "content": "eA==",
+                },
+            )
+
+        client._request = request
+
+        with self.assertRaisesRegex(PublicationError, "mismatched snapshot blob SHA"):
+            client.get_content()
+
+    def test_github_large_content_rejects_invalid_blob_base64(self) -> None:
+        client = GitHubContentsClient(
+            repository="owner/repo",
+            branch="portfolio-data",
+            path="portfolio-snapshot.json",
+            token="test-only",
+        )
+
+        def request(url: str):
+            if "/contents/" in url:
+                return (
+                    200,
+                    {},
+                    {
+                        "type": "file",
+                        "sha": "large-blob-sha",
+                        "size": 2,
+                        "encoding": "none",
+                        "content": "",
+                    },
+                )
+            return (
+                200,
+                {},
+                {
+                    "sha": "large-blob-sha",
+                    "size": 2,
+                    "encoding": "base64",
+                    "content": "not-base64!",
+                },
+            )
+
+        client._request = request
+
+        with self.assertRaisesRegex(PublicationError, "invalid snapshot blob content"):
+            client.get_content()
+
+    def test_github_large_content_rejects_mismatched_blob_size(self) -> None:
+        client = GitHubContentsClient(
+            repository="owner/repo",
+            branch="portfolio-data",
+            path="portfolio-snapshot.json",
+            token="test-only",
+        )
+
+        def request(url: str):
+            if "/contents/" in url:
+                return (
+                    200,
+                    {},
+                    {
+                        "type": "file",
+                        "sha": "large-blob-sha",
+                        "size": 2,
+                        "encoding": "none",
+                        "content": "",
+                    },
+                )
+            return (
+                200,
+                {},
+                {
+                    "sha": "large-blob-sha",
+                    "size": 2,
+                    "encoding": "base64",
+                    "content": "eA==",
+                },
+            )
+
+        client._request = request
+
+        with self.assertRaisesRegex(PublicationError, "mismatched snapshot blob size"):
+            client.get_content()
+
+    def test_github_large_content_propagates_retryable_blob_lookup(self) -> None:
+        client = GitHubContentsClient(
+            repository="owner/repo",
+            branch="portfolio-data",
+            path="portfolio-snapshot.json",
+            token="test-only",
+        )
+
+        def request(url: str):
+            if "/contents/" in url:
+                return (
+                    200,
+                    {},
+                    {
+                        "type": "file",
+                        "sha": "large-blob-sha",
+                        "size": 1024 * 1024 + 1,
+                        "encoding": "none",
+                        "content": "",
+                    },
+                )
+            return 429, {"Retry-After": "7"}, {"message": "rate limited"}
+
+        client._request = request
+
+        with self.assertRaisesRegex(NetworkFailure, "blob lookup failure") as caught:
+            client.get_content()
+        self.assertEqual(caught.exception.headers, {"Retry-After": "7"})
+
+    def test_github_content_rejects_unknown_encoding(self) -> None:
+        client = GitHubContentsClient(
+            repository="owner/repo",
+            branch="portfolio-data",
+            path="portfolio-snapshot.json",
+            token="test-only",
+        )
+        client._request = lambda url: (
+            200,
+            {},
+            {
+                "type": "file",
+                "sha": "blob-sha",
+                "size": 1,
+                "encoding": "utf-8",
+                "content": "x",
+            },
+        )
+
+        with self.assertRaisesRegex(PublicationError, "unsupported snapshot encoding"):
+            client.get_content()
+
+    def test_large_remote_content_is_adopted_after_put_timeout(self) -> None:
+        payload = json.loads(self.snapshot_path.read_text(encoding="utf-8"))
+        payload["padding"] = "x" * (1024 * 1024 + 1)
+        content = json.dumps(payload, sort_keys=True).encode("utf-8")
+        self.snapshot_path.write_bytes(content)
+        intended = hashlib.sha256(content).hexdigest()
+        atomic_write_json(
+            self.root / "state" / "publication-attempt.json",
+            {
+                "intended_hash": intended,
+                "expected_remote_blob_sha": "previous-blob-sha",
+                "revision": 1,
+            },
+        )
+        client = GitHubContentsClient(
+            repository="owner/repo",
+            branch="portfolio-data",
+            path="portfolio-snapshot.json",
+            token="test-only",
+        )
+        encoded = base64.b64encode(content).decode("ascii")
+        calls: list[tuple[str, str]] = []
+
+        def request(url: str, *, method: str = "GET", body=None):
+            calls.append((method, url))
+            if "/git/ref/heads/" in url:
+                return 200, {}, {"object": {"sha": "branch-commit"}}
+            if "/contents/" in url:
+                return (
+                    200,
+                    {},
+                    {
+                        "type": "file",
+                        "sha": "published-blob-sha",
+                        "size": len(content),
+                        "encoding": "none",
+                        "content": "",
+                    },
+                )
+            if "/git/blobs/" in url:
+                return (
+                    200,
+                    {},
+                    {
+                        "sha": "published-blob-sha",
+                        "size": len(content),
+                        "encoding": "base64",
+                        "content": encoded,
+                    },
+                )
+            raise AssertionError(f"unexpected request: {method} {url}")
+
+        client._request = request
+        publisher = SnapshotPublisher(
+            root=self.root,
+            client=client,
+            sleep=lambda _: None,
+        )
+
+        result = publisher.publish()
+
+        self.assertEqual(result["status"], "recovered")
+        self.assertEqual([method for method, _ in calls], ["GET", "GET", "GET"])
+        self.assertFalse((self.root / "state" / "publication-attempt.json").exists())
 
 
 if __name__ == "__main__":
