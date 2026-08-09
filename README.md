@@ -594,6 +594,26 @@ Hermes bridge append 及重建：
 `LATEST_COMPLETE_SEGMENT`。系統不會把缺口前後兩段回報串接；Dashboard 及
 SPY 對比亦會顯示最新共同有效起點。
 
+### 已接受的歷史市場資料缺口
+
+已過期 Option 合約而無可靠 contract close 的缺口，可以由 portfolio owner
+明確接受，但不可補上 underlying 正股價格或從 snapshot 隱藏。精確 instrument、
+NYSE session、決定原因、重開條件及預期績效範圍記錄在
+`config/accepted_market_data_gaps.json`。唯讀 audit 只會接受 manifest 內完全
+相同的缺口；任何新增缺口、已解決但未更新的 acceptance，或績效 metadata
+漂移都會要求重新檢查：
+
+```bash
+/usr/local/bin/python3 \
+  /data/portfolio-tracker/scripts/audit_market_data_gaps.py \
+  --root /data/portfolio
+```
+
+`status=accepted_with_known_gaps` 及 exit `0` 表示現況只包含已封存例外；
+`review_required`、`stale_acceptance` 或 `invalid_input` 均不可視為通過。這個
+audit 不會修改 ledger、重建 snapshot 或發出 publish request，亦不會改變
+`doctor-active` 的 operational health 判定。
+
 ### Hermes 讀取
 
 ```bash
