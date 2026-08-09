@@ -441,7 +441,62 @@ Space Exploration Technologies Corp. 已於 2026 年 6 月以 `SPCX` 上市；
 
 已經錯誤匯入為 `PRIVATE:SPACEX` 的生產資料，使用一次性 append-only
 migration 修正。`--check-only` 只驗證目標、報價衝突及重播不變量；
-`--apply` 會先備份三個 ledger，再以 VOID + replacement BUY 保留 audi�~-�G����ƭy�r_legacy_option_identities.py \
+`--apply` 會先備份三個 ledger，再以 VOID + replacement BUY 保留 audit
+trail，補齊 2026-07-22 至 2026-07-24 收市價，重建 snapshot 及建立
+`publish.pending`：
+
+```bash
+python3 scripts/repair_spcx_listing.py \
+  --root /data/portfolio \
+  --check-only
+
+python3 scripts/repair_spcx_listing.py \
+  --root /data/portfolio \
+  --apply
+```
+
+Migration 會逐筆配對原有 SPCX BUY，並必須證明現金、買入資金流、已實現
+損益、交易數量、SPCX 股數及平均成本不變；重跑同一指令必須回傳
+`status=current`，不得再增加 ledger 事件或備份。
+
+CBRS 上市後身份及 SK hynix when-issued ticker 轉換亦使用獨立 append-only
+migration：
+
+```bash
+python3 scripts/repair_instrument_identities.py \
+  --root /data/portfolio \
+  --check-only
+
+python3 scripts/repair_instrument_identities.py \
+  --root /data/portfolio \
+  --apply
+```
+
+它會把五筆 `PRIVATE:CEREBRAS` 交易逐筆改為 `EQUITY:CBRS`，把未平倉
+`EQUITY:SKHYV` 改為正式 `EQUITY:SKHY`，並以原有三筆 SKHYV 收市價建立
+SKHY quote alias。原事件只會被 VOID，不會覆寫或刪除。驗收必須證明現金、
+FIFO 損益、交易數量、CBRS 已平倉狀態、SKHY 股數及成本完全不變。若程序
+在 JSONL batch 中途終止，重跑會先核對已寫入的 deterministic payload，再
+只補寫餘下事件。
+
+新 Live 寫入會執行 current-identity gate：2026-07-13 起拒絕 `SKHYV`；
+CBRS、SPCX 及 SKHY 必須使用已核實的上市身份；Option 不得以相關正股的
+`quote_symbol` 估值，而要用穩定 `OPTION:...` instrument ID 對應報價。
+一般 Live 股票及已知 ETF 經 Hermes bridge 寫入時會補上明確 identity，
+避免使用裸 symbol 作 lot key。
+
+已匯入但仍帶有 underlying `quote_symbol` 的舊 Option 交易，先執行
+append-only identity migration。它會為每筆交易建立移除 `quote_symbol`
+的 replacement，再 VOID 原事件；成交價、股數、contract multiplier、
+現金及 FIFO P&L 必須完全不變。沒有 option-contract close 的日期會保留為
+`INSUFFICIENT_MARKET_DATA`，不可用正股價格代替：
+
+```bash
+python3 scripts/repair_legacy_option_identities.py \
+  --root /data/portfolio \
+  --check-only
+
+python3 scripts/repair_legacy_option_identities.py \
   --root /data/portfolio \
   --apply
 ```
