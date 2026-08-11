@@ -16025,8 +16025,8 @@
     "symbol": "SPY"
   },
   "currency": "USD",
-  "data_as_of": "2026-08-11T20:00:00Z",
-  "generated_at": "2026-08-11T21:00:14.940299Z",
+  "data_as_of": "2026-08-11T20:30:13.732066Z",
+  "generated_at": "2026-08-11T23:19:52.568180Z",
   "portfolios": {
     "live": {
       "cash": "171.61",
@@ -58184,7 +58184,7 @@
       ]
     },
     "paper": {
-      "cash": "100000",
+      "cash": "80004.70018",
       "daily": [
         {
           "cash": "100000",
@@ -58536,29 +58536,80 @@
           "pnl": "0",
           "segment_id": 1,
           "segment_return": "0"
+        },
+        {
+          "cash": "80004.70018",
+          "cumulative_return": null,
+          "daily_return": null,
+          "data_status": "INSUFFICIENT_MARKET_DATA",
+          "date": "2026-08-12",
+          "external_flow": "0",
+          "missing_symbols": [
+            "NVDA"
+          ],
+          "nav": null,
+          "pnl": null,
+          "segment_id": null,
+          "segment_return": null
         }
       ],
-      "data_status": "OK",
-      "holdings": [],
+      "data_status": "INSUFFICIENT_DATA",
+      "holdings": [
+        {
+          "avg_cost": "222.169998",
+          "contract_multiplier": "1",
+          "cost_basis": "19995.29982",
+          "current_price": null,
+          "instrument_id": "NVDA",
+          "instrument_name": null,
+          "instrument_type": "EQUITY",
+          "market_price_as_of": null,
+          "market_value": null,
+          "quote_status": "MISSING",
+          "quote_symbol": "NVDA",
+          "shares": "90",
+          "symbol": "NVDA",
+          "unrealized_pnl": null,
+          "unrealized_pnl_pct": null
+        }
+      ],
       "initial_cash": "100000",
       "metrics": {
         "closed_episodes": 0,
-        "data_status": "OK",
+        "data_status": "INSUFFICIENT_DATA",
         "income_expense": "0",
-        "max_drawdown": "0",
-        "performance_effective_date": "2026-07-16",
-        "performance_scope": "FULL_HISTORY",
+        "max_drawdown": null,
+        "performance_effective_date": null,
+        "performance_scope": null,
         "realized_pnl": "0",
         "sharpe_ratio": null,
-        "total_return": "0",
+        "total_return": null,
         "win_rate": null
       },
       "realized_pnl_per_trade": [],
-      "recent_trades": []
+      "recent_trades": [
+        {
+          "action": "BUY",
+          "created_at": "2026-08-11T20:30:13.732066Z",
+          "event_id": "paper-swing-687159f0e3f16653413fa6973419e06e",
+          "fee": "0",
+          "ledger_seq": 2,
+          "occurred_at": "2026-08-11T20:30:13.732066Z",
+          "pnl": null,
+          "pnl_pct": null,
+          "portfolio": "paper",
+          "price": "222.169998",
+          "reason": "高於SMA50 ↑; 高於SMA200 ↑; 回調 3.2% (靚位); 動量 Top 29%",
+          "shares": "90",
+          "source": "swing-trader",
+          "strategy": "swing-v2",
+          "symbol": "NVDA"
+        }
+      ]
     }
   },
   "prices_as_of": "2026-08-11T20:00:00Z",
-  "revision": 39300,
+  "revision": 39301,
   "schema_version": 4,
   "source_head": {
     "live": {
@@ -58572,12 +58623,13 @@
       "last_event_id": "market-benchmark-2026-08-11-spy"
     },
     "paper": {
-      "count": 1,
-      "hash": "6360c8c97f70efe977a8535e0c64c5b7cbebbd6612df8485ba7362f2828db071",
-      "last_event_id": "paper-open-20260716"
+      "count": 2,
+      "hash": "52b8a8ce963fe8f9e2a90e56bc806b1c00397d4f6f8ebdedee9cb27e11ef1a8f",
+      "last_event_id": "paper-swing-687159f0e3f16653413fa6973419e06e"
     }
   },
   "warnings": [
+    "paper performance contains incomplete market data",
     "live performance starts at 2025-09-17 after incomplete market data"
   ]
 }
