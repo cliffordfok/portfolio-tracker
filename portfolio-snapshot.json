@@ -16106,8 +16106,8 @@
     "symbol": "SPY"
   },
   "currency": "USD",
-  "data_as_of": "2026-08-20T20:00:00Z",
-  "generated_at": "2026-08-21T12:28:23.174987Z",
+  "data_as_of": "2026-08-21T12:45:00Z",
+  "generated_at": "2026-08-21T12:48:39.362114Z",
   "portfolios": {
     "live": {
       "cash": "611.61",
@@ -45790,10 +45790,10 @@
         {
           "contract_multiplier": "1",
           "cumulative_pnl": "628.75",
-          "event_id": "live-manual-sell-nvda-2-20260818",
+          "event_id": "live-manual-sell-nvda-2-20260818-r2",
           "fee": "0",
           "instrument_id": "EQUITY:NVDA",
-          "instrument_name": null,
+          "instrument_name": "NVIDIA Corporation",
           "instrument_type": "EQUITY",
           "matches": [
             {
@@ -45838,14 +45838,15 @@
       "recent_trades": [
         {
           "action": "SELL",
-          "created_at": "2026-08-18T14:42:00Z",
+          "created_at": "2026-08-21T12:45:00Z",
           "cumulative_pnl": "628.75",
-          "event_id": "live-manual-sell-nvda-2-20260818",
+          "event_id": "live-manual-sell-nvda-2-20260818-r2",
           "fee": "0",
           "instrument_id": "EQUITY:NVDA",
+          "instrument_name": "NVIDIA Corporation",
           "instrument_type": "EQUITY",
-          "ledger_seq": 674,
-          "note": "Clifford sold 2 NVDA @ 220",
+          "ledger_seq": 676,
+          "note": "Clifford sold 2 NVDA @ 220 (re-recorded per append-only audit)",
           "occurred_at": "2026-08-18T14:42:00Z",
           "pnl": "5",
           "pnl_pct": "0.01149425",
@@ -58524,13 +58525,13 @@
     }
   },
   "prices_as_of": "2026-08-20T20:00:00Z",
-  "revision": 39525,
+  "revision": 39527,
   "schema_version": 4,
   "source_head": {
     "live": {
-      "count": 674,
-      "hash": "c81219826b3d8398db473ad60ece70664e1cb2702fc813603f577653955e9435",
-      "last_event_id": "live-manual-sell-nvda-2-20260818"
+      "count": 676,
+      "hash": "8398428b6c68ec7cdfae9ed2e4a279c10b266f512afed8682264818cf6331602",
+      "last_event_id": "live-manual-sell-nvda-2-20260818-r2"
     },
     "market": {
       "count": 38850,
