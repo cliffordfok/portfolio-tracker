@@ -16155,16 +16155,25 @@
         "date": "2026-08-26",
         "segment_id": 1,
         "segment_return": "0.84584137"
+      },
+      {
+        "close": "771.1",
+        "cumulative_return": "0.85793687",
+        "daily_return": "0.00655284",
+        "data_status": "OK",
+        "date": "2026-08-27",
+        "segment_id": 1,
+        "segment_return": "0.85793687"
       }
     ],
     "symbol": "SPY"
   },
   "currency": "USD",
-  "data_as_of": "2026-08-26T20:30:24.388789Z",
-  "generated_at": "2026-08-26T21:00:26.819781Z",
+  "data_as_of": "2026-08-27T20:00:00Z",
+  "generated_at": "2026-08-27T21:01:05.790681Z",
   "portfolios": {
     "live": {
-      "cash": "2292.41",
+      "cash": "1479.91",
       "daily": [
         {
           "cash": "100",
@@ -39504,43 +39513,56 @@
           "segment_return": "0.12423254"
         },
         {
-          "cash": "2292.41",
+          "cash": "1479.91",
           "cumulative_return": null,
-          "daily_return": "-0.01308721",
+          "daily_return": "-0.01343458",
           "data_status": "OK",
           "date": "2026-08-24",
           "external_flow": "0",
           "missing_symbols": [],
-          "nav": "101284.7122829",
-          "pnl": "25449.7122829",
+          "nav": "101249.0622829",
+          "pnl": "25414.0622829",
           "segment_id": 3,
-          "segment_return": "0.10951947"
+          "segment_return": "0.10912895"
         },
         {
-          "cash": "2292.41",
+          "cash": "1479.91",
           "cumulative_return": null,
-          "daily_return": "0.00746801",
+          "daily_return": "0.00767608",
           "data_status": "OK",
           "date": "2026-08-25",
           "external_flow": "0",
           "missing_symbols": [],
-          "nav": "102041.1077526",
-          "pnl": "26206.1077526",
+          "nav": "102026.2577526",
+          "pnl": "26191.2577526",
           "segment_id": 3,
-          "segment_return": "0.11780537"
+          "segment_return": "0.11764271"
         },
         {
-          "cash": "2292.41",
+          "cash": "1479.91",
           "cumulative_return": null,
-          "daily_return": "0.0014464",
+          "daily_return": "0.00137261",
           "data_status": "OK",
           "date": "2026-08-26",
           "external_flow": "0",
           "missing_symbols": [],
-          "nav": "102188.699846",
-          "pnl": "26353.699846",
+          "nav": "102166.299846",
+          "pnl": "26331.299846",
           "segment_id": 3,
-          "segment_return": "0.11942216"
+          "segment_return": "0.1191768"
+        },
+        {
+          "cash": "1479.91",
+          "cumulative_return": null,
+          "daily_return": "0.00533427",
+          "data_status": "OK",
+          "date": "2026-08-27",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "102711.2827625",
+          "pnl": "26876.2827625",
+          "segment_id": 3,
+          "segment_return": "0.12514679"
         }
       ],
       "data_status": "OK",
@@ -39549,69 +39571,69 @@
           "avg_cost": "1042.549411764705882352941176",
           "contract_multiplier": "1",
           "cost_basis": "17723.34",
-          "current_price": "938.4",
+          "current_price": "935.39",
           "instrument_id": "EQUITY:MU",
           "instrument_name": "Micron Technology, Inc.",
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-08-26T20:00:00Z",
-          "market_value": "15952.8",
+          "market_price_as_of": "2026-08-27T20:00:00Z",
+          "market_value": "15901.63",
           "quote_status": "OK",
           "quote_symbol": "MU",
           "shares": "17",
           "symbol": "MU",
-          "unrealized_pnl": "-1770.54",
-          "unrealized_pnl_pct": "-0.09989878"
+          "unrealized_pnl": "-1821.71",
+          "unrealized_pnl_pct": "-0.10278593"
         },
         {
-          "avg_cost": "170",
+          "avg_cost": "167.5",
           "contract_multiplier": "1",
-          "cost_basis": "1700",
-          "current_price": "158.02",
+          "cost_basis": "2512.5",
+          "current_price": "161.61",
           "instrument_id": "EQUITY:SKHY",
           "instrument_name": "SK hynix Inc. ADR",
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-08-26T20:00:00Z",
-          "market_value": "1580.2",
+          "market_price_as_of": "2026-08-27T20:00:00Z",
+          "market_value": "2424.15",
           "quote_status": "OK",
           "quote_symbol": "SKHY",
-          "shares": "10",
+          "shares": "15",
           "symbol": "SKHY",
-          "unrealized_pnl": "-119.8",
-          "unrealized_pnl_pct": "-0.07047059"
+          "unrealized_pnl": "-88.35",
+          "unrealized_pnl_pct": "-0.03516418"
         },
         {
           "avg_cost": "170",
           "contract_multiplier": "1",
           "cost_basis": "5100",
-          "current_price": "139.63",
+          "current_price": "140.87",
           "instrument_id": "EQUITY:SPCX",
           "instrument_name": "Space Exploration Technologies Corp.",
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-08-26T20:00:00Z",
-          "market_value": "4188.9",
+          "market_price_as_of": "2026-08-27T20:00:00Z",
+          "market_value": "4226.1",
           "quote_status": "OK",
           "quote_symbol": "SPCX",
           "shares": "30",
           "symbol": "SPCX",
-          "unrealized_pnl": "-911.1",
-          "unrealized_pnl_pct": "-0.17864706"
+          "unrealized_pnl": "-873.9",
+          "unrealized_pnl_pct": "-0.17135294"
         },
         {
           "avg_cost": "463.4829702077160744329220281",
           "contract_multiplier": "1",
           "cost_basis": "51452",
-          "current_price": "704.2",
+          "current_price": "708.75",
           "instrument_id": "ETF:VOO",
           "instrument_name": "Vanguard S&P 500 ETF",
           "instrument_type": "ETF",
-          "market_price_as_of": "2026-08-26T20:00:00Z",
-          "market_value": "78174.389846",
+          "market_price_as_of": "2026-08-27T20:00:00Z",
+          "market_value": "78679.4927625",
           "quote_status": "OK",
           "quote_symbol": "VOO",
           "shares": "111.01163",
           "symbol": "VOO",
-          "unrealized_pnl": "26722.389846",
-          "unrealized_pnl_pct": "0.51936542"
+          "unrealized_pnl": "27227.4927625",
+          "unrealized_pnl_pct": "0.5291824"
         }
       ],
       "initial_cash": "0",
@@ -39623,8 +39645,8 @@
         "performance_effective_date": "2025-09-17",
         "performance_scope": "LATEST_COMPLETE_SEGMENT",
         "realized_pnl": "640.95",
-        "sharpe_ratio": "0.77001081",
-        "total_return": "0.11942216",
+        "sharpe_ratio": "0.79880517",
+        "total_return": "0.12514679",
         "win_rate": "0.75471698"
       },
       "realized_pnl_per_trade": [
@@ -46013,6 +46035,26 @@
         }
       ],
       "recent_trades": [
+        {
+          "action": "BUY",
+          "created_at": "2026-08-24T15:35:00Z",
+          "event_id": "live-manual-buy-skhy-5-20260824",
+          "fee": "0",
+          "instrument_id": "EQUITY:SKHY",
+          "instrument_name": "SK hynix Inc. ADR",
+          "instrument_type": "EQUITY",
+          "ledger_seq": 678,
+          "note": "Clifford bought 5 SKHY @ 162.5",
+          "occurred_at": "2026-08-24T15:35:00Z",
+          "pnl": null,
+          "pnl_pct": null,
+          "portfolio": "live",
+          "price": "162.5",
+          "quote_symbol": "SKHY",
+          "shares": "5",
+          "source": "manual-import",
+          "symbol": "SKHY"
+        },
         {
           "action": "SELL",
           "created_at": "2026-08-24T14:44:00Z",
@@ -58782,51 +58824,49 @@
         },
         {
           "cash": "80038.799703",
-          "cumulative_return": null,
-          "daily_return": null,
-          "data_status": "INSUFFICIENT_MARKET_DATA",
+          "cumulative_return": "0.0074626",
+          "daily_return": "0.00609381",
+          "data_status": "OK",
           "date": "2026-08-27",
           "external_flow": "0",
-          "missing_symbols": [
-            "MSFT"
-          ],
-          "nav": null,
-          "pnl": null,
-          "segment_id": null,
-          "segment_return": null
+          "missing_symbols": [],
+          "nav": "100746.259703",
+          "pnl": "746.259703",
+          "segment_id": 1,
+          "segment_return": "0.0074626"
         }
       ],
-      "data_status": "INSUFFICIENT_DATA",
+      "data_status": "OK",
       "holdings": [
         {
           "avg_cost": "479.880005",
           "contract_multiplier": "1",
           "cost_basis": "19675.080205",
-          "current_price": null,
+          "current_price": "505.06",
           "instrument_id": "MSFT",
           "instrument_name": null,
           "instrument_type": "EQUITY",
-          "market_price_as_of": null,
-          "market_value": null,
-          "quote_status": "MISSING",
+          "market_price_as_of": "2026-08-27T20:00:00Z",
+          "market_value": "20707.46",
+          "quote_status": "OK",
           "quote_symbol": "MSFT",
           "shares": "41",
           "symbol": "MSFT",
-          "unrealized_pnl": null,
-          "unrealized_pnl_pct": null
+          "unrealized_pnl": "1032.379795",
+          "unrealized_pnl_pct": "0.05247144"
         }
       ],
       "initial_cash": "100000",
       "metrics": {
         "closed_episodes": 1,
-        "data_status": "INSUFFICIENT_DATA",
+        "data_status": "OK",
         "income_expense": "0",
-        "max_drawdown": null,
-        "performance_effective_date": null,
-        "performance_scope": null,
+        "max_drawdown": "-0.00168068",
+        "performance_effective_date": "2026-08-17",
+        "performance_scope": "FULL_HISTORY",
         "realized_pnl": "-286.120092",
         "sharpe_ratio": null,
-        "total_return": null,
+        "total_return": "0.0074626",
         "win_rate": "0"
       },
       "realized_pnl_per_trade": [
@@ -58919,19 +58959,19 @@
       ]
     }
   },
-  "prices_as_of": "2026-08-26T20:00:00Z",
-  "revision": 39659,
+  "prices_as_of": "2026-08-27T20:00:00Z",
+  "revision": 39692,
   "schema_version": 4,
   "source_head": {
     "live": {
-      "count": 677,
-      "hash": "105649c592457f017715f1b96dc94e347a97b18070d4fe0d6ab7b85333988de1",
-      "last_event_id": "live-manual-sell-nvda-8-20260824"
+      "count": 678,
+      "hash": "06a3ac44f9a63348927003917fd918efc688f95cc342182449a40b3f672b4980",
+      "last_event_id": "live-manual-buy-skhy-5-20260824"
     },
     "market": {
-      "count": 38978,
-      "hash": "0f74b095baa918d4cfb049f63116606e23b1524279352c95d3f8567576abba4e",
-      "last_event_id": "market-benchmark-2026-08-26-spy"
+      "count": 39010,
+      "hash": "fe91af4932eea9ea3df468af397b9264a34c440d01a84ed27a610927728abc45",
+      "last_event_id": "market-benchmark-2026-08-27-spy"
     },
     "paper": {
       "count": 4,
@@ -58940,7 +58980,6 @@
     }
   },
   "warnings": [
-    "paper performance contains incomplete market data",
     "live performance starts at 2025-09-17 after incomplete market data"
   ]
 }
