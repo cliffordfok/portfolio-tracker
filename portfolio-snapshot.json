@@ -16200,13 +16200,22 @@
         "date": "2026-08-31",
         "segment_id": 1,
         "segment_return": "0.84817853"
+      },
+      {
+        "close": "761.78",
+        "cumulative_return": "0.83548066",
+        "daily_return": "-0.00687048",
+        "data_status": "OK",
+        "date": "2026-09-01",
+        "segment_id": 1,
+        "segment_return": "0.83548066"
       }
     ],
     "symbol": "SPY"
   },
   "currency": "USD",
-  "data_as_of": "2026-08-31T20:00:00Z",
-  "generated_at": "2026-09-01T05:15:34.264081Z",
+  "data_as_of": "2026-09-01T20:00:00Z",
+  "generated_at": "2026-09-01T21:00:16.867161Z",
   "portfolios": {
     "live": {
       "cash": "72.91",
@@ -39651,6 +39660,19 @@
           "pnl": "26976.4878707",
           "segment_id": 3,
           "segment_return": "0.12624448"
+        },
+        {
+          "cash": "72.91",
+          "cumulative_return": null,
+          "daily_return": "-0.01022953",
+          "data_status": "OK",
+          "date": "2026-09-01",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "101759.7742564",
+          "pnl": "25924.7742564",
+          "segment_id": 3,
+          "segment_return": "0.11472353"
         }
       ],
       "data_status": "OK",
@@ -39659,69 +39681,69 @@
           "avg_cost": "1042.549411764705882352941176",
           "contract_multiplier": "1",
           "cost_basis": "17723.34",
-          "current_price": "958.73",
+          "current_price": "933.44",
           "instrument_id": "EQUITY:MU",
           "instrument_name": "Micron Technology, Inc.",
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-08-31T20:00:00Z",
-          "market_value": "16298.41",
+          "market_price_as_of": "2026-09-01T20:00:00Z",
+          "market_value": "15868.48",
           "quote_status": "OK",
           "quote_symbol": "MU",
           "shares": "17",
           "symbol": "MU",
-          "unrealized_pnl": "-1424.93",
-          "unrealized_pnl_pct": "-0.0803985"
+          "unrealized_pnl": "-1854.86",
+          "unrealized_pnl_pct": "-0.10465635"
         },
         {
           "avg_cost": "167.5",
           "contract_multiplier": "1",
           "cost_basis": "2512.5",
-          "current_price": "164.58",
+          "current_price": "160.78",
           "instrument_id": "EQUITY:SKHY",
           "instrument_name": "SK hynix Inc. ADR",
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-08-31T20:00:00Z",
-          "market_value": "2468.7",
+          "market_price_as_of": "2026-09-01T20:00:00Z",
+          "market_value": "2411.7",
           "quote_status": "OK",
           "quote_symbol": "SKHY",
           "shares": "15",
           "symbol": "SKHY",
-          "unrealized_pnl": "-43.8",
-          "unrealized_pnl_pct": "-0.01743284"
+          "unrealized_pnl": "-100.8",
+          "unrealized_pnl_pct": "-0.0401194"
         },
         {
           "avg_cost": "170",
           "contract_multiplier": "1",
           "cost_basis": "5100",
-          "current_price": "143.69",
+          "current_price": "142.23",
           "instrument_id": "EQUITY:SPCX",
           "instrument_name": "Space Exploration Technologies Corp.",
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-08-31T20:00:00Z",
-          "market_value": "4310.7",
+          "market_price_as_of": "2026-09-01T20:00:00Z",
+          "market_value": "4266.9",
           "quote_status": "OK",
           "quote_symbol": "SPCX",
           "shares": "30",
           "symbol": "SPCX",
-          "unrealized_pnl": "-789.3",
-          "unrealized_pnl_pct": "-0.15476471"
+          "unrealized_pnl": "-833.1",
+          "unrealized_pnl_pct": "-0.16335294"
         },
         {
           "avg_cost": "467.7306220607560478510043612",
           "contract_multiplier": "1",
           "cost_basis": "52859",
-          "current_price": "704.89",
+          "current_price": "700.28",
           "instrument_id": "ETF:VOO",
           "instrument_name": "Vanguard S&P 500 ETF",
           "instrument_type": "ETF",
-          "market_price_as_of": "2026-08-31T20:00:00Z",
-          "market_value": "79660.7678707",
+          "market_price_as_of": "2026-09-01T20:00:00Z",
+          "market_value": "79139.7842564",
           "quote_status": "OK",
           "quote_symbol": "VOO",
           "shares": "113.01163",
           "symbol": "VOO",
-          "unrealized_pnl": "26801.7678707",
-          "unrealized_pnl_pct": "0.50704266"
+          "unrealized_pnl": "26280.7842564",
+          "unrealized_pnl_pct": "0.49718656"
         }
       ],
       "initial_cash": "0",
@@ -39733,8 +39755,8 @@
         "performance_effective_date": "2025-09-17",
         "performance_scope": "LATEST_COMPLETE_SEGMENT",
         "realized_pnl": "640.95",
-        "sharpe_ratio": "0.80119098",
-        "total_return": "0.12624448",
+        "sharpe_ratio": "0.73678017",
+        "total_return": "0.11472353",
         "win_rate": "0.75471698"
       },
       "realized_pnl_per_trade": [
@@ -58994,6 +59016,19 @@
           "pnl": "237.769371",
           "segment_id": 1,
           "segment_return": "0.00237769"
+        },
+        {
+          "cash": "66097.719371",
+          "cumulative_return": "-0.00237981",
+          "daily_return": "-0.00474621",
+          "data_status": "OK",
+          "date": "2026-09-01",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "99762.019371",
+          "pnl": "-237.980629",
+          "segment_id": 1,
+          "segment_return": "-0.00237981"
         }
       ],
       "data_status": "OK",
@@ -59002,35 +59037,35 @@
           "avg_cost": "479.880005",
           "contract_multiplier": "1",
           "cost_basis": "13916.520145",
-          "current_price": "507.29",
+          "current_price": "501.02",
           "instrument_id": "MSFT",
           "instrument_name": null,
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-08-31T20:00:00Z",
-          "market_value": "14711.41",
+          "market_price_as_of": "2026-09-01T20:00:00Z",
+          "market_value": "14529.58",
           "quote_status": "OK",
           "quote_symbol": "MSFT",
           "shares": "29",
           "symbol": "MSFT",
-          "unrealized_pnl": "794.889855",
-          "unrealized_pnl_pct": "0.05711844"
+          "unrealized_pnl": "613.059855",
+          "unrealized_pnl_pct": "0.04405267"
         },
         {
           "avg_cost": "227.330002",
           "contract_multiplier": "1",
           "cost_basis": "20005.040176",
-          "current_price": "220.78",
+          "current_price": "217.44",
           "instrument_id": "NVDA",
           "instrument_name": null,
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-08-31T20:00:00Z",
-          "market_value": "19428.64",
+          "market_price_as_of": "2026-09-01T20:00:00Z",
+          "market_value": "19134.72",
           "quote_status": "OK",
           "quote_symbol": "NVDA",
           "shares": "88",
           "symbol": "NVDA",
-          "unrealized_pnl": "-576.400176",
-          "unrealized_pnl_pct": "-0.02881275"
+          "unrealized_pnl": "-870.320176",
+          "unrealized_pnl_pct": "-0.04350505"
         }
       ],
       "initial_cash": "100000",
@@ -59038,12 +59073,12 @@
         "closed_episodes": 1,
         "data_status": "OK",
         "income_expense": "0",
-        "max_drawdown": "-0.00846504",
+        "max_drawdown": "-0.01317108",
         "performance_effective_date": "2026-08-17",
         "performance_scope": "FULL_HISTORY",
         "realized_pnl": "19.279692",
         "sharpe_ratio": null,
-        "total_return": "0.00237769",
+        "total_return": "-0.00237981",
         "win_rate": "0"
       },
       "realized_pnl_per_trade": [
@@ -59203,8 +59238,8 @@
       ]
     }
   },
-  "prices_as_of": "2026-08-31T20:00:00Z",
-  "revision": 39759,
+  "prices_as_of": "2026-09-01T20:00:00Z",
+  "revision": 39791,
   "schema_version": 4,
   "source_head": {
     "live": {
@@ -59213,9 +59248,9 @@
       "last_event_id": "live-manual-buy-voo-2-20260826"
     },
     "market": {
-      "count": 39074,
-      "hash": "d1434f99864b100096e8422fab84e40328cc0097b455f9f064f72934224cf541",
-      "last_event_id": "market-benchmark-2026-08-31-spy"
+      "count": 39106,
+      "hash": "00eb7d70dbcb506832f8600a79cd4aa6b8a34a49bdb4cacef2fbbc5f668c8739",
+      "last_event_id": "market-benchmark-2026-09-01-spy"
     },
     "paper": {
       "count": 6,
