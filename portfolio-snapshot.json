@@ -16206,10 +16206,10 @@
   },
   "currency": "USD",
   "data_as_of": "2026-08-31T20:00:00Z",
-  "generated_at": "2026-08-31T21:00:27.978410Z",
+  "generated_at": "2026-09-01T05:15:34.264081Z",
   "portfolios": {
     "live": {
-      "cash": "1479.91",
+      "cash": "72.91",
       "daily": [
         {
           "cash": "100",
@@ -39575,82 +39575,82 @@
           "segment_return": "0.11764271"
         },
         {
-          "cash": "1479.91",
+          "cash": "72.91",
           "cumulative_return": null,
-          "daily_return": "0.00137261",
+          "daily_return": "0.00138633",
           "data_status": "OK",
           "date": "2026-08-26",
           "external_flow": "0",
           "missing_symbols": [],
-          "nav": "102166.299846",
-          "pnl": "26331.299846",
+          "nav": "102167.699846",
+          "pnl": "26332.699846",
           "segment_id": 3,
-          "segment_return": "0.1191768"
+          "segment_return": "0.11919213"
         },
         {
-          "cash": "1479.91",
+          "cash": "72.91",
           "cumulative_return": null,
-          "daily_return": "0.00533427",
+          "daily_return": "0.00542327",
           "data_status": "OK",
           "date": "2026-08-27",
           "external_flow": "0",
           "missing_symbols": [],
-          "nav": "102711.2827625",
-          "pnl": "26876.2827625",
+          "nav": "102721.7827625",
+          "pnl": "26886.7827625",
           "segment_id": 3,
-          "segment_return": "0.12514679"
+          "segment_return": "0.12526181"
         },
         {
-          "cash": "1479.91",
+          "cash": "72.91",
           "cumulative_return": null,
-          "daily_return": "-0.00195001",
+          "daily_return": "-0.00197921",
           "data_status": "OK",
           "date": "2026-08-28",
           "external_flow": "0",
           "missing_symbols": [],
-          "nav": "102510.9952012",
-          "pnl": "26675.9952012",
+          "nav": "102518.4752012",
+          "pnl": "26683.4752012",
           "segment_id": 3,
-          "segment_return": "0.12295274"
+          "segment_return": "0.12303468"
         },
         {
-          "cash": "1479.91",
+          "cash": "72.91",
           "cumulative_return": null,
           "daily_return": "0",
           "data_status": "OK",
           "date": "2026-08-29",
           "external_flow": "0",
           "missing_symbols": [],
-          "nav": "102510.9952012",
-          "pnl": "26675.9952012",
+          "nav": "102518.4752012",
+          "pnl": "26683.4752012",
           "segment_id": 3,
-          "segment_return": "0.12295274"
+          "segment_return": "0.12303468"
         },
         {
-          "cash": "1479.91",
+          "cash": "72.91",
           "cumulative_return": null,
           "daily_return": "0",
           "data_status": "OK",
           "date": "2026-08-30",
           "external_flow": "0",
           "missing_symbols": [],
-          "nav": "102510.9952012",
-          "pnl": "26675.9952012",
+          "nav": "102518.4752012",
+          "pnl": "26683.4752012",
           "segment_id": 3,
-          "segment_return": "0.12295274"
+          "segment_return": "0.12303468"
         },
         {
-          "cash": "1479.91",
+          "cash": "72.91",
           "cumulative_return": null,
-          "daily_return": "0.0029042",
+          "daily_return": "0.00285815",
           "data_status": "OK",
           "date": "2026-08-31",
           "external_flow": "0",
           "missing_symbols": [],
-          "nav": "102808.7078707",
-          "pnl": "26973.7078707",
+          "nav": "102811.4878707",
+          "pnl": "26976.4878707",
           "segment_id": 3,
-          "segment_return": "0.12621402"
+          "segment_return": "0.12624448"
         }
       ],
       "data_status": "OK",
@@ -39707,21 +39707,21 @@
           "unrealized_pnl_pct": "-0.15476471"
         },
         {
-          "avg_cost": "463.4829702077160744329220281",
+          "avg_cost": "467.7306220607560478510043612",
           "contract_multiplier": "1",
-          "cost_basis": "51452",
+          "cost_basis": "52859",
           "current_price": "704.89",
           "instrument_id": "ETF:VOO",
           "instrument_name": "Vanguard S&P 500 ETF",
           "instrument_type": "ETF",
           "market_price_as_of": "2026-08-31T20:00:00Z",
-          "market_value": "78250.9878707",
+          "market_value": "79660.7678707",
           "quote_status": "OK",
           "quote_symbol": "VOO",
-          "shares": "111.01163",
+          "shares": "113.01163",
           "symbol": "VOO",
-          "unrealized_pnl": "26798.9878707",
-          "unrealized_pnl_pct": "0.52085415"
+          "unrealized_pnl": "26801.7678707",
+          "unrealized_pnl_pct": "0.50704266"
         }
       ],
       "initial_cash": "0",
@@ -39733,8 +39733,8 @@
         "performance_effective_date": "2025-09-17",
         "performance_scope": "LATEST_COMPLETE_SEGMENT",
         "realized_pnl": "640.95",
-        "sharpe_ratio": "0.80103726",
-        "total_return": "0.12621402",
+        "sharpe_ratio": "0.80119098",
+        "total_return": "0.12624448",
         "win_rate": "0.75471698"
       },
       "realized_pnl_per_trade": [
@@ -46123,6 +46123,26 @@
         }
       ],
       "recent_trades": [
+        {
+          "action": "BUY",
+          "created_at": "2026-09-01T05:15:00Z",
+          "event_id": "live-manual-buy-voo-2-20260826",
+          "fee": "0",
+          "instrument_id": "ETF:VOO",
+          "instrument_name": "Vanguard S&P 500 ETF",
+          "instrument_type": "ETF",
+          "ledger_seq": 679,
+          "note": "Clifford bought 2 VOO @ 703.5 on 8/26 (reconciliation gap close)",
+          "occurred_at": "2026-08-26T12:00:00Z",
+          "pnl": null,
+          "pnl_pct": null,
+          "portfolio": "live",
+          "price": "703.5",
+          "quote_symbol": "VOO",
+          "shares": "2",
+          "source": "manual-import",
+          "symbol": "VOO"
+        },
         {
           "action": "BUY",
           "created_at": "2026-08-24T15:35:00Z",
@@ -59184,13 +59204,13 @@
     }
   },
   "prices_as_of": "2026-08-31T20:00:00Z",
-  "revision": 39758,
+  "revision": 39759,
   "schema_version": 4,
   "source_head": {
     "live": {
-      "count": 678,
-      "hash": "06a3ac44f9a63348927003917fd918efc688f95cc342182449a40b3f672b4980",
-      "last_event_id": "live-manual-buy-skhy-5-20260824"
+      "count": 679,
+      "hash": "41cba38fec44ad16a052c60bc203ef808865a56ddcc4d6258e2c4969b84614e7",
+      "last_event_id": "live-manual-buy-voo-2-20260826"
     },
     "market": {
       "count": 39074,
