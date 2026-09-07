@@ -16242,7 +16242,7 @@
   },
   "currency": "USD",
   "data_as_of": "2026-09-04T20:00:00Z",
-  "generated_at": "2026-09-04T21:00:31.505564Z",
+  "generated_at": "2026-09-07T13:33:58.120465Z",
   "portfolios": {
     "live": {
       "cash": "-902.09",
@@ -39585,48 +39585,48 @@
           "segment_return": "0.12423254"
         },
         {
-          "cash": "1479.91",
+          "cash": "2292.41",
           "cumulative_return": null,
-          "daily_return": "-0.01343458",
+          "daily_return": "-0.01308721",
           "data_status": "OK",
           "date": "2026-08-24",
           "external_flow": "0",
           "missing_symbols": [],
-          "nav": "101249.0622829",
-          "pnl": "25414.0622829",
+          "nav": "101284.7122829",
+          "pnl": "25449.7122829",
           "segment_id": 3,
-          "segment_return": "0.10912895"
+          "segment_return": "0.10951947"
         },
         {
-          "cash": "1479.91",
+          "cash": "2292.41",
           "cumulative_return": null,
-          "daily_return": "0.00767608",
+          "daily_return": "0.00746801",
           "data_status": "OK",
           "date": "2026-08-25",
           "external_flow": "0",
           "missing_symbols": [],
-          "nav": "102026.2577526",
-          "pnl": "26191.2577526",
+          "nav": "102041.1077526",
+          "pnl": "26206.1077526",
           "segment_id": 3,
-          "segment_return": "0.11764271"
+          "segment_return": "0.11780537"
         },
         {
-          "cash": "72.91",
+          "cash": "885.41",
           "cumulative_return": null,
-          "daily_return": "0.00138633",
+          "daily_return": "0.00146012",
           "data_status": "OK",
           "date": "2026-08-26",
           "external_flow": "0",
           "missing_symbols": [],
-          "nav": "102167.699846",
-          "pnl": "26332.699846",
+          "nav": "102190.099846",
+          "pnl": "26355.099846",
           "segment_id": 3,
-          "segment_return": "0.11919213"
+          "segment_return": "0.1194375"
         },
         {
           "cash": "72.91",
           "cumulative_return": null,
-          "daily_return": "0.00542327",
+          "daily_return": "0.00520288",
           "data_status": "OK",
           "date": "2026-08-27",
           "external_flow": "0",
@@ -39634,7 +39634,7 @@
           "nav": "102721.7827625",
           "pnl": "26886.7827625",
           "segment_id": 3,
-          "segment_return": "0.12526181"
+          "segment_return": "0.1252618"
         },
         {
           "cash": "72.91",
@@ -39647,7 +39647,7 @@
           "nav": "102518.4752012",
           "pnl": "26683.4752012",
           "segment_id": 3,
-          "segment_return": "0.12303468"
+          "segment_return": "0.12303467"
         },
         {
           "cash": "72.91",
@@ -39660,7 +39660,7 @@
           "nav": "102518.4752012",
           "pnl": "26683.4752012",
           "segment_id": 3,
-          "segment_return": "0.12303468"
+          "segment_return": "0.12303467"
         },
         {
           "cash": "72.91",
@@ -39673,7 +39673,7 @@
           "nav": "102518.4752012",
           "pnl": "26683.4752012",
           "segment_id": 3,
-          "segment_return": "0.12303468"
+          "segment_return": "0.12303467"
         },
         {
           "cash": "72.91",
@@ -39686,7 +39686,7 @@
           "nav": "102811.4878707",
           "pnl": "26976.4878707",
           "segment_id": 3,
-          "segment_return": "0.12624448"
+          "segment_return": "0.12624447"
         },
         {
           "cash": "-902.09",
@@ -39699,7 +39699,7 @@
           "nav": "101760.1642564",
           "pnl": "25925.1642564",
           "segment_id": 3,
-          "segment_return": "0.1147278"
+          "segment_return": "0.11472779"
         },
         {
           "cash": "-902.09",
@@ -39712,7 +39712,7 @@
           "nav": "102515.6606583",
           "pnl": "26680.6606583",
           "segment_id": 3,
-          "segment_return": "0.12300385"
+          "segment_return": "0.12300384"
         },
         {
           "cash": "-902.09",
@@ -39725,7 +39725,7 @@
           "nav": "103638.2856736",
           "pnl": "27803.2856736",
           "segment_id": 3,
-          "segment_return": "0.13530161"
+          "segment_return": "0.1353016"
         },
         {
           "cash": "-902.09",
@@ -39738,7 +39738,7 @@
           "nav": "104446.7141563",
           "pnl": "28611.7141563",
           "segment_id": 3,
-          "segment_return": "0.14415751"
+          "segment_return": "0.1441575"
         }
       ],
       "data_status": "OK",
@@ -39838,8 +39838,8 @@
         "performance_effective_date": "2025-09-17",
         "performance_scope": "LATEST_COMPLETE_SEGMENT",
         "realized_pnl": "640.95",
-        "sharpe_ratio": "0.88466742",
-        "total_return": "0.14415751",
+        "sharpe_ratio": "0.88484179",
+        "total_return": "0.1441575",
         "win_rate": "0.75471698"
       },
       "realized_pnl_per_trade": [
@@ -46250,6 +46250,26 @@
         },
         {
           "action": "BUY",
+          "created_at": "2026-09-01T05:30:00Z",
+          "event_id": "live-manual-buy-skhy-5-20260827",
+          "fee": "0",
+          "instrument_id": "EQUITY:SKHY",
+          "instrument_name": "SK hynix Inc. ADR",
+          "instrument_type": "EQUITY",
+          "ledger_seq": 682,
+          "note": "Clifford bought 5 SKHY @ 162.5 (exec 8/27 10:30 ET per statement)",
+          "occurred_at": "2026-08-27T14:30:00Z",
+          "pnl": null,
+          "pnl_pct": null,
+          "portfolio": "live",
+          "price": "162.5",
+          "quote_symbol": "SKHY",
+          "shares": "5",
+          "source": "manual-import",
+          "symbol": "SKHY"
+        },
+        {
+          "action": "BUY",
           "created_at": "2026-09-01T05:15:00Z",
           "event_id": "live-manual-buy-voo-2-20260826",
           "fee": "0",
@@ -46267,26 +46287,6 @@
           "shares": "2",
           "source": "manual-import",
           "symbol": "VOO"
-        },
-        {
-          "action": "BUY",
-          "created_at": "2026-08-24T15:35:00Z",
-          "event_id": "live-manual-buy-skhy-5-20260824",
-          "fee": "0",
-          "instrument_id": "EQUITY:SKHY",
-          "instrument_name": "SK hynix Inc. ADR",
-          "instrument_type": "EQUITY",
-          "ledger_seq": 678,
-          "note": "Clifford bought 5 SKHY @ 162.5",
-          "occurred_at": "2026-08-24T15:35:00Z",
-          "pnl": null,
-          "pnl_pct": null,
-          "portfolio": "live",
-          "price": "162.5",
-          "quote_symbol": "SKHY",
-          "shares": "5",
-          "source": "manual-import",
-          "symbol": "SKHY"
         },
         {
           "action": "SELL",
@@ -59415,13 +59415,13 @@
     }
   },
   "prices_as_of": "2026-09-04T20:00:00Z",
-  "revision": 39889,
+  "revision": 39891,
   "schema_version": 4,
   "source_head": {
     "live": {
-      "count": 680,
-      "hash": "59de982f431ce6e0e08d1640a9ec558c662358739f42e35f96da1e9ecd2d7fa3",
-      "last_event_id": "live-manual-buy-aapl-3-20260901"
+      "count": 682,
+      "hash": "053bddaa877780d2fc7fb1bc7bfa9173c7e879e2c745988a8aa09e3ef50a9962",
+      "last_event_id": "live-manual-buy-skhy-5-20260827"
     },
     "market": {
       "count": 39202,
