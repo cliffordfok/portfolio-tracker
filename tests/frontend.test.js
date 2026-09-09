@@ -10,7 +10,16 @@ import {
   currentPortfolioTotalPnl,
   loadDashboardData,
   normalizeBenchmark,
+  portfolioRangeEndDate,
 } from "../js/data.js";
+import {
+  appState,
+  buildPortfolioChartModel,
+  dataStatusView,
+  refreshData,
+  snapshotPerformanceDetail,
+  winRateDetail,
+} from "../js/app.js";
 import {
   csvEscape,
   exportTableToCsv,
@@ -19,6 +28,7 @@ import {
   formatCurrency,
   formatPercent,
   numeric,
+  rangeStartDate,
 } from "../js/utils.js";
 
 test("realized activity chart falls back to FIFO and income P&L", () => {
@@ -225,6 +235,8 @@ test("compare uses and rebases the latest common contiguous segment", () => {
   assert.ok(Math.abs(result.paper[1].value - 0.05) < 1e-12);
   assert.equal(result.live[0].value, 0);
   assert.equal(result.performance_effective_date, "2026-01-03");
+  assert.equal(result.range_start_date, "2026-01-03");
+  assert.equal(result.range_end_date, "2026-01-04");
 });
 
 test("compare range is anchored to the latest common date", () => {
@@ -264,6 +276,8 @@ test("compare range is anchored to the latest common date", () => {
   assert.equal(result.paper[0].value, 0);
   assert.equal(result.live[0].value, 0);
   assert.equal(result.benchmark[0].value, 0);
+  assert.equal(result.range_start_date, "2026-06-01");
+  assert.equal(result.range_end_date, "2026-06-30");
 });
 
 test("global range uses latest dataset date rather than today's date", () => {
@@ -275,6 +289,194 @@ test("global range uses latest dataset date rather than today's date", () => {
   assert.deepEqual(
     filterByRange(rows, "1M").map((row) => row.date),
     ["2024-06-01", "2024-06-20"],
+  );
+});
+
+test("portfolio range stays anchored to the last daily record when trading is inactive", () => {
+  const portfolio = {
+    daily: [
+      { date: "2026-08-31", data_status: "OK", pnl: "20" },
+      {
+        date: "2026-09-30",
+        data_status: "INSUFFICIENT_MARKET_DATA",
+        pnl: null,
+      },
+    ],
+    holdings: [{ market_price_as_of: "2026-10-01T20:00:00Z" }],
+    recent_trades: [
+      { occurred_at: "2026-01-15T15:00:00Z", action: "BUY" },
+    ],
+  };
+  const endDate = portfolioRangeEndDate(portfolio);
+  assert.equal(endDate, "2026-09-30");
+  assert.equal(rangeStartDate("1M", endDate), "2026-08-30");
+  assert.deepEqual(
+    filterByRange(
+      portfolio.recent_trades,
+      "1M",
+      (trade) => trade.occurred_at,
+      endDate,
+    ),
+    [],
+  );
+  assert.equal(
+    filterByRange(portfolio.daily, "1M", (point) => point.date, endDate).at(-1)
+      .data_status,
+    "INSUFFICIENT_MARKET_DATA",
+  );
+});
+
+test("portfolio range fallback order is holding quote then own trade date", () => {
+  const quoted = {
+    daily: [],
+    holdings: [
+      { market_price_as_of: null },
+      { market_price_as_of: "2026-07-20T20:00:00Z" },
+    ],
+    recent_trades: [{ occurred_at: "2026-08-01T15:00:00Z" }],
+  };
+  assert.equal(portfolioRangeEndDate(quoted), "2026-07-20");
+  assert.equal(
+    portfolioRangeEndDate({
+      ...quoted,
+      holdings: [],
+    }),
+    "2026-08-01",
+  );
+  assert.equal(
+    portfolioRangeEndDate({ daily: [], holdings: [], recent_trades: [] }),
+    null,
+  );
+});
+
+test("explicit range end applies both lower and upper bounds while ALL stays complete", () => {
+  const rows = [
+    { date: "2026-01-01" },
+    { date: "2026-08-31" },
+    { date: "2026-09-30" },
+    { date: "2026-10-01" },
+  ];
+  assert.deepEqual(
+    filterByRange(rows, "1M", (row) => row.date, "2026-09-30").map(
+      (row) => row.date,
+    ),
+    ["2026-08-31", "2026-09-30"],
+  );
+  assert.deepEqual(filterByRange(rows, "ALL"), rows);
+});
+
+test("portfolio chart switches modes and preserves full-history cumulative values", () => {
+  const fallbackPortfolio = {
+    daily: [
+      {
+        date: "2026-09-30",
+        data_status: "INSUFFICIENT_MARKET_DATA",
+        pnl: null,
+      },
+    ],
+    recent_trades: [
+      {
+        ledger_seq: 1,
+        occurred_at: "2026-07-01T15:00:00Z",
+        action: "SELL",
+        pnl: "10",
+      },
+      {
+        ledger_seq: 2,
+        occurred_at: "2026-09-15T15:00:00Z",
+        action: "INCOME_EXPENSE",
+        pnl: "5",
+      },
+    ],
+    holdings: [],
+  };
+  const fallback = buildPortfolioChartModel(
+    fallbackPortfolio,
+    "paper",
+    "1M",
+  );
+  assert.equal(fallback.mode, "realized-activity");
+  assert.match(fallback.title, /累計已實現損益及收入／支出/);
+  assert.match(fallback.description, /不含未實現損益/);
+  assert.deepEqual(fallback.values, [{ date: "2026-09-15", value: 15 }]);
+
+  const restored = buildPortfolioChartModel(
+    {
+      ...fallbackPortfolio,
+      daily: [
+        { date: "2026-09-01", data_status: "OK", pnl: "12" },
+        { date: "2026-09-29", data_status: "OK", pnl: "18" },
+        {
+          date: "2026-09-30",
+          data_status: "INSUFFICIENT_MARKET_DATA",
+          pnl: null,
+        },
+      ],
+    },
+    "paper",
+    "1M",
+  );
+  assert.equal(restored.mode, "daily");
+  assert.equal(restored.title, "累計總損益");
+  assert.match(restored.description, /已實現、未實現損益及收入／支出/);
+  assert.equal(restored.values.at(-1).value, null);
+
+  const empty = buildPortfolioChartModel(
+    { daily: [], recent_trades: [], holdings: [] },
+    "live",
+    "ALL",
+  );
+  assert.equal(empty.mode, "empty");
+  assert.deepEqual(empty.values, []);
+});
+
+test("snapshot and win-rate metric details disclose their distinct periods", () => {
+  const portfolio = {
+    daily: [
+      { date: "2026-06-01", data_status: "OK" },
+      { date: "2026-09-30", data_status: "OK" },
+    ],
+    metrics: {
+      data_status: "OK",
+      performance_effective_date: "2026-06-01",
+      performance_scope: "LATEST_COMPLETE_SEGMENT",
+      closed_episodes: 7,
+    },
+  };
+  const performance = snapshotPerformanceDetail(portfolio);
+  assert.match(performance, /最新完整估值區間/);
+  assert.match(performance, /2026年6月1日/);
+  assert.match(performance, /2026年9月30日/);
+  assert.match(performance, /不隨篩選/);
+  const winRate = winRateDetail(portfolio.metrics);
+  assert.match(winRate, /7 個全帳本已完成交易週期/);
+  assert.match(winRate, /統計期間未提供/);
+  assert.doesNotMatch(winRate, /2026年6月1日/);
+});
+
+test("structured source and freshness status drive fresh, stale, and demo labels", () => {
+  assert.deepEqual(
+    dataStatusView({
+      load_status: { source: "snapshot", freshness: "fresh" },
+    }).label,
+    "公開快照已同步",
+  );
+  const staleNetwork = dataStatusView({
+    load_status: { source: "snapshot", freshness: "stale" },
+  });
+  const staleCache = dataStatusView({
+    load_status: { source: "cache", freshness: "stale" },
+  });
+  assert.equal(staleNetwork.label, "快照已過期");
+  assert.equal(staleNetwork.sourceLabel, "公開快照");
+  assert.equal(staleCache.label, "快照已過期");
+  assert.equal(staleCache.sourceLabel, "last-good cache");
+  assert.equal(staleCache.warning, true);
+  assert.equal(
+    dataStatusView({
+      load_status: { source: "fallback", freshness: "demo" },
+    }).label,
+    "虛構示範資料（非實際倉位）",
   );
 });
 
@@ -367,6 +569,14 @@ test("static page contains all required tabs, tables, and D3 v7", async () => {
     'id="live-trades"',
     'id="compare-chart"',
     'id="snapshot-generated-at"',
+    'id="data-source"',
+    'id="data-source-acquired-label"',
+    'id="data-source-acquired-at"',
+    'id="data-accessed-at"',
+    'id="active-range-dates"',
+    'id="paper-chart-title"',
+    'id="paper-chart-description"',
+    'aria-labelledby="paper-chart-title paper-chart-description"',
     'data-range="1M" aria-pressed="false"',
     'data-range="ALL" aria-pressed="true"',
     "d3@7.9.0",
@@ -877,7 +1087,241 @@ test("dashboard cache prevents a second fetch inside the two-minute TTL", async 
     const second = await loadDashboardData(config, { now: 2000 });
     assert.equal(first.source, "snapshot");
     assert.equal(second.source, "cache");
+    assert.equal(first.load_status.freshness, "fresh");
+    assert.equal(second.load_status.source, "cache");
+    assert.equal(first.load_status.source_acquired_at, new Date(1000).toISOString());
+    assert.equal(first.load_status.accessed_at, new Date(1000).toISOString());
+    assert.equal(second.load_status.source_acquired_at, new Date(1000).toISOString());
+    assert.equal(second.load_status.accessed_at, new Date(2000).toISOString());
+    assert.equal(dataStatusView(second).sourceAcquiredLabel, "原始下載");
+    assert.equal(
+      JSON.parse(localStorage.getItem("cache-test:last-good-snapshot")).cachedAt,
+      1000,
+    );
     assert.equal(fetches, 1);
+  } finally {
+    globalThis.window = previousWindow;
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test("a timed-out primary source is aborted before the secondary source succeeds", async () => {
+  const previousWindow = globalThis.window;
+  const previousFetch = globalThis.fetch;
+  const localStorage = new MemoryStorage();
+  globalThis.window = {
+    location: { href: "https://cliffordfok.github.io/portfolio-tracker/" },
+    localStorage,
+  };
+  let firstSignal;
+  let secondSignal;
+  let requests = 0;
+  globalThis.fetch = async (requestUrl, options) => {
+    requests += 1;
+    if (String(requestUrl).includes("primary.test")) {
+      firstSignal = options.signal;
+      return new Promise((_, reject) => {
+        options.signal.addEventListener("abort", () =>
+          reject(new DOMException("Aborted", "AbortError")),
+        );
+      });
+    }
+    secondSignal = options.signal;
+    return { ok: true, json: async () => validSnapshot(41) };
+  };
+  const config = {
+    snapshotUrls: [
+      "https://primary.test/snapshot.json",
+      "https://secondary.test/snapshot.json",
+    ],
+    requestTimeoutMs: 20,
+    loadTimeoutMs: 120,
+    fetchLeaseMs: 150,
+    maxFetchesPerHour: 60,
+    storagePrefix: "primary-timeout-test",
+    staleAfterMinutes: 999999,
+  };
+  try {
+    const started = Date.now();
+    const result = await loadDashboardData(config, { now: 1000 });
+    assert.equal(result.revision, 41);
+    assert.equal(result.source, "snapshot");
+    assert.equal(requests, 2);
+    assert.equal(firstSignal.aborted, true);
+    assert.ok(Date.now() - started < config.loadTimeoutMs);
+    assert.equal(localStorage.getItem("primary-timeout-test:fetch-lease"), null);
+    await new Promise((resolve) => setTimeout(resolve, config.requestTimeoutMs + 10));
+    assert.equal(secondSignal.aborted, false);
+  } finally {
+    globalThis.window = previousWindow;
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test("request timeout also covers a response whose JSON body never finishes", async () => {
+  const previousWindow = globalThis.window;
+  const previousFetch = globalThis.fetch;
+  globalThis.window = {
+    location: { href: "https://cliffordfok.github.io/portfolio-tracker/" },
+    localStorage: new MemoryStorage(),
+  };
+  let primarySignal;
+  globalThis.fetch = async (requestUrl, options) => {
+    if (String(requestUrl).includes("primary.test")) {
+      primarySignal = options.signal;
+      return { ok: true, json: () => new Promise(() => {}) };
+    }
+    return { ok: true, json: async () => validSnapshot(42) };
+  };
+  try {
+    const result = await loadDashboardData(
+      {
+        snapshotUrls: [
+          "https://primary.test/snapshot.json",
+          "https://secondary.test/snapshot.json",
+        ],
+        requestTimeoutMs: 15,
+        loadTimeoutMs: 100,
+        maxFetchesPerHour: 60,
+        storagePrefix: "json-timeout-test",
+        staleAfterMinutes: 999999,
+      },
+      { now: 1000 },
+    );
+    assert.equal(result.revision, 42);
+    assert.equal(primarySignal.aborted, true);
+  } finally {
+    globalThis.window = previousWindow;
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test("failed snapshots and failed demo fixtures end within the load limit and allow retry", async () => {
+  const previousWindow = globalThis.window;
+  const previousFetch = globalThis.fetch;
+  const localStorage = new MemoryStorage();
+  globalThis.window = {
+    location: { href: "https://cliffordfok.github.io/portfolio-tracker/" },
+    localStorage,
+  };
+  let shouldFail = true;
+  let aborts = 0;
+  globalThis.fetch = async (_requestUrl, options) => {
+    if (!shouldFail) {
+      return { ok: true, json: async () => validSnapshot(43) };
+    }
+    return new Promise((_, reject) => {
+      options.signal.addEventListener("abort", () => {
+        aborts += 1;
+        reject(new DOMException("Aborted", "AbortError"));
+      });
+    });
+  };
+  const config = {
+    snapshotUrls: [
+      "https://primary.test/snapshot.json",
+      "https://secondary.test/snapshot.json",
+    ],
+    fallbackUrls: {
+      paper: "./data/paper.json",
+      live: "./data/live.json",
+      benchmark: "./data/benchmark.json",
+    },
+    fallbackInitialCash: { paper: 100000, live: 50000 },
+    requestTimeoutMs: 15,
+    loadTimeoutMs: 55,
+    fetchLeaseMs: 80,
+    maxFetchesPerHour: 60,
+    storagePrefix: "bounded-failure-retry-test",
+    staleAfterMinutes: 999999,
+  };
+  try {
+    const started = Date.now();
+    await assert.rejects(
+      loadDashboardData(config, { now: 1000 }),
+      /無法載入投資組合數據/,
+    );
+    assert.ok(Date.now() - started <= config.loadTimeoutMs + 20);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    assert.ok(aborts >= 3);
+    assert.equal(
+      localStorage.getItem("bounded-failure-retry-test:fetch-lease"),
+      null,
+    );
+
+    shouldFail = false;
+    const retry = await loadDashboardData(config, { force: true, now: 2000 });
+    assert.equal(retry.revision, 43);
+    assert.equal(retry.source, "snapshot");
+    assert.equal(
+      localStorage.getItem("bounded-failure-retry-test:fetch-lease"),
+      null,
+    );
+  } finally {
+    globalThis.window = previousWindow;
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test("an early fallback failure waits for sibling cleanup before releasing the lease", async () => {
+  const previousWindow = globalThis.window;
+  const previousFetch = globalThis.fetch;
+  const localStorage = new MemoryStorage();
+  globalThis.window = {
+    location: { href: "https://cliffordfok.github.io/portfolio-tracker/" },
+    localStorage,
+  };
+  let shouldFail = true;
+  const siblingSignals = [];
+  globalThis.fetch = async (requestUrl, options) => {
+    const url = String(requestUrl);
+    if (!shouldFail) {
+      return { ok: true, json: async () => validSnapshot(44) };
+    }
+    if (url.includes("snapshot.json")) throw new Error("snapshot offline");
+    if (url.includes("paper.json")) {
+      return { ok: false, status: 500, statusText: "Fixture failure" };
+    }
+    siblingSignals.push(options.signal);
+    return new Promise((_, reject) => {
+      options.signal.addEventListener("abort", () =>
+        reject(new DOMException("Aborted", "AbortError")),
+      );
+    });
+  };
+  const config = {
+    snapshotUrls: ["https://example.test/snapshot.json"],
+    fallbackUrls: {
+      paper: "./data/paper.json",
+      live: "./data/live.json",
+      benchmark: "./data/benchmark.json",
+    },
+    fallbackInitialCash: { paper: 100000, live: 50000 },
+    requestTimeoutMs: 20,
+    loadTimeoutMs: 80,
+    fetchLeaseMs: 100,
+    maxFetchesPerHour: 60,
+    storagePrefix: "fallback-sibling-cleanup-test",
+    staleAfterMinutes: 999999,
+  };
+  try {
+    const started = Date.now();
+    await assert.rejects(
+      loadDashboardData(config, { now: 1000 }),
+      /無法載入投資組合數據/,
+    );
+    assert.ok(Date.now() - started <= config.loadTimeoutMs + 20);
+    assert.equal(siblingSignals.length, 2);
+    assert.ok(siblingSignals.every((signal) => signal.aborted));
+    assert.equal(
+      localStorage.getItem("fallback-sibling-cleanup-test:fetch-lease"),
+      null,
+    );
+
+    shouldFail = false;
+    const retry = await loadDashboardData(config, { force: true, now: 2000 });
+    assert.equal(retry.revision, 44);
+    assert.equal(retry.source, "snapshot");
   } finally {
     globalThis.window = previousWindow;
     globalThis.fetch = previousFetch;
@@ -915,8 +1359,72 @@ test("failed forced refresh serves the last-good snapshot with a warning", async
       now: 2000,
     });
     assert.equal(result.revision, 7);
-    assert.equal(result.source, "stale-cache");
+    assert.equal(result.source, "cache");
+    assert.equal(result.load_status.source, "cache");
     assert.ok(result.warnings.some((warning) => warning.includes("last-good")));
+    assert.equal(localStorage.getItem("stale-test:fetch-lease"), null);
+  } finally {
+    globalThis.window = previousWindow;
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test("fresh, stale-cache, and refreshed snapshot states transition without stale client errors", async () => {
+  const previousWindow = globalThis.window;
+  const previousFetch = globalThis.fetch;
+  const localStorage = new MemoryStorage();
+  globalThis.window = {
+    location: { href: "https://cliffordfok.github.io/portfolio-tracker/" },
+    localStorage,
+  };
+  let mode = "fresh";
+  globalThis.fetch = async () => {
+    if (mode === "offline") throw new Error("offline");
+    const snapshot = validSnapshot(mode === "fresh" ? 50 : 51);
+    snapshot.generated_at =
+      mode === "fresh" ? "2026-07-25T00:00:00Z" : "2026-07-25T01:00:00Z";
+    return { ok: true, json: async () => snapshot };
+  };
+  const config = {
+    snapshotUrls: ["https://example.test/snapshot.json"],
+    cacheTtlMs: 1,
+    requestTimeoutMs: 30,
+    loadTimeoutMs: 100,
+    maxFetchesPerHour: 60,
+    storagePrefix: "freshness-transition-test",
+    staleAfterMinutes: 15,
+  };
+  try {
+    const fresh = await loadDashboardData(config, {
+      now: Date.parse("2026-07-25T00:10:00Z"),
+    });
+    assert.equal(fresh.source, "snapshot");
+    assert.equal(fresh.load_status.freshness, "fresh");
+
+    mode = "offline";
+    const stale = await loadDashboardData(config, {
+      force: true,
+      now: Date.parse("2026-07-25T00:30:00Z"),
+    });
+    assert.equal(stale.source, "cache");
+    assert.equal(stale.load_status.freshness, "stale");
+    assert.ok(stale.warnings.some((warning) => warning.includes("快照已過期")));
+    assert.equal(dataStatusView(stale).label, "快照已過期");
+
+    mode = "refreshed";
+    const refreshed = await loadDashboardData(config, {
+      force: true,
+      now: Date.parse("2026-07-25T01:05:00Z"),
+    });
+    assert.equal(refreshed.revision, 51);
+    assert.equal(refreshed.source, "snapshot");
+    assert.equal(refreshed.load_status.freshness, "fresh");
+    assert.ok(
+      refreshed.warnings.every(
+        (warning) =>
+          !warning.includes("offline") && !warning.includes("快照已過期"),
+      ),
+    );
   } finally {
     globalThis.window = previousWindow;
     globalThis.fetch = previousFetch;
@@ -953,7 +1461,8 @@ test("shared hourly budget falls back to cache instead of over-fetching", async 
       now: 2000,
     });
     assert.equal(fetches, 1);
-    assert.equal(result.source, "stale-cache");
+    assert.equal(result.source, "cache");
+    assert.equal(result.load_status.source, "cache");
     assert.ok(result.warnings.some((warning) => warning.includes("共享更新上限")));
   } finally {
     globalThis.window = previousWindow;
@@ -989,7 +1498,7 @@ test("invalid refreshed schema never replaces the last-good cache", async () => 
       force: true,
       now: 2000,
     });
-    assert.equal(failedRefresh.source, "stale-cache");
+    assert.equal(failedRefresh.source, "cache");
     assert.equal(failedRefresh.revision, 11);
     payload = validSnapshot(13);
     payload.portfolios.paper.metrics.realized_pnl = true;
@@ -997,7 +1506,7 @@ test("invalid refreshed schema never replaces the last-good cache", async () => 
       force: true,
       now: 2500,
     });
-    assert.equal(failedDecimal.source, "stale-cache");
+    assert.equal(failedDecimal.source, "cache");
     assert.equal(failedDecimal.revision, 11);
     payload = validSnapshot(14);
     payload.portfolios.paper.metrics.performance_effective_date =
@@ -1007,7 +1516,7 @@ test("invalid refreshed schema never replaces the last-good cache", async () => 
       force: true,
       now: 2750,
     });
-    assert.equal(failedPerformanceMetadata.source, "stale-cache");
+    assert.equal(failedPerformanceMetadata.source, "cache");
     assert.equal(failedPerformanceMetadata.revision, 11);
     const cached = await loadDashboardData(config, { now: 3000 });
     assert.equal(cached.source, "cache");
@@ -1056,8 +1565,63 @@ test("an active cross-tab fetch lease prevents a duplicate network request", asy
       now: 2000,
     });
     assert.equal(fetches, 1);
-    assert.equal(result.source, "stale-cache");
+    assert.equal(result.source, "cache");
+    assert.equal(result.load_status.source, "cache");
     assert.ok(result.warnings.some((warning) => warning.includes("另一個瀏覽器分頁")));
+  } finally {
+    globalThis.window = previousWindow;
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test("overall deadline includes cross-tab lease waiting and demo fallback", async () => {
+  const previousWindow = globalThis.window;
+  const previousFetch = globalThis.fetch;
+  const localStorage = new MemoryStorage();
+  globalThis.window = {
+    location: { href: "https://cliffordfok.github.io/portfolio-tracker/" },
+    localStorage,
+  };
+  const fallbackSignals = [];
+  globalThis.fetch = async (requestUrl, options) => {
+    fallbackSignals.push(options.signal);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    if (String(requestUrl).includes("benchmark.json")) {
+      return {
+        ok: true,
+        json: async () => [{ date: "2026-01-01", close: 500 }],
+      };
+    }
+    return { ok: true, json: async () => [] };
+  };
+  const config = {
+    snapshotUrls: ["https://example.test/snapshot.json"],
+    fallbackUrls: {
+      paper: "./data/paper.json",
+      live: "./data/live.json",
+      benchmark: "./data/benchmark.json",
+    },
+    fallbackInitialCash: { paper: 100000, live: 50000 },
+    requestTimeoutMs: 20,
+    loadTimeoutMs: 60,
+    fetchLeaseMs: 500,
+    maxFetchesPerHour: 60,
+    storagePrefix: "lease-fallback-budget-test",
+    staleAfterMinutes: 999999,
+  };
+  localStorage.setItem(
+    "lease-fallback-budget-test:fetch-lease",
+    JSON.stringify({ token: "other-tab", expiresAt: Date.now() + 500 }),
+  );
+  try {
+    const started = Date.now();
+    const result = await loadDashboardData(config, { now: 1000 });
+    assert.equal(result.source, "fallback");
+    assert.equal(result.load_status.freshness, "demo");
+    assert.ok(Date.now() - started <= config.loadTimeoutMs + 20);
+    await new Promise((resolve) => setTimeout(resolve, config.requestTimeoutMs + 10));
+    assert.equal(fallbackSignals.length, 3);
+    assert.ok(fallbackSignals.every((signal) => signal.aborted === false));
   } finally {
     globalThis.window = previousWindow;
     globalThis.fetch = previousFetch;
@@ -1120,12 +1684,13 @@ test("sample JSON is an explicit demo fallback and never a primary snapshot", as
   try {
     const result = await loadDashboardData(config, { now: 1000 });
     assert.equal(result.source, "fallback");
+    assert.equal(result.load_status.freshness, "demo");
     assert.equal(result.revision, "fallback");
     assert.ok(
       result.warnings.some(
         (warning) =>
-          warning.includes("虛構示範數據") &&
-          warning.includes("並非你的實際投資組合"),
+          warning.includes("虛構示範資料") &&
+          warning.includes("非實際倉位"),
       ),
     );
     assert.ok(
@@ -1155,6 +1720,69 @@ test("production config never treats the bundled demo snapshot as authoritative"
     /snapshotUrls:[\s\S]*?\.\/data\/portfolio-snapshot\.json/,
   );
   assert.match(appSource, /虛構示範資料（非實際倉位）/);
+});
+
+test("refresh clears loading after failure, preserves the screen, and can retry", async () => {
+  const previousDocument = globalThis.document;
+  const previousData = appState.data;
+  const previousLoading = appState.loading;
+  const visibleClasses = new Set();
+  const statusContainer = {
+    classList: {
+      add: (name) => visibleClasses.add(name),
+    },
+  };
+  const overlay = {
+    classList: {
+      add: (name) => visibleClasses.add(name),
+      remove: (name) => visibleClasses.delete(name),
+    },
+  };
+  const notice = { innerHTML: "" };
+  const status = {
+    textContent: "",
+    closest: () => statusContainer,
+  };
+  globalThis.document = {
+    querySelector: (selector) =>
+      ({
+        "#loading-overlay": overlay,
+        "#notice-region": notice,
+        "#data-status-label": status,
+      })[selector],
+  };
+  const existing = { revision: "existing-screen" };
+  appState.data = existing;
+  appState.loading = false;
+  try {
+    await refreshData({
+      loader: async () => {
+        throw new Error("synthetic failure");
+      },
+      renderer: () => assert.fail("failed refresh must not render replacement data"),
+    });
+    assert.equal(appState.loading, false);
+    assert.equal(appState.data, existing);
+    assert.equal(visibleClasses.has("is-visible"), false);
+    assert.match(notice.innerHTML, /synthetic failure/);
+    assert.equal(status.textContent, "數據載入失敗");
+
+    let renders = 0;
+    const recovered = { revision: "recovered" };
+    await refreshData({
+      loader: async () => recovered,
+      renderer: () => {
+        renders += 1;
+      },
+    });
+    assert.equal(appState.loading, false);
+    assert.equal(appState.data, recovered);
+    assert.equal(renders, 1);
+  } finally {
+    appState.data = previousData;
+    appState.loading = previousLoading;
+    globalThis.document = previousDocument;
+  }
 });
 
 test("gitignore blocks common private credential artifacts", async () => {

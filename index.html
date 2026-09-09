@@ -100,9 +100,27 @@
               </button>
             </div>
           </div>
-          <div class="as-of">
-            <span>資料截至</span>
-            <strong id="data-as-of">—</strong>
+          <div class="data-context">
+            <div class="as-of">
+              <span>資料來源</span>
+              <strong id="data-source">—</strong>
+            </div>
+            <div class="as-of">
+              <span>目前篩選</span>
+              <strong id="active-range-dates">ALL · 完整歷史</strong>
+            </div>
+            <div class="as-of">
+              <span>報價截至</span>
+              <strong id="data-as-of">—</strong>
+            </div>
+            <div class="as-of">
+              <span id="data-source-acquired-label">來源取得</span>
+              <strong id="data-source-acquired-at">—</strong>
+            </div>
+            <div class="as-of">
+              <span>本次讀取</span>
+              <strong id="data-accessed-at">—</strong>
+            </div>
           </div>
         </section>
 
@@ -127,13 +145,16 @@
             <div class="card-heading">
               <div>
                 <p class="card-kicker">PERFORMANCE</p>
-                <h3>累計損益</h3>
+                <h3 id="paper-chart-title">累計損益</h3>
+                <p class="chart-description" id="paper-chart-description">
+                  正在判斷可用損益資料。
+                </p>
               </div>
               <div class="legend">
-                <span><i class="legend-swatch paper"></i>模擬倉 P&amp;L</span>
+                <span><i class="legend-swatch paper"></i><span id="paper-chart-legend">模擬倉 P&amp;L</span></span>
               </div>
             </div>
-            <div class="chart" id="paper-chart" aria-label="模擬倉累計損益圖"></div>
+            <div class="chart" id="paper-chart" aria-labelledby="paper-chart-title paper-chart-description"></div>
           </article>
           <div class="content-grid">
             <article class="card table-card">
@@ -212,13 +233,16 @@
             <div class="card-heading">
               <div>
                 <p class="card-kicker">PERFORMANCE</p>
-                <h3>累計損益</h3>
+                <h3 id="live-chart-title">累計損益</h3>
+                <p class="chart-description" id="live-chart-description">
+                  正在判斷可用損益資料。
+                </p>
               </div>
               <div class="legend">
-                <span><i class="legend-swatch live"></i>真實倉 P&amp;L</span>
+                <span><i class="legend-swatch live"></i><span id="live-chart-legend">真實倉 P&amp;L</span></span>
               </div>
             </div>
-            <div class="chart" id="live-chart" aria-label="真實倉累計損益圖"></div>
+            <div class="chart" id="live-chart" aria-labelledby="live-chart-title live-chart-description"></div>
           </article>
           <article class="card table-card">
             <div class="card-heading">

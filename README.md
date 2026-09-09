@@ -12,10 +12,13 @@
 - 目前持倉、平均成本、市值、未實現損益
 - NAV、分段 TWR、績效生效日、最大回撤、Sharpe ratio、closed-episode 勝率
 - 模擬倉／真實倉／SPY 百分比回報比較
-- 1M、3M、6M、1Y、ALL 全域時間篩選
+- 1M、3M、6M、1Y、ALL 全域時間篩選；個別組合以 daily 最後記錄（包括缺價日）
+  作截止，沒有 daily 時依次使用該組合最新持倉報價日、最新交易日，絕不借用今日
+  或另一組合日期
 - 所有表格可匯出 CSV
-- 2 分鐘 last-good snapshot cache；Tab 切換共用 cache，手動 refresh
-  有 30 秒 cooldown，跨瀏覽器分頁共用每小時 60 次 request budget
+- 2 分鐘 last-good snapshot cache；每個資料請求 5 秒 timeout、整體載入 16 秒上限；
+  Tab 切換共用 cache，手動 refresh 有 30 秒 cooldown，跨瀏覽器分頁共用每小時
+  60 次 request budget
 - 快照失敗時先使用 last-good cache；完全沒有有效 cache 時才使用三個
   sample JSON，並明確標示為「虛構示範資料」，不會冒充正式快照
 - Responsive、keyboard tabs、focus state、semantic tables

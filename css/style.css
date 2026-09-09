@@ -338,6 +338,12 @@ h3 {
   font-weight: 600;
 }
 
+.data-context {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
 .notice {
   display: flex;
   align-items: center;
@@ -497,6 +503,14 @@ h3 {
 .chart-card {
   margin-bottom: 14px;
   padding: 21px 22px 13px;
+}
+
+.chart-description {
+  max-width: 620px;
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
 }
 
 .card-heading {
@@ -850,7 +864,8 @@ td small {
 }
 
 .compare-card dl {
-  gap: 24px;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .compare-card dl div {
@@ -868,6 +883,15 @@ td small {
   color: #bac8d1;
   font-family: var(--mono);
   font-size: 11px;
+}
+
+.compare-card dd small {
+  display: block;
+  margin-top: 2px;
+  color: var(--faint);
+  font-family: var(--sans);
+  font-size: 9px;
+  line-height: 1.35;
 }
 
 .paper-card {
@@ -964,6 +988,13 @@ footer p {
 }
 
 @media (max-width: 1100px) {
+  .data-context {
+    display: grid;
+    grid-template-columns: repeat(2, max-content);
+    column-gap: 20px;
+    row-gap: 6px;
+  }
+
   .metric-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -1034,7 +1065,14 @@ footer p {
   }
 
   .as-of {
-    max-width: 130px;
+    max-width: 150px;
+  }
+
+  .data-context {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
   }
 
   .section-heading {
