@@ -16272,13 +16272,22 @@
         "date": "2026-09-08",
         "segment_id": 1,
         "segment_return": "0.84555222"
+      },
+      {
+        "close": "762.4",
+        "cumulative_return": "0.83697454",
+        "daily_return": "-0.00464776",
+        "data_status": "OK",
+        "date": "2026-09-09",
+        "segment_id": 1,
+        "segment_return": "0.83697454"
       }
     ],
     "symbol": "SPY"
   },
   "currency": "USD",
-  "data_as_of": "2026-09-08T20:30:17.469603Z",
-  "generated_at": "2026-09-08T21:00:14.892375Z",
+  "data_as_of": "2026-09-09T20:30:32.679968Z",
+  "generated_at": "2026-09-09T21:00:31.578103Z",
   "portfolios": {
     "live": {
       "cash": "300.36",
@@ -39827,6 +39836,19 @@
           "pnl": "28173.8883341",
           "segment_id": 3,
           "segment_return": "0.13892791"
+        },
+        {
+          "cash": "300.36",
+          "cumulative_return": null,
+          "daily_return": "0.00115953",
+          "data_status": "OK",
+          "date": "2026-09-09",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "105330.8811181",
+          "pnl": "28295.8811181",
+          "segment_id": 3,
+          "segment_return": "0.14024853"
         }
       ],
       "data_status": "OK",
@@ -39835,86 +39857,86 @@
           "avg_cost": "325",
           "contract_multiplier": "1",
           "cost_basis": "975",
-          "current_price": "316.22",
+          "current_price": "315.34",
           "instrument_id": "EQUITY:AAPL",
           "instrument_name": "Apple Inc.",
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-09-08T20:00:00Z",
-          "market_value": "948.66",
+          "market_price_as_of": "2026-09-09T20:00:00Z",
+          "market_value": "946.02",
           "quote_status": "OK",
           "quote_symbol": "AAPL",
           "shares": "3",
           "symbol": "AAPL",
-          "unrealized_pnl": "-26.34",
-          "unrealized_pnl_pct": "-0.02701538"
+          "unrealized_pnl": "-28.98",
+          "unrealized_pnl_pct": "-0.02972308"
         },
         {
           "avg_cost": "1042.549411764705882352941176",
           "contract_multiplier": "1",
           "cost_basis": "17723.34",
-          "current_price": "1000.26",
+          "current_price": "1027.77",
           "instrument_id": "EQUITY:MU",
           "instrument_name": "Micron Technology, Inc.",
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-09-08T20:00:00Z",
-          "market_value": "17004.42",
+          "market_price_as_of": "2026-09-09T20:00:00Z",
+          "market_value": "17472.09",
           "quote_status": "OK",
           "quote_symbol": "MU",
           "shares": "17",
           "symbol": "MU",
-          "unrealized_pnl": "-718.92",
-          "unrealized_pnl_pct": "-0.04056346"
+          "unrealized_pnl": "-251.25",
+          "unrealized_pnl_pct": "-0.01417622"
         },
         {
           "avg_cost": "167.5",
           "contract_multiplier": "1",
           "cost_basis": "2512.5",
-          "current_price": "185.55",
+          "current_price": "198.63",
           "instrument_id": "EQUITY:SKHY",
           "instrument_name": "SK hynix Inc. ADR",
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-09-08T20:00:00Z",
-          "market_value": "2783.25",
+          "market_price_as_of": "2026-09-09T20:00:00Z",
+          "market_value": "2979.45",
           "quote_status": "OK",
           "quote_symbol": "SKHY",
           "shares": "15",
           "symbol": "SKHY",
-          "unrealized_pnl": "270.75",
-          "unrealized_pnl_pct": "0.10776119"
+          "unrealized_pnl": "466.95",
+          "unrealized_pnl_pct": "0.18585075"
         },
         {
           "avg_cost": "170",
           "contract_multiplier": "1",
           "cost_basis": "5100",
-          "current_price": "153.47",
+          "current_price": "147.55",
           "instrument_id": "EQUITY:SPCX",
           "instrument_name": "Space Exploration Technologies Corp.",
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-09-08T20:00:00Z",
-          "market_value": "4604.1",
+          "market_price_as_of": "2026-09-09T20:00:00Z",
+          "market_value": "4426.5",
           "quote_status": "OK",
           "quote_symbol": "SPCX",
           "shares": "30",
           "symbol": "SPCX",
-          "unrealized_pnl": "-495.9",
-          "unrealized_pnl_pct": "-0.09723529"
+          "unrealized_pnl": "-673.5",
+          "unrealized_pnl_pct": "-0.13205882"
         },
         {
           "avg_cost": "467.7306220607560478510043612",
           "contract_multiplier": "1",
           "cost_basis": "52859",
-          "current_price": "704.07",
+          "current_price": "700.87",
           "instrument_id": "ETF:VOO",
           "instrument_name": "Vanguard S&P 500 ETF",
           "instrument_type": "ETF",
-          "market_price_as_of": "2026-09-08T20:00:00Z",
-          "market_value": "79568.0983341",
+          "market_price_as_of": "2026-09-09T20:00:00Z",
+          "market_value": "79206.4611181",
           "quote_status": "OK",
           "quote_symbol": "VOO",
           "shares": "113.01163",
           "symbol": "VOO",
-          "unrealized_pnl": "26709.0983341",
-          "unrealized_pnl_pct": "0.50528951"
+          "unrealized_pnl": "26347.4611181",
+          "unrealized_pnl_pct": "0.49844797"
         }
       ],
       "initial_cash": "0",
@@ -39926,8 +39948,8 @@
         "performance_effective_date": "2025-09-17",
         "performance_scope": "LATEST_COMPLETE_SEGMENT",
         "realized_pnl": "640.95",
-        "sharpe_ratio": "0.85605594",
-        "total_return": "0.13892791",
+        "sharpe_ratio": "0.86115019",
+        "total_return": "0.14024853",
         "win_rate": "0.75471698"
       },
       "realized_pnl_per_trade": [
@@ -59112,7 +59134,7 @@
       ]
     },
     "paper": {
-      "cash": "34957.199269",
+      "cash": "15164.699269",
       "daily": [
         {
           "cash": "100000",
@@ -59415,13 +59437,27 @@
         },
         {
           "cash": "34957.199269",
+          "cumulative_return": "0.01097669",
+          "daily_return": "0.00116418",
+          "data_status": "OK",
+          "date": "2026-09-09",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "101097.669269",
+          "pnl": "1097.669269",
+          "segment_id": 1,
+          "segment_return": "0.01097669"
+        },
+        {
+          "cash": "15164.699269",
           "cumulative_return": null,
           "daily_return": null,
           "data_status": "INSUFFICIENT_MARKET_DATA",
-          "date": "2026-09-09",
+          "date": "2026-09-10",
           "external_flow": "0",
           "missing_symbols": [
             "AAPL",
+            "AMD",
             "MSFT",
             "MU",
             "NVDA"
@@ -59448,6 +59484,23 @@
           "quote_symbol": "AAPL",
           "shares": "63",
           "symbol": "AAPL",
+          "unrealized_pnl": null,
+          "unrealized_pnl_pct": null
+        },
+        {
+          "avg_cost": "507.5",
+          "contract_multiplier": "1",
+          "cost_basis": "19792.5",
+          "current_price": null,
+          "instrument_id": "AMD",
+          "instrument_name": null,
+          "instrument_type": "EQUITY",
+          "market_price_as_of": null,
+          "market_value": null,
+          "quote_status": "MISSING",
+          "quote_symbol": "AMD",
+          "shares": "39",
+          "symbol": "AMD",
           "unrealized_pnl": null,
           "unrealized_pnl_pct": null
         },
@@ -59617,6 +59670,23 @@
       "recent_trades": [
         {
           "action": "BUY",
+          "created_at": "2026-09-09T20:30:32.679968Z",
+          "event_id": "paper-swing-v2-2a7e8cd689f042828ff41f35a14e3342",
+          "fee": "0",
+          "ledger_seq": 10,
+          "occurred_at": "2026-09-09T20:30:32.679968Z",
+          "pnl": null,
+          "pnl_pct": null,
+          "portfolio": "paper",
+          "price": "507.5",
+          "reason": "高於SMA50 ↑; 高於SMA200 ↑; 近高位 (淺回調); 動量 Top 7%",
+          "shares": "39",
+          "source": "swing-trader",
+          "strategy": "swing-v2.1",
+          "symbol": "AMD"
+        },
+        {
+          "action": "BUY",
           "created_at": "2026-09-08T20:30:17.469603Z",
           "event_id": "paper-swing-v2-09294412ba3c488e9d75f6409fffd27d",
           "fee": "0",
@@ -59757,8 +59827,8 @@
       ]
     }
   },
-  "prices_as_of": "2026-09-08T20:00:00Z",
-  "revision": 39933,
+  "prices_as_of": "2026-09-09T20:00:00Z",
+  "revision": 39966,
   "schema_version": 4,
   "source_head": {
     "live": {
@@ -59767,14 +59837,14 @@
       "last_event_id": "live-manual-income-div-mu-20260721"
     },
     "market": {
-      "count": 39234,
-      "hash": "a847f04b962e28bef3b1e1a8edac6649f9893c758fe91df0d90d126e0a373bf5",
-      "last_event_id": "market-benchmark-2026-09-08-spy"
+      "count": 39266,
+      "hash": "c668f6b3fd9f0a5504fc38bf1f78d339eb6a31dc01a29b2052ee935d2831daff",
+      "last_event_id": "market-benchmark-2026-09-09-spy"
     },
     "paper": {
-      "count": 9,
-      "hash": "9825834088038af6ca37f41e611e915e9440005be66c339ce1c374fa4dd7b1cb",
-      "last_event_id": "paper-swing-v2-09294412ba3c488e9d75f6409fffd27d"
+      "count": 10,
+      "hash": "f1a25e5e07b8e28395fdf4360960a77cc3ddc485843e8358a1c866ecacb51f59",
+      "last_event_id": "paper-swing-v2-2a7e8cd689f042828ff41f35a14e3342"
     }
   },
   "warnings": [
