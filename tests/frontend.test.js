@@ -16,6 +16,7 @@ import {
   appState,
   buildPortfolioChartModel,
   dataStatusView,
+  portfolioHistoryBounds,
   refreshData,
   snapshotPerformanceDetail,
   winRateDetail,
@@ -363,6 +364,64 @@ test("explicit range end applies both lower and upper bounds while ALL stays com
     ["2026-08-31", "2026-09-30"],
   );
   assert.deepEqual(filterByRange(rows, "ALL"), rows);
+  assert.deepEqual(
+    filterByRange(rows, "ALL", (row) => row.date, "2026-09-30"),
+    rows.slice(0, 3),
+  );
+});
+
+test("ALL display, trades, and realized chart share the daily cutoff", () => {
+  const portfolio = {
+    daily: [{ date: "2026-09-30", pnl: null }],
+    holdings: [{ market_price_as_of: "2026-10-02T20:00:00Z" }],
+    recent_trades: [
+      { date: "2026-01-01", action: "SELL", pnl: "10" },
+      { date: "2026-09-30", action: "SELL", pnl: "5" },
+      { date: "2026-10-01", action: "SELL", pnl: "20" },
+    ],
+  };
+  const bounds = portfolioHistoryBounds(portfolio);
+  assert.deepEqual(bounds, { start: "2026-01-01", end: "2026-09-30" });
+  assert.deepEqual(
+    filterByRange(portfolio.recent_trades, "ALL", (row) => row.date, bounds.end)
+      .map((row) => row.date),
+    ["2026-01-01", "2026-09-30"],
+  );
+  const chart = buildPortfolioChartModel(portfolio, "live", "ALL");
+  assert.deepEqual(chart.values, [
+    { date: "2026-01-01", value: 10 },
+    { date: "2026-09-30", value: 15 },
+  ]);
+  assert.deepEqual(portfolioHistoryBounds({ daily: [], holdings: [], recent_trades: [] }), null);
+  assert.deepEqual(portfolioHistoryBounds({
+    daily: [],
+    holdings: [{ market_price_as_of: "2026-09-30T20:00:00Z" }],
+    recent_trades: [{ date: "2026-10-01" }],
+  }), { start: "2026-09-30", end: "2026-09-30" });
+});
+
+test("demo realized daily rows never become a total P&L chart", () => {
+  const portfolio = calculateFallbackPortfolio([
+    { date: "2026-01-01", symbol: "ABC", action: "BUY", shares: 10, price: 100 },
+    { date: "2026-01-02", symbol: "ABC", action: "SELL", shares: 1, price: 110 },
+    { date: "2026-01-03", symbol: "ABC", action: "SELL", shares: 1, price: 120, current_price: 120 },
+  ], 50000);
+  assert.equal(portfolio.estimated_nav - portfolio.initial_cash, 190);
+  for (const range of ["ALL", "1M"]) {
+    const chart = buildPortfolioChartModel(portfolio, "live", range);
+    assert.equal(chart.mode, "realized-activity");
+    assert.equal(chart.values.at(-1).value, 30);
+    assert.match(chart.title, /已實現/);
+    assert.match(chart.description, /不含未實現損益/);
+    assert.match(chart.ariaLabel, /不含未實現損益/);
+  }
+  const restored = buildPortfolioChartModel({
+    ...portfolio,
+    data_status: "OK",
+    daily: [{ date: "2026-01-02", pnl: "100" }, { date: "2026-01-03", pnl: "190" }],
+  }, "live", "ALL");
+  assert.equal(restored.mode, "daily");
+  assert.equal(restored.values.at(-1).value, "190");
 });
 
 test("portfolio chart switches modes and preserves full-history cumulative values", () => {

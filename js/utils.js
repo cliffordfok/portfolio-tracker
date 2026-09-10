@@ -109,8 +109,16 @@ export function filterByRange(
   accessor = (item) => item.date,
   endDate = null,
 ) {
-  if (range === "ALL" || !RANGE_DAYS[range] || !items.length) return [...items];
+  if (!RANGE_DAYS[range] || !items.length) return [...items];
   const explicitEnd = dateTimestamp(endDate);
+  // ALL has no lower bound, but an explicit valuation cutoff still applies.
+  if (range === "ALL") {
+    if (explicitEnd === null) return [...items];
+    return items.filter((item) => {
+      const timestamp = dateTimestamp(accessor(item));
+      return timestamp !== null && timestamp <= explicitEnd;
+    });
+  }
   const latest =
     explicitEnd === null ? maxDate(items, accessor) : new Date(explicitEnd);
   if (!latest) return [...items];

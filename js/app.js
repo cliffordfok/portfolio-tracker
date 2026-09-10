@@ -216,7 +216,11 @@ export function buildPortfolioChartModel(portfolio, name, range) {
     date: point.date,
     value: point.pnl,
   }));
-  if (dailyValues.filter((point) => numeric(point.value) !== null).length >= 2) {
+  // Browser fallback daily rows are realized activity, not daily valuations.
+  if (
+    portfolio.data_status !== "FALLBACK" &&
+    dailyValues.filter((point) => numeric(point.value) !== null).length >= 2
+  ) {
     return {
       mode: "daily",
       title: "累計總損益",
@@ -281,7 +285,9 @@ function comparisonReturn(series) {
   return series.length ? numeric(series.at(-1).value) : null;
 }
 
-function portfolioHistoryBounds(portfolio) {
+export function portfolioHistoryBounds(portfolio) {
+  const end = portfolioRangeEndDate(portfolio);
+  if (!end) return null;
   const dates = [
     ...(portfolio.daily || []).map((point) => dateOnly(point.date)),
     ...(portfolio.recent_trades || []).map((trade) =>
@@ -291,9 +297,9 @@ function portfolioHistoryBounds(portfolio) {
       dateOnly(holding.market_price_as_of),
     ),
   ]
-    .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+    .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date) && date <= end)
     .sort();
-  return dates.length ? { start: dates[0], end: dates.at(-1) } : null;
+  return dates.length ? { start: dates[0], end } : null;
 }
 
 function setDisplayedRange(
