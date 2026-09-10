@@ -80,22 +80,55 @@ export function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function dateTimestamp(value) {
+  const day = dateOnly(value);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
+  const timestamp = Date.parse(`${day}T00:00:00Z`);
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
 export function maxDate(items, accessor = (item) => item.date) {
   const timestamps = items
-    .map((item) => new Date(`${accessor(item).slice(0, 10)}T00:00:00Z`).getTime())
-    .filter(Number.isFinite);
+    .map((item) => dateTimestamp(accessor(item)))
+    .filter((timestamp) => timestamp !== null);
   return timestamps.length ? new Date(Math.max(...timestamps)) : null;
 }
 
-export function filterByRange(items, range, accessor = (item) => item.date) {
-  if (range === "ALL" || !RANGE_DAYS[range] || !items.length) return [...items];
-  const latest = maxDate(items, accessor);
-  if (!latest) return [...items];
-  const cutoff = new Date(latest);
+export function rangeStartDate(range, endDate) {
+  if (range === "ALL" || !RANGE_DAYS[range]) return null;
+  const endTimestamp = dateTimestamp(endDate);
+  if (endTimestamp === null) return null;
+  const cutoff = new Date(endTimestamp);
   cutoff.setUTCDate(cutoff.getUTCDate() - RANGE_DAYS[range]);
+  return cutoff.toISOString().slice(0, 10);
+}
+
+export function filterByRange(
+  items,
+  range,
+  accessor = (item) => item.date,
+  endDate = null,
+) {
+  if (!RANGE_DAYS[range] || !items.length) return [...items];
+  const explicitEnd = dateTimestamp(endDate);
+  // ALL has no lower bound, but an explicit valuation cutoff still applies.
+  if (range === "ALL") {
+    if (explicitEnd === null) return [...items];
+    return items.filter((item) => {
+      const timestamp = dateTimestamp(accessor(item));
+      return timestamp !== null && timestamp <= explicitEnd;
+    });
+  }
+  const latest =
+    explicitEnd === null ? maxDate(items, accessor) : new Date(explicitEnd);
+  if (!latest) return [...items];
+  const cutoff = Date.parse(
+    `${rangeStartDate(range, latest.toISOString())}T00:00:00Z`,
+  );
+  const end = latest.getTime();
   return items.filter((item) => {
-    const timestamp = new Date(`${accessor(item).slice(0, 10)}T00:00:00Z`);
-    return timestamp >= cutoff;
+    const timestamp = dateTimestamp(accessor(item));
+    return timestamp !== null && timestamp >= cutoff && timestamp <= end;
   });
 }
 

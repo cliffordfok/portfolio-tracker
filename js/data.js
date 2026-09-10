@@ -1,4 +1,7 @@
-import { dateOnly, filterByRange, numeric } from "./utils.js";
+import { dateOnly, filterByRange, maxDate, numeric } from "./utils.js";
+
+const DEFAULT_REQUEST_TIMEOUT_MS = 5000;
+const DEFAULT_LOAD_TIMEOUT_MS = 16000;
 
 function storage() {
   try {
@@ -37,19 +40,57 @@ function removeStored(key) {
   }
 }
 
-async function fetchJson(url, { githubRaw = false } = {}) {
+function configuredDuration(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+async function fetchJson(
+  url,
+  {
+    githubRaw = false,
+    timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS,
+    deadline = Number.POSITIVE_INFINITY,
+  } = {},
+) {
+  const remaining = deadline - Date.now();
+  if (remaining <= 0) throw new Error("整體載入逾時");
+  const requestLimit = Math.max(1, Math.min(timeoutMs, remaining));
   const requestUrl = new URL(url, window.location.href);
   requestUrl.searchParams.set("_", Date.now().toString());
-  const response = await fetch(requestUrl, {
-    cache: "no-store",
-    headers: {
-      Accept: githubRaw
-        ? "application/vnd.github.raw+json"
-        : "application/json",
-    },
+  const controller = new AbortController();
+  let timedOut = false;
+  let timer = null;
+  const request = (async () => {
+    const response = await fetch(requestUrl, {
+      cache: "no-store",
+      signal: controller.signal,
+      headers: {
+        Accept: githubRaw
+          ? "application/vnd.github.raw+json"
+          : "application/json",
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`${response.status} ${response.statusText}`);
+    }
+    return response.json();
   });
-  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-  return response.json();
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+      reject(new Error("請求逾時"));
+    }, requestLimit);
+  });
+  try {
+    return await Promise.race([request(), timeout]);
+  } catch (error) {
+    if (timedOut || controller.signal.aborted) throw new Error("請求逾時");
+    throw error;
+  } finally {
+    if (timer !== null) clearTimeout(timer);
+  }
 }
 
 function upgradeLegacySnapshot(snapshot) {
@@ -446,6 +487,27 @@ export function buildRealizedActivityPnlSeries(trades) {
     });
 }
 
+function latestDate(items, accessor) {
+  const latest = maxDate(items || [], accessor);
+  return latest ? latest.toISOString().slice(0, 10) : null;
+}
+
+export function portfolioRangeEndDate(portfolio) {
+  const dailyDate = latestDate(portfolio?.daily, (point) => point.date);
+  if (dailyDate) return dailyDate;
+
+  const holdingQuoteDate = latestDate(
+    portfolio?.holdings,
+    (holding) => holding.market_price_as_of,
+  );
+  if (holdingQuoteDate) return holdingQuoteDate;
+
+  return latestDate(
+    portfolio?.recent_trades,
+    (trade) => trade.occurred_at || trade.date,
+  );
+}
+
 function cachedSnapshot(config) {
   const cached = readStoredJson(storageKey(config, "last-good-snapshot"));
   if (!cached || typeof cached.cachedAt !== "number") return null;
@@ -495,7 +557,10 @@ function acquireFetchLease(config) {
   if (!local) return { key: null, token: null };
   const key = storageKey(config, "fetch-lease");
   const now = Date.now();
-  const duration = Number(config.fetchLeaseMs) || 4000;
+  const duration = Math.max(
+    configuredDuration(config.fetchLeaseMs, DEFAULT_LOAD_TIMEOUT_MS + 1000),
+    configuredDuration(config.loadTimeoutMs, DEFAULT_LOAD_TIMEOUT_MS) + 1000,
+  );
   const existing = readStoredJson(key);
   if (
     existing &&
@@ -516,10 +581,23 @@ function releaseFetchLease(lease) {
   if (current?.token === lease.token) removeStored(lease.key);
 }
 
-async function waitForSharedSnapshot(config, cachedAt) {
-  const deadline = Date.now() + (Number(config.fetchLeaseMs) || 4000) + 250;
+async function waitForSharedSnapshot(config, cachedAt, loadDeadline) {
+  const leaseWait = configuredDuration(
+    config.fetchLeaseMs,
+    DEFAULT_LOAD_TIMEOUT_MS + 1000,
+  );
+  const fallbackReserve = configuredDuration(
+    config.requestTimeoutMs,
+    DEFAULT_REQUEST_TIMEOUT_MS,
+  );
+  const deadline = Math.min(
+    Date.now() + leaseWait + 250,
+    loadDeadline - fallbackReserve,
+  );
   while (Date.now() < deadline) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) =>
+      setTimeout(resolve, Math.min(100, Math.max(1, deadline - Date.now()))),
+    );
     const candidate = cachedSnapshot(config);
     if (candidate && candidate.cachedAt > cachedAt) return candidate;
     const lease = readStoredJson(storageKey(config, "fetch-lease"));
@@ -528,34 +606,59 @@ async function waitForSharedSnapshot(config, cachedAt) {
   return null;
 }
 
-function staleSnapshot(snapshot, message, source) {
+function withLoadStatus(
+  snapshot,
+  config,
+  now,
+  { source, message = null, sourceAcquiredAt = now },
+) {
+  const generated = Date.parse(snapshot.generated_at);
+  const threshold = (Number(config.staleAfterMinutes) || 15) * 60 * 1000;
+  const freshness =
+    source === "fallback"
+      ? "demo"
+      : Number.isFinite(generated) && now - generated > threshold
+        ? "stale"
+        : "fresh";
+  const staleWarning =
+    freshness === "stale"
+      ? `快照已過期（最後生成：${snapshot.generated_at || "未知"}）`
+      : null;
   return {
     ...snapshot,
     source,
-    warnings: [...new Set([...(snapshot.warnings || []), message])],
+    load_status: {
+      source,
+      freshness,
+      snapshot_generated_at: snapshot.generated_at ?? null,
+      prices_as_of: snapshot.prices_as_of ?? null,
+      source_acquired_at: new Date(sourceAcquiredAt).toISOString(),
+      accessed_at: new Date(now).toISOString(),
+      message,
+    },
+    warnings: [
+      ...new Set(
+        [...(snapshot.warnings || []), staleWarning, message].filter(Boolean),
+      ),
+    ],
   };
 }
 
-function freshness(snapshot, config, now) {
-  const generated = Date.parse(snapshot.generated_at);
-  const threshold = (Number(config.staleAfterMinutes) || 15) * 60 * 1000;
-  if (!Number.isFinite(generated) || now - generated <= threshold) {
-    return snapshot;
-  }
-  return staleSnapshot(
-    snapshot,
-    `公開快照可能已過期（最後生成：${snapshot.generated_at || "未知"}）`,
-    snapshot.source,
-  );
-}
-
-async function fetchSnapshot(config) {
+async function fetchSnapshot(config, deadline) {
   const urls = config.snapshotUrls || [config.snapshotUrl];
+  const timeoutMs = configuredDuration(
+    config.requestTimeoutMs,
+    DEFAULT_REQUEST_TIMEOUT_MS,
+  );
   const errors = [];
   for (const url of urls.filter(Boolean)) {
     try {
       return validateSnapshot(
-        await fetchJson(url, { githubRaw: url.includes("api.github.com/") }),
+        await fetchJson(url, {
+          githubRaw: url.includes("api.github.com/"),
+          timeoutMs,
+          deadline,
+        }),
       );
     } catch (error) {
       errors.push(`${url}: ${error.message}`);
@@ -783,11 +886,16 @@ export function buildCommonComparison(
       live: [],
       benchmark: [],
       performance_effective_date: null,
+      range_start_date: null,
+      range_end_date: null,
     };
   }
+  const commonEndDate = latest.at(-1);
   latest = filterByRange(
     latest.map((date) => ({ date })),
     range,
+    (point) => point.date,
+    commonEndDate,
   ).map((point) => point.date);
 
   function rebase(map) {
@@ -803,19 +911,28 @@ export function buildCommonComparison(
     live: rebase(liveMap),
     benchmark: rebase(benchmarkMap),
     performance_effective_date: latest[0],
+    range_start_date: latest[0],
+    range_end_date: latest.at(-1),
   };
 }
 
-async function loadFallback(config) {
-  const [paper, live, benchmark] = await Promise.all([
-    fetchJson(config.fallbackUrls.paper),
-    fetchJson(config.fallbackUrls.live),
-    fetchJson(config.fallbackUrls.benchmark),
+async function loadFallback(config, deadline, now) {
+  const timeoutMs = configuredDuration(
+    config.requestTimeoutMs,
+    DEFAULT_REQUEST_TIMEOUT_MS,
+  );
+  const results = await Promise.allSettled([
+    fetchJson(config.fallbackUrls.paper, { timeoutMs, deadline }),
+    fetchJson(config.fallbackUrls.live, { timeoutMs, deadline }),
+    fetchJson(config.fallbackUrls.benchmark, { timeoutMs, deadline }),
   ]);
+  const failed = results.find((result) => result.status === "rejected");
+  if (failed) throw failed.reason;
+  const [paper, live, benchmark] = results.map((result) => result.value);
   return {
     schema_version: 4,
     revision: "fallback",
-    generated_at: new Date().toISOString(),
+    generated_at: new Date(now).toISOString(),
     data_as_of: [
       ...paper.map((trade) => trade.date),
       ...live.map((trade) => trade.date),
@@ -830,7 +947,7 @@ async function loadFallback(config) {
     },
     benchmark: { symbol: "SPY", daily: normalizeBenchmark(benchmark) },
     warnings: [
-      "未能讀取正式快照；以下是虛構示範數據，並非你的實際投資組合。",
+      "未能讀取正式快照；以下是虛構示範資料（非實際倉位）。",
       "現正使用瀏覽器 FIFO 後備計算。",
     ],
   };
@@ -840,35 +957,50 @@ export async function loadDashboardData(
   config,
   { force = false, now = Date.now() } = {},
 ) {
+  const loadTimeoutMs = configuredDuration(
+    config.loadTimeoutMs,
+    DEFAULT_LOAD_TIMEOUT_MS,
+  );
+  const deadline = Date.now() + loadTimeoutMs;
   const cached = cachedSnapshot(config);
   const ttl = Number(config.cacheTtlMs) || 2 * 60 * 1000;
   if (!force && cached && now - cached.cachedAt < ttl) {
-    return freshness(
-      { ...cached.snapshot, source: "cache" },
+    return withLoadStatus(
+      cached.snapshot,
       config,
       now,
+      { source: "cache", sourceAcquiredAt: cached.cachedAt },
     );
   }
 
   const lease = acquireFetchLease(config);
   if (!lease) {
     if (cached) {
-      return staleSnapshot(
+      return withLoadStatus(
         cached.snapshot,
-        "另一個瀏覽器分頁正在更新；現正使用 last-good cache",
-        "stale-cache",
-      );
-    }
-    const shared = await waitForSharedSnapshot(config, -1);
-    if (shared) {
-      return freshness(
-        { ...shared.snapshot, source: "cache" },
         config,
         now,
+        {
+          source: "cache",
+          sourceAcquiredAt: cached.cachedAt,
+          message: "另一個瀏覽器分頁正在更新；現正使用 last-good cache",
+        },
       );
     }
-    const fallback = await loadFallback(config);
-    return staleSnapshot(fallback, "另一個瀏覽器分頁更新逾時", "fallback");
+    const shared = await waitForSharedSnapshot(config, -1, deadline);
+    if (shared) {
+      return withLoadStatus(
+        shared.snapshot,
+        config,
+        now,
+        { source: "cache", sourceAcquiredAt: shared.cachedAt },
+      );
+    }
+    const fallback = await loadFallback(config, deadline, now);
+    return withLoadStatus(fallback, config, now, {
+      source: "fallback",
+      message: "另一個瀏覽器分頁更新逾時",
+    });
   }
 
   try {
@@ -876,34 +1008,49 @@ export async function loadDashboardData(
     if (!budget.allowed) {
       const minutes = Math.max(1, Math.ceil(budget.retryAfterMs / 60000));
       if (cached) {
-        return staleSnapshot(
+        return withLoadStatus(
           cached.snapshot,
-          `已達共享更新上限；約 ${minutes} 分鐘後自動恢復`,
-          "stale-cache",
+          config,
+          now,
+          {
+            source: "cache",
+            sourceAcquiredAt: cached.cachedAt,
+            message: `已達共享更新上限；約 ${minutes} 分鐘後自動恢復`,
+          },
         );
       }
-      const fallback = await loadFallback(config);
-      return staleSnapshot(
+      const fallback = await loadFallback(config, deadline, now);
+      return withLoadStatus(
         fallback,
-        `已達共享更新上限；約 ${minutes} 分鐘後自動恢復`,
-        "fallback",
+        config,
+        now,
+        {
+          source: "fallback",
+          message: `已達共享更新上限；約 ${minutes} 分鐘後自動恢復`,
+        },
       );
     }
 
     try {
-      const snapshot = await fetchSnapshot(config);
+      const snapshot = await fetchSnapshot(config, deadline);
       saveSnapshot(config, snapshot, now);
-      return freshness({ ...snapshot, source: "snapshot" }, config, now);
+      return withLoadStatus(snapshot, config, now, { source: "snapshot" });
     } catch (snapshotError) {
       if (cached) {
-        return staleSnapshot(
+        return withLoadStatus(
           cached.snapshot,
-          `無法取得最新快照；現正使用 last-good cache（${snapshotError.message}）`,
-          "stale-cache",
+          config,
+          now,
+          {
+            source: "cache",
+            sourceAcquiredAt: cached.cachedAt,
+            message: `無法取得最新快照；現正使用 last-good cache（${snapshotError.message}）`,
+          },
         );
       }
       try {
-        return await loadFallback(config);
+        const fallback = await loadFallback(config, deadline, now);
+        return withLoadStatus(fallback, config, now, { source: "fallback" });
       } catch (fallbackError) {
         throw new Error(
           `無法載入投資組合數據：${snapshotError.message}; ${fallbackError.message}`,
