@@ -77,6 +77,48 @@ def _snapshot_timestamp(
         ) from exc
 
 
+def _validate_analytics(analytics, daily):
+    if not isinstance(analytics, dict) or analytics.get("version") != 1:
+        raise ValidationError("invalid analytics version")
+    rows = analytics.get("daily")
+    lots = analytics.get("open_lots")
+    if not isinstance(rows, list) or not isinstance(lots, list):
+        raise ValidationError("invalid analytics arrays")
+    if not all(isinstance(r, dict) for r in rows + daily):
+        raise ValidationError("invalid analytics daily entry")
+    if [r.get("date") for r in rows] != [r.get("date") for r in daily]:
+        raise ValidationError("analytics dates must match portfolio daily")
+    for row in rows:
+        if not isinstance(row.get("instruments"), list):
+            raise ValidationError("invalid analytics instruments")
+        seen = set()
+        for item in row["instruments"]:
+            if not isinstance(item, dict):
+                raise ValidationError("invalid analytics instrument")
+            key = item.get("instrument_id")
+            if not isinstance(key, str) or not INSTRUMENT_ID_RE.fullmatch(key) or key in seen:
+                raise ValidationError("invalid or duplicate analytics identity")
+            seen.add(key)
+            if not isinstance(item.get("symbol"), str):
+                raise ValidationError("invalid analytics symbol")
+            for field in ("realized", "income", "fees", "unrealized"):
+                if field not in item or (field != "unrealized" and item[field] is None):
+                    raise ValidationError("missing analytics amount")
+                _snapshot_decimal_or_none(item[field], label=f"analytics.{field}")
+    for lot in lots:
+        if not isinstance(lot, dict) or not isinstance(lot.get("instrument_id"), str) or not INSTRUMENT_ID_RE.fullmatch(lot["instrument_id"]):
+            raise ValidationError("invalid analytics lot")
+        if not isinstance(lot.get("symbol"), str):
+            raise ValidationError("invalid lot symbol")
+        _snapshot_timestamp(lot.get("opened_at"), label="lot.opened_at", nullable=False)
+        for field in ("shares", "cost_basis", "contract_multiplier"):
+            if lot.get(field) is None:
+                raise ValidationError("missing lot amount")
+            _snapshot_decimal_or_none(lot[field], label=f"lot.{field}")
+            if Decimal(lot[field]) < 0 or (field != "cost_basis" and Decimal(lot[field]) == 0):
+                raise ValidationError("invalid lot amount")
+
+
 def validate_snapshot(snapshot: Any) -> None:
     """Validate the complete intrinsic schema of one public snapshot."""
 
@@ -186,6 +228,9 @@ def validate_snapshot(snapshot: Any) -> None:
                     portfolio[field],
                     label=f"{name}.{field}",
                 )
+
+        if "analytics" in portfolio:
+            _validate_analytics(portfolio["analytics"], portfolio["daily"])
 
         for holding in portfolio["holdings"]:
             if not isinstance(holding, dict):
@@ -1087,6 +1132,55 @@ def _daily_series(
     return daily
 
 
+def _instrument_analytics(result, quotes, days, sessions):
+    """Public cumulative attribution; reuse canonical FIFO on activity days only."""
+    by_session = defaultdict(list)
+    for event in result.effective_events:
+        session = _session_for_event(event, sessions)
+        if session is not None:
+            by_session[session].append(event)
+    history = []
+    rows = []
+    current = None
+    session_set = set(sessions)
+    for day in days:
+        events = by_session.get(day, [])
+        if events:
+            history.extend(events)
+            current = replay_portfolio(sorted(history, key=lambda e: e["ledger_seq"]), portfolio=result.portfolio)
+        if current is None:
+            continue
+        totals = {}
+        def entry(key, symbol):
+            return totals.setdefault(key, {
+                "instrument_id": key, "symbol": symbol,
+                "realized": ZERO, "income": ZERO, "fees": ZERO,
+                "unrealized": ZERO,
+            })
+        for trade in current.trade_history:
+            if trade["action"] not in {"BUY", "SELL", "INCOME_EXPENSE"}:
+                continue
+            key = trade.get("instrument_id") or trade.get("symbol") or "CASH"
+            item = entry(key, trade.get("symbol") or "現金／未分配")
+            if trade["action"] == "SELL":
+                item["realized"] += trade["pnl"]
+            if trade["action"] == "INCOME_EXPENSE":
+                item["income"] += trade["amount"]
+            else:
+                item["fees"] += money(trade.get("fee", 0))
+        for holding in _enrich_holdings(current, quotes, day, session_set):
+            entry(holding["instrument_id"], holding["symbol"])["unrealized"] = holding["unrealized_pnl"]
+        rows.append({"date": day, "instruments": list(totals.values())})
+    dates = {e["event_id"]: e["occurred_at"] for e in result.effective_events}
+    lots = [
+        {"instrument_id": lot.instrument_id, "symbol": lot.symbol,
+         "opened_at": dates[lot.event_id], "shares": lot.remaining_shares,
+         "cost_basis": lot.remaining_cost, "contract_multiplier": lot.contract_multiplier}
+        for group in result.lots.values() for lot in group if lot.remaining_shares > 0
+    ]
+    return {"version": 1, "daily": rows, "open_lots": lots}
+
+
 def _benchmark_series(
     benchmark: dict[str, dict[str, Any]],
     days: list[str],
@@ -1280,6 +1374,7 @@ def _build_snapshot_locked(
             "holdings": holdings,
             "recent_trades": list(reversed(result.trade_history)),
             "realized_pnl_per_trade": result.realized_pnl_per_trade,
+            "analytics": _instrument_analytics(result, quotes, portfolio_days, portfolio_sessions),
             "daily": daily,
             "metrics": metrics,
         }

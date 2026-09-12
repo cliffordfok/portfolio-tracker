@@ -312,6 +312,26 @@ function validateSnapshot(snapshot) {
         }
       }
     }
+    if (hasOwn(portfolio, "analytics")) {
+      const a = portfolio.analytics;
+      if (!object(a) || a.version !== 1 || !Array.isArray(a.daily) || !Array.isArray(a.open_lots) || a.daily.length !== portfolio.daily.length) fail();
+      a.daily.forEach((row,index) => {
+        if (!object(row) || row.date !== portfolio.daily[index].date || !Array.isArray(row.instruments)) fail();
+        const seen = new Set();
+        row.instruments.forEach(item => {
+          if (!object(item) || !instrumentId(item.instrument_id) || seen.has(item.instrument_id) || typeof item.symbol !== "string") fail();
+          seen.add(item.instrument_id);
+          for (const field of ["realized", "income", "fees"]) if (!decimalString(item[field])) fail();
+          if (!hasDecimal(item,"unrealized")) fail();
+        });
+      });
+      a.open_lots.forEach(lot => {
+        if (!object(lot) || !instrumentId(lot.instrument_id) || typeof lot.symbol !== "string" || !lot.opened_at || !utcTimestampOrNull(lot.opened_at)) fail();
+        for (const field of ["shares", "cost_basis", "contract_multiplier"]) {
+          if (!decimalString(lot[field]) || Number(lot[field]) < 0 || (field !== "cost_basis" && Number(lot[field]) === 0)) fail();
+        }
+      });
+    }
     for (const point of portfolio.daily) {
       if (
         !object(point) ||

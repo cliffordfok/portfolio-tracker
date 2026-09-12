@@ -1,3 +1,4 @@
+import { renderAnalytics } from "./analytics-view.js";
 import { renderSeriesChart } from "./charts.js";
 import {
   buildRealizedActivityPnlSeries,
@@ -118,7 +119,7 @@ function renderHoldings(name) {
     .map(
       (holding) => `<tr>
         <td>
-          <span class="symbol">${escapeHtml(holding.symbol)}</span>
+          <button type="button" class="symbol" data-holding-id="${escapeHtml(holding.instrument_id || holding.symbol)}">${escapeHtml(holding.symbol)}</button>
           <small>${escapeHtml(holding.instrument_name || holding.instrument_type || "")}</small>
           ${holding.quote_status === "MANUAL" ? "<small>人工報價</small>" : ""}
           ${holding.quote_status === "MISSING" ? "<small>待補報價</small>" : ""}
@@ -517,6 +518,13 @@ function renderActiveTab() {
   renderHoldings(state.activeTab);
   renderTrades(state.activeTab);
   renderPortfolioChart(state.activeTab);
+  document.querySelector(`#${state.activeTab}-holdings`).onclick = event => {
+    const button = event.target.closest('[data-holding-id]');
+    if (!button) return;
+    const select = document.querySelector(`#${state.activeTab}-instrument`);
+    if (select) { select.value = button.dataset.holdingId; select.dispatchEvent(new Event('change')); select.focus(); }
+  };
+  renderAnalytics(document.querySelector(`#${state.activeTab}-analytics`), state.data.portfolios[state.activeTab], state.data.benchmark, state.range, state.activeTab);
 }
 
 function renderAll() {

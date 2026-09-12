@@ -1869,3 +1869,22 @@ test("gitignore blocks common private credential artifacts", async () => {
     assert.ok(rules.has(rule), `missing credential ignore rule: ${rule}`);
   }
 });
+
+test("optional analytics validates on load and malformed refresh preserves last-good", async () => {
+  const previousWindow = globalThis.window;
+  const previousFetch = globalThis.fetch;
+  globalThis.window = { location: { href: "https://example.test/" }, localStorage: new MemoryStorage() };
+  let payload = validSnapshot(4);
+  payload.portfolios.paper.analytics = { version: 1, daily: [], open_lots: [{ instrument_id: "EQUITY:AAPL", symbol: "AAPL", opened_at: "2024-01-02T15:00:00Z", shares: "1", cost_basis: "100", contract_multiplier: "1" }] };
+  globalThis.fetch = async () => ({ ok: true, json: async () => structuredClone(payload) });
+  const config = { snapshotUrls: ["https://example.test/analytics.json"], storagePrefix: "analytics-schema-test", staleAfterMinutes: 999999 };
+  try {
+    const first = await loadDashboardData(config, { now: 1000 });
+    assert.equal(first.source, "snapshot");
+    assert.equal(first.portfolios.paper.analytics.open_lots[0].cost_basis, "100");
+    payload.portfolios.paper.analytics.open_lots[0].shares = "NaN";
+    const invalid = await loadDashboardData(config, { force: true, now: 100000 });
+    assert.equal(invalid.source, "cache");
+    assert.equal(invalid.portfolios.paper.analytics.open_lots[0].shares, "1");
+  } finally { globalThis.window = previousWindow; globalThis.fetch = previousFetch; }
+});
