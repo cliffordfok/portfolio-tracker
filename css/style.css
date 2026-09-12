@@ -1175,3 +1175,21 @@ footer p {
     transition-duration: 0.01ms !important;
   }
 }
+
+.analytics-grid { display: grid; gap: 1.25rem; margin-top: 1.5rem; min-width: 0; }
+.analytics-card { padding: clamp(1rem, 3vw, 1.75rem); border: 1px solid var(--border, #334155); border-radius: 16px; min-width: 0; }
+.analytics-card p { line-height: 1.65; overflow-wrap: anywhere; }
+.analytics-card .table-scroll { overflow-x: auto; max-width: 100%; }
+.analytics-card table { width: 100%; white-space: nowrap; }
+.analytics-card select { max-width: 100%; padding: .65rem; }
+.analytics-card button { cursor: pointer; padding: .5rem .75rem; }
+.analytics-card td small { display: block; }
+.analytics-card h4 { margin-top: 1.5rem; }
+.analytics-card { background: var(--panel); border-color: var(--line); }
+.analytics-card p { color: var(--muted); }
+.analytics-card select,
+.analytics-card button,
+button[data-holding-id] { background: var(--panel-strong); color: var(--text); border: 1px solid var(--line); border-radius: 6px; }
+.analytics-card select:focus-visible { outline: 2px solid var(--paper); outline-offset: 3px; }
+.analytics-card label { display: block; margin-bottom: .5rem; }
+.analytics-card td small { color: var(--muted); }

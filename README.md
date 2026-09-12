@@ -27,6 +27,42 @@
   不會假設跨 gap 零回報
 - GitHub Contents API crash recovery、manual-edit fail-closed、最多三次 retry
 
+## 個股分析及月度績效
+
+- 損益貢獻榜：依全域期間顯示各 instrument 的已實現損益、未實現損益
+  變動、淨收入／支出及總貢獻，按 USD 總貢獻排序。這是金額貢獻，並非
+  TWR 百分比歸因。期間起點之前最後一日作基準；ALL 由組合開始累計。
+  交易費已包括在 FIFO 損益／剩餘成本，參考欄不會再扣一次。
+- 個股詳情：點擊持倉或貢獻榜，或用下拉選單選擇已平倉資產，查看完整
+  交易／收入歷史、累計損益及最新未平倉 FIFO 批次。這部分不隨時間篩選；
+  批次成本保留 fee、settlement adjustment、split 及 contract multiplier。
+- 月度績效：所選日期按月分組，複利相乘每日 TWR，與相同日期的 SPY 比較。
+  首尾月份顯示實際日期，不能當作完整月份；組合首個估值日亦作 SPY 起始
+  基準。任何缺價、未知每日回報或 segment 轉換均不拼接回報。
+- 新表格均可匯出 CSV；相同 symbol 的不同 instrument 不會合併。無明確
+  instrument identity 的收入獨立列示，沒有猜測歸屬。未平倉估值缺失時
+  顯示空值，不能以零補上。
+
+Schema 4 新增可選 `portfolios.<name>.analytics`（version 1），包含每日
+各 instrument 的累計 realized/income/fees/unrealized，以及最新 open_lots。
+新前端仍可讀取舊快照；未提供 analytics 時，月度績效及交易詳情仍可使用，
+貢獻榜／批次／個股累計損益會明示資料未提供。新後端只產生白名單衍生
+欄位，不加入私人 notes、帳戶資料或 broker reference。
+
+上線需要分開批准前端合併與 VPS 後端更新。VPS 更新後須明確重建一次
+snapshot，再按既有 publisher 流程發布及執行 doctor-active；只更新 Pages
+並不會產生新 analytics，`rebuild --if-needed` 在 ledger 未變時亦可能跳過。
+不需要修改 master ledger、交易策略或 cron。部署前以實際資料量檢查重建
+時間及快照大小；重播只在有活動的 session 進行，報價日重用 FIFO 狀態。
+
+本機驗收可在 repository root 以全新的暫存路徑生成虛構資料（不要覆寫
+production 或既有 runtime）：
+
+```bash
+python backend/seed_demo.py --runtime /tmp/portfolio-analytics-demo-runtime --output /tmp/portfolio-analytics-demo-output
+```
+
+
 ## 資料流
 
 ```text
@@ -110,7 +146,7 @@ Frontend 測試只需要 Node，不需要 `npm install`：
 
 ```powershell
 cd ..
-node --test tests/frontend.test.js
+node --test tests/frontend.test.js tests/analytics.test.js
 node --check js/app.js
 node --check js/data.js
 node --check js/charts.js
