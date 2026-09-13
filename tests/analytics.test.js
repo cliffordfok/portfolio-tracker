@@ -72,3 +72,22 @@ test('detail selection escapes content, retains selection on refresh and separat
   renderAnalytics(container,p,{},'ALL','live');
   assert.equal(detail.innerHTML,'');
 });
+
+test('pagination clamps pages after shrink, handles empty lists and validates page size', async () => {
+  const {pageWindow}=await import('../js/table-view.js');
+  assert.deepEqual(pageWindow(655, 65, 10), {page:65,pages:66,size:10,start:650,end:655});
+  assert.equal(pageWindow(5,65,10).page,0);
+  assert.equal(pageWindow(0,1,10).end,0);
+  assert.equal(pageWindow(100,0,999).size,10);
+  assert.equal(pageWindow(100,-4,25).page,0);
+});
+
+test('contribution summary shows both tails, excludes null/zero and preserves full model', async () => {
+  const {contributionSummary}=await import('../js/table-view.js');
+  const rows=Array.from({length:21},(_,i)=>({total:i-10}));
+  rows.push({total:null});
+  const summary=contributionSummary(rows);
+  assert.deepEqual(summary.map(row=>row.total),[10,9,8,7,6,-10,-9,-8,-7,-6]);
+  assert.equal(rows.length,22);
+  assert.deepEqual(contributionSummary([{total:0},{total:null}]),[]);
+});

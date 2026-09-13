@@ -1,3 +1,4 @@
+import { mountTable } from "./table-view.js";
 import { renderAnalytics } from "./analytics-view.js";
 import { renderSeriesChart } from "./charts.js";
 import {
@@ -159,10 +160,12 @@ function actionBadge(action) {
 
 function renderTrades(name) {
   const body = document.querySelector(`#${name}-trades tbody`);
+  body.closest("article").querySelector(".table-controls")?.remove();
   const trades = visibleTrades(name);
   const columns = name === "live" ? 8 : 7;
   if (!trades.length) {
     body.innerHTML = emptyRow(columns, "所選區間未有交易");
+    mountTable(body.closest("table"), { scope: state.range });
     return;
   }
   body.innerHTML = trades
@@ -203,6 +206,7 @@ function renderTrades(name) {
       </tr>`;
     })
     .join("");
+  mountTable(body.closest("table"), { scope: state.range });
 }
 
 export function buildPortfolioChartModel(portfolio, name, range) {

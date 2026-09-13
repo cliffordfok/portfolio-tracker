@@ -1193,3 +1193,18 @@ button[data-holding-id] { background: var(--panel-strong); color: var(--text); b
 .analytics-card select:focus-visible { outline: 2px solid var(--paper); outline-offset: 3px; }
 .analytics-card label { display: block; margin-bottom: .5rem; }
 .analytics-card td small { color: var(--muted); }
+
+/* Short tables keep the following sections reachable on desktop and mobile. */
+.table-controls { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem; padding: .75rem 1rem; }
+.table-controls label { display: inline-flex; align-items: center; gap: .4rem; margin: 0; }
+.table-controls span { color: var(--muted); font-size: .8rem; }
+.table-controls button, .table-controls select { padding: .45rem .65rem; background: var(--panel-strong); color: var(--text); border: 1px solid var(--line); border-radius: 6px; }
+.table-controls button:disabled { opacity: .4; cursor: default; }
+.table-controls [hidden] { display: none !important; }
+.table-controls select:focus-visible { outline: 2px solid var(--paper); outline-offset: 3px; }
+.analytics-card table td, .analytics-card table th { padding-top: .55rem; padding-bottom: .55rem; }
+@media (max-width: 600px) {
+  .table-controls { padding: .65rem 0; }
+  .table-controls span { flex-basis: 100%; }
+}
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
