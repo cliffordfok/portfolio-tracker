@@ -1,3 +1,4 @@
+import { exportableTable } from "./table-view.js";
 const RANGE_DAYS = Object.freeze({
   "1M": 31,
   "3M": 93,
@@ -143,6 +144,7 @@ export function csvEscape(value) {
 }
 
 export function exportTableToCsv(table, filename) {
+  table = exportableTable(table);
   const rows = [...table.querySelectorAll("tr")]
     .filter((row) => !row.classList.contains("empty-row"))
     .map((row) =>
