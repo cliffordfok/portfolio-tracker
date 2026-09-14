@@ -16332,7 +16332,7 @@
   },
   "currency": "USD",
   "data_as_of": "2026-09-14T20:30:29.267274Z",
-  "generated_at": "2026-09-14T21:00:40.942861Z",
+  "generated_at": "2026-09-14T23:16:26.304961Z",
   "portfolios": {
     "live": {
       "analytics": {
@@ -288574,9 +288574,9 @@
                 "fees": "0.09",
                 "income": "4.62",
                 "instrument_id": "EQUITY:AAPL",
-                "realized": "240.82",
+                "realized": "270.82",
                 "symbol": "AAPL",
-                "unrealized": "24.24"
+                "unrealized": "0"
               },
               {
                 "fees": "0.17",
@@ -289344,14 +289344,6 @@
           },
           {
             "contract_multiplier": "1",
-            "cost_basis": "975",
-            "instrument_id": "EQUITY:AAPL",
-            "opened_at": "2026-09-01T05:20:00Z",
-            "shares": "3",
-            "symbol": "AAPL"
-          },
-          {
-            "contract_multiplier": "1",
             "cost_basis": "729",
             "instrument_id": "EQUITY:MU",
             "opened_at": "2026-05-18T15:07:49Z",
@@ -289457,7 +289449,7 @@
         ],
         "version": 1
       },
-      "cash": "300.36",
+      "cash": "1305.36",
       "daily": [
         {
           "cash": "100",
@@ -313070,38 +313062,21 @@
           "segment_return": "0.13300103"
         },
         {
-          "cash": "300.36",
+          "cash": "1305.36",
           "cumulative_return": null,
-          "daily_return": "-0.01476474",
+          "daily_return": "-0.0147097",
           "data_status": "OK",
           "date": "2026-09-14",
           "external_flow": "0",
           "missing_symbols": [],
-          "nav": "103116.092859",
-          "pnl": "26081.092859",
+          "nav": "103121.852859",
+          "pnl": "26086.852859",
           "segment_id": 3,
-          "segment_return": "0.11627256"
+          "segment_return": "0.11633492"
         }
       ],
       "data_status": "OK",
       "holdings": [
-        {
-          "avg_cost": "325",
-          "contract_multiplier": "1",
-          "cost_basis": "975",
-          "current_price": "333.08",
-          "instrument_id": "EQUITY:AAPL",
-          "instrument_name": "Apple Inc.",
-          "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-09-14T20:00:00Z",
-          "market_value": "999.24",
-          "quote_status": "OK",
-          "quote_symbol": "AAPL",
-          "shares": "3",
-          "symbol": "AAPL",
-          "unrealized_pnl": "24.24",
-          "unrealized_pnl_pct": "0.02486154"
-        },
         {
           "avg_cost": "1042.549411764705882352941176",
           "contract_multiplier": "1",
@@ -313173,16 +313148,16 @@
       ],
       "initial_cash": "0",
       "metrics": {
-        "closed_episodes": 106,
+        "closed_episodes": 107,
         "data_status": "OK",
         "income_expense": "1794.25",
         "max_drawdown": "-0.11392256",
         "performance_effective_date": "2025-09-17",
         "performance_scope": "LATEST_COMPLETE_SEGMENT",
-        "realized_pnl": "640.95",
-        "sharpe_ratio": "0.72676129",
-        "total_return": "0.11627256",
-        "win_rate": "0.75471698"
+        "realized_pnl": "670.95",
+        "sharpe_ratio": "0.72710181",
+        "total_return": "0.11633492",
+        "win_rate": "0.75700935"
       },
       "realized_pnl_per_trade": [
         {
@@ -319567,9 +319542,62 @@
           "price": "210.1",
           "shares": "8",
           "symbol": "NVDA"
+        },
+        {
+          "contract_multiplier": "1",
+          "cumulative_pnl": "670.95",
+          "event_id": "live-manual-sell-AAPL-3-20260914",
+          "fee": "0",
+          "instrument_id": "EQUITY:AAPL",
+          "instrument_name": "Apple Inc.",
+          "instrument_type": "EQUITY",
+          "matches": [
+            {
+              "buy_event_id": "live-manual-buy-aapl-3-20260901",
+              "buy_fee": "0",
+              "buy_price": "325",
+              "buy_settlement_adjustment": "0",
+              "contract_multiplier": "1",
+              "cost": "975",
+              "instrument_id": "EQUITY:AAPL",
+              "pnl": "30",
+              "proceeds": "1005",
+              "sell_fee": "0",
+              "sell_price": "335",
+              "sell_settlement_adjustment": "0",
+              "shares": "3"
+            }
+          ],
+          "occurred_at": "2026-09-14T15:00:00Z",
+          "pnl": "30",
+          "pnl_pct": "0.03076923",
+          "price": "335",
+          "shares": "3",
+          "symbol": "AAPL"
         }
       ],
       "recent_trades": [
+        {
+          "action": "SELL",
+          "created_at": "2026-09-14T23:16:05Z",
+          "cumulative_pnl": "670.95",
+          "event_id": "live-manual-sell-AAPL-3-20260914",
+          "fee": "0",
+          "instrument_id": "EQUITY:AAPL",
+          "instrument_name": "Apple Inc.",
+          "instrument_type": "EQUITY",
+          "ledger_seq": 691,
+          "note": "Sold 3 AAPL @ 335 (per user report 9/14; exec time approximate - verify with Apex statement)",
+          "occurred_at": "2026-09-14T15:00:00Z",
+          "pnl": "30",
+          "pnl_pct": "0.03076923",
+          "portfolio": "live",
+          "price": "335",
+          "quote_symbol": "AAPL",
+          "shares": "3",
+          "source": "manual-import",
+          "symbol": "AAPL"
+        },
         {
           "action": "BUY",
           "created_at": "2026-09-01T05:20:00Z",
@@ -333966,13 +333994,13 @@
     }
   },
   "prices_as_of": "2026-09-14T20:00:00Z",
-  "revision": 40065,
+  "revision": 40066,
   "schema_version": 4,
   "source_head": {
     "live": {
-      "count": 690,
-      "hash": "4c95131499458df2f49e0397a3fcb4b0b7cc2e127604d5fcf50d279dc853a03a",
-      "last_event_id": "live-manual-income-div-mu-20260721"
+      "count": 691,
+      "hash": "55f40a91b2619002ab05123dc3f552ffe48595f8fa764b8f70919b1dc2e8ca5a",
+      "last_event_id": "live-manual-sell-AAPL-3-20260914"
     },
     "market": {
       "count": 39362,
