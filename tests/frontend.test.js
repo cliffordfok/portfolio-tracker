@@ -8,10 +8,12 @@ import {
   calculateFallbackPortfolio,
   currentPortfolioNav,
   currentPortfolioTotalPnl,
+  previousTradingDayPnl,
   loadDashboardData,
   normalizeBenchmark,
   portfolioRangeEndDate,
 } from "../js/data.js";
+import { isNyseSession } from "../js/market-calendar.js";
 import {
   appState,
   buildPortfolioChartModel,
@@ -182,6 +184,50 @@ test("current portfolio totals never substitute a stale or cash-only NAV", () =>
   };
   assert.equal(currentPortfolioNav(fallback), 1015);
   assert.equal(currentPortfolioTotalPnl(fallback), 15);
+});
+
+test("daily P&L compares NYSE sessions across weekends and holidays, excluding deposits", () => {
+  const portfolio = {
+    data_status: "OK",
+    daily: [
+      { date: "2026-07-02", data_status: "OK", nav: "1000", external_flow: "0", daily_return: "0" },
+      { date: "2026-07-03", data_status: "OK", nav: "1000", external_flow: "0", daily_return: "0" },
+      { date: "2026-07-04", data_status: "OK", nav: "1000", external_flow: "0", daily_return: "0" },
+      { date: "2026-07-05", data_status: "OK", nav: "1000", external_flow: "0", daily_return: "0" },
+      { date: "2026-07-06", data_status: "OK", nav: "1110", external_flow: "100", daily_return: "0.00909091" },
+    ],
+  };
+  assert.equal(isNyseSession("2026-07-03"), false); // Independence Day observed
+  assert.equal(isNyseSession("2026-07-06"), true);
+  assert.deepEqual(previousTradingDayPnl(portfolio), {
+    amount: 10,
+    percent: 0.00909091,
+    previousDate: "2026-07-02",
+    date: "2026-07-06",
+  });
+  portfolio.daily.push({ date: "2026-07-07", data_status: "OK", nav: "1100", external_flow: "0", daily_return: "-0.00900901" });
+  assert.equal(previousTradingDayPnl(portfolio).amount, -10);
+});
+
+test("daily P&L refuses missing valuations, broken return segments, and fallback data", () => {
+  const portfolio = {
+    data_status: "OK",
+    daily: [
+      { date: "2026-04-02", data_status: "OK", nav: "1000", external_flow: "0", daily_return: "0" },
+      { date: "2026-04-03", data_status: "OK", nav: "1000", external_flow: "0", daily_return: "0" },
+      { date: "2026-04-06", data_status: "INSUFFICIENT_MARKET_DATA", nav: null, external_flow: "0", daily_return: null },
+      { date: "2026-04-07", data_status: "OK", nav: "1050", external_flow: "0", daily_return: null },
+    ],
+  };
+  assert.equal(isNyseSession("2026-04-03"), false); // Good Friday
+  assert.equal(isNyseSession("2026-01-19"), false); // Martin Luther King Jr. Day
+  assert.equal(isNyseSession("2025-01-09"), false); // Special closure
+  assert.equal(isNyseSession("2021-12-31"), true); // Saturday New Year is not observed on Friday
+  assert.equal(previousTradingDayPnl(portfolio), null);
+  portfolio.daily.push({ date: "2026-04-08", data_status: "OK", nav: "1040", external_flow: "0", daily_return: "-0.00952381" });
+  assert.equal(previousTradingDayPnl(portfolio).amount, -10);
+  assert.equal(previousTradingDayPnl({ ...portfolio, data_status: "FALLBACK" }), null);
+  assert.equal(previousTradingDayPnl({ ...portfolio, daily: portfolio.daily.slice(0, 1) }), null);
 });
 
 test("benchmark is normalized from its first close", () => {

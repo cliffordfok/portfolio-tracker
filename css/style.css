@@ -429,7 +429,7 @@ h3 {
 
 .metric-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 14px;
 }
@@ -491,6 +491,12 @@ h3 {
 
 .is-neutral {
   color: inherit;
+}
+
+@media (max-width: 1300px) {
+  .metric-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .card {
