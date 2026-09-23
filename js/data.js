@@ -1,4 +1,5 @@
 import { dateOnly, filterByRange, maxDate, numeric } from "./utils.js";
+import { isNyseSession } from "./market-calendar.js";
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 5000;
 const DEFAULT_LOAD_TIMEOUT_MS = 16000;
@@ -481,6 +482,27 @@ export function currentPortfolioTotalPnl(portfolio) {
     0,
   );
   return nav - initial - flows;
+}
+
+export function previousTradingDayPnl(portfolio) {
+  if (!portfolio || portfolio.data_status === "FALLBACK") return null;
+  // The snapshot has calendar-day rows, including carried-forward weekend and holiday values.
+  const sessions = (portfolio.daily || []).filter((row) => isNyseSession(row.date));
+  if (sessions.length < 2) return null;
+  const previous = sessions.at(-2);
+  const latest = sessions.at(-1);
+  if (previous.data_status !== "OK" || latest.data_status !== "OK") return null;
+  const previousNav = numeric(previous.nav);
+  const latestNav = numeric(latest.nav);
+  const flow = numeric(latest.external_flow);
+  const percent = numeric(latest.daily_return);
+  if (previousNav === null || latestNav === null || flow === null || percent === null) return null;
+  return {
+    amount: latestNav - previousNav - flow,
+    percent,
+    previousDate: previous.date,
+    date: latest.date,
+  };
 }
 
 export function buildRealizedActivityPnlSeries(trades) {

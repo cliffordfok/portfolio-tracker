@@ -6,6 +6,7 @@ import {
   buildCommonComparison,
   currentPortfolioNav,
   currentPortfolioTotalPnl,
+  previousTradingDayPnl,
   loadDashboardData,
   portfolioRangeEndDate,
 } from "./data.js";
@@ -74,6 +75,7 @@ function renderPortfolioMetrics(name) {
   const portfolio = state.data.portfolios[name];
   const nav = currentPortfolioNav(portfolio);
   const pnl = currentPortfolioTotalPnl(portfolio);
+  const dailyPnl = previousTradingDayPnl(portfolio);
   const totalReturn = numeric(portfolio.metrics?.total_return);
   const cash = numeric(portfolio.cash);
   const winRate = numeric(portfolio.metrics?.win_rate);
@@ -89,6 +91,14 @@ function renderPortfolioMetrics(name) {
       formatCurrency(pnl, { sign: true }),
       `已實現 ${formatCurrency(portfolio.metrics?.realized_pnl, { sign: true })} · 收入／支出 ${formatCurrency(portfolio.metrics?.income_expense, { sign: true })} · 快照值，不隨篩選`,
       valueClass(pnl),
+    ),
+    metricCard(
+      "較上一交易日損益",
+      formatCurrency(dailyPnl?.amount, { sign: true }),
+      dailyPnl
+        ? `${formatDate(dailyPnl.date)} 對比 ${formatDate(dailyPnl.previousDate)} · ${formatPercent(dailyPnl.percent, { sign: true })} · 已扣除入金／提款 · 不隨篩選`
+        : "相鄰交易日估值未齊 · 不隨篩選",
+      valueClass(dailyPnl?.amount),
     ),
     metricCard(
       "總回報",
