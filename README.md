@@ -166,6 +166,7 @@ node --check js/app.js
 node --check js/data.js
 node --check js/charts.js
 node --check js/utils.js
+node --check js/market-calendar.js
 ```
 
 `package.json` 只用來告訴 Node 以 ES module 解析 `.js`；沒有 dependencies、scripts 或 build。
@@ -708,7 +709,9 @@ Frontend request 使用 cache-busting query、2 分鐘 TTL 及每小時共享 bu
 Contents API 後備 request 會使用 GitHub raw media `Accept` header，亦唔依賴
 jsDelivr cache。
 
-本專案沒有 GitHub Actions；GitHub Pages 直接由 branch root 提供靜態檔案。
+GitHub Actions 會在 PR 及 `main` 更新時執行前後端測試與語法檢查，
+不使用 repository secrets，亦不會修改 VPS 或公開快照。
+GitHub Pages 仍直接由 `main` branch root 提供靜態檔案，不經 CI build。
 
 ## VPS publisher
 
