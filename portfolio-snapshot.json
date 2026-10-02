@@ -16479,13 +16479,22 @@
         "date": "2026-10-01",
         "segment_id": 1,
         "segment_return": "0.84080556"
+      },
+      {
+        "close": "769.64",
+        "cumulative_return": "0.85441902",
+        "daily_return": "0.00739538",
+        "data_status": "OK",
+        "date": "2026-10-02",
+        "segment_id": 1,
+        "segment_return": "0.85441902"
       }
     ],
     "symbol": "SPY"
   },
   "currency": "USD",
-  "data_as_of": "2026-10-01T20:00:00Z",
-  "generated_at": "2026-10-01T21:00:34.701041Z",
+  "data_as_of": "2026-10-02T20:30:22.975812Z",
+  "generated_at": "2026-10-02T21:00:34.225487Z",
   "portfolios": {
     "live": {
       "analytics": {
@@ -292737,6 +292746,235 @@
                 "unrealized": "390"
               }
             ]
+          },
+          {
+            "date": "2026-10-02",
+            "instruments": [
+              {
+                "fees": "5.4",
+                "income": "0",
+                "instrument_id": "ETF:SQQQ",
+                "realized": "255.91",
+                "symbol": "SQQQ",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.2",
+                "income": "1665.97",
+                "instrument_id": "ETF:VOO",
+                "realized": "877.63",
+                "symbol": "VOO",
+                "unrealized": "27101.2486902"
+              },
+              {
+                "fees": "0.23",
+                "income": "16.64",
+                "instrument_id": "ETF:QQQ",
+                "realized": "-12.25",
+                "symbol": "QQQ",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.01",
+                "income": "0",
+                "instrument_id": "ETF:INDA",
+                "realized": "7.49",
+                "symbol": "INDA",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0",
+                "income": "-55.66",
+                "instrument_id": "USD",
+                "realized": "0",
+                "symbol": "USD",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.02",
+                "income": "0",
+                "instrument_id": "EQUITY:INTC",
+                "realized": "-80.02",
+                "symbol": "INTC",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.15",
+                "income": "1.59",
+                "instrument_id": "EQUITY:NVDA",
+                "realized": "242.12",
+                "symbol": "NVDA",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.05",
+                "income": "0",
+                "instrument_id": "OPTION:AMD:2022-03-18:C:165",
+                "realized": "59.95",
+                "symbol": "AMD",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.24",
+                "income": "0",
+                "instrument_id": "ETF:TQQQ",
+                "realized": "358.09",
+                "symbol": "TQQQ",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.06",
+                "income": "0",
+                "instrument_id": "OPTION:NVDA:2022-03-18:C:310",
+                "realized": "-1775.06",
+                "symbol": "NVDA",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.11",
+                "income": "118.44",
+                "instrument_id": "EQUITY:ABBV",
+                "realized": "868.39",
+                "symbol": "ABBV",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.03",
+                "income": "0",
+                "instrument_id": "EQUITY:AMD",
+                "realized": "-283.76",
+                "symbol": "AMD",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.01",
+                "income": "0",
+                "instrument_id": "ETF:SARK",
+                "realized": "-56.01",
+                "symbol": "SARK",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.09",
+                "income": "4.62",
+                "instrument_id": "EQUITY:AAPL",
+                "realized": "270.82",
+                "symbol": "AAPL",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.17",
+                "income": "0",
+                "instrument_id": "EQUITY:BRK.B",
+                "realized": "-851.87",
+                "symbol": "BRK.B",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.81",
+                "income": "0",
+                "instrument_id": "EQUITY:TSLA",
+                "realized": "-1275.41",
+                "symbol": "TSLA",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.26",
+                "income": "30.8",
+                "instrument_id": "EQUITY:KO",
+                "realized": "-773.13",
+                "symbol": "KO",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.17",
+                "income": "2.13",
+                "instrument_id": "EQUITY:MCD",
+                "realized": "40.89",
+                "symbol": "MCD",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "EQUITY:PLTR",
+                "realized": "1134.52",
+                "symbol": "PLTR",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.04",
+                "income": "0",
+                "instrument_id": "OPTION:AAPL:2025-10-10:P:230",
+                "realized": "-556.04",
+                "symbol": "AAPL",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.03",
+                "income": "0",
+                "instrument_id": "EQUITY:ONDS",
+                "realized": "-380.2099999999999999999999997",
+                "symbol": "ONDS",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.13",
+                "income": "3.8",
+                "instrument_id": "EQUITY:GOOGL",
+                "realized": "438.15",
+                "symbol": "GOOGL",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.03",
+                "income": "4.14",
+                "instrument_id": "ETF:SGOV",
+                "realized": "0.02",
+                "symbol": "SGOV",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.12",
+                "income": "0",
+                "instrument_id": "EQUITY:SNDK",
+                "realized": "1088.38",
+                "symbol": "SNDK",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0.1",
+                "income": "1.78",
+                "instrument_id": "EQUITY:MU",
+                "realized": "1721",
+                "symbol": "MU",
+                "unrealized": "549.79"
+              },
+              {
+                "fees": "0.05",
+                "income": "0",
+                "instrument_id": "EQUITY:CBRS",
+                "realized": "-648.65",
+                "symbol": "CBRS",
+                "unrealized": "0"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "EQUITY:SPCX",
+                "realized": "0",
+                "symbol": "SPCX",
+                "unrealized": "-331.2"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "EQUITY:SKHY",
+                "realized": "0",
+                "symbol": "SKHY",
+                "unrealized": "414.45"
+              }
+            ]
           }
         ],
         "open_lots": [
@@ -317340,6 +317578,19 @@
           "pnl": "29644.3083305",
           "segment_id": 3,
           "segment_return": "0.15484578"
+        },
+        {
+          "cash": "1305.36",
+          "cumulative_return": null,
+          "daily_return": "0.0052042",
+          "data_status": "OK",
+          "date": "2026-10-02",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "107234.4886902",
+          "pnl": "30199.4886902",
+          "segment_id": 3,
+          "segment_return": "0.16085583"
         }
       ],
       "data_status": "OK",
@@ -317348,69 +317599,69 @@
           "avg_cost": "1042.549411764705882352941176",
           "contract_multiplier": "1",
           "cost_basis": "17723.34",
-          "current_price": "1097.39",
+          "current_price": "1074.89",
           "instrument_id": "EQUITY:MU",
           "instrument_name": "Micron Technology, Inc.",
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-10-01T20:00:00Z",
-          "market_value": "18655.63",
+          "market_price_as_of": "2026-10-02T20:00:00Z",
+          "market_value": "18273.13",
           "quote_status": "OK",
           "quote_symbol": "MU",
           "shares": "17",
           "symbol": "MU",
-          "unrealized_pnl": "932.29",
-          "unrealized_pnl_pct": "0.05260239"
+          "unrealized_pnl": "549.79",
+          "unrealized_pnl_pct": "0.03102068"
         },
         {
           "avg_cost": "167.5",
           "contract_multiplier": "1",
           "cost_basis": "2512.5",
-          "current_price": "193.5",
+          "current_price": "195.13",
           "instrument_id": "EQUITY:SKHY",
           "instrument_name": "SK hynix Inc. ADR",
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-10-01T20:00:00Z",
-          "market_value": "2902.5",
+          "market_price_as_of": "2026-10-02T20:00:00Z",
+          "market_value": "2926.95",
           "quote_status": "OK",
           "quote_symbol": "SKHY",
           "shares": "15",
           "symbol": "SKHY",
-          "unrealized_pnl": "390",
-          "unrealized_pnl_pct": "0.15522388"
+          "unrealized_pnl": "414.45",
+          "unrealized_pnl_pct": "0.16495522"
         },
         {
           "avg_cost": "170",
           "contract_multiplier": "1",
           "cost_basis": "5100",
-          "current_price": "148.07",
+          "current_price": "158.96",
           "instrument_id": "EQUITY:SPCX",
           "instrument_name": "Space Exploration Technologies Corp.",
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-10-01T20:00:00Z",
-          "market_value": "4442.1",
+          "market_price_as_of": "2026-10-02T20:00:00Z",
+          "market_value": "4768.8",
           "quote_status": "OK",
           "quote_symbol": "SPCX",
           "shares": "30",
           "symbol": "SPCX",
-          "unrealized_pnl": "-657.9",
-          "unrealized_pnl_pct": "-0.129"
+          "unrealized_pnl": "-331.2",
+          "unrealized_pnl_pct": "-0.06494118"
         },
         {
           "avg_cost": "467.7306220607560478510043612",
           "contract_multiplier": "1",
           "cost_basis": "52859",
-          "current_price": "702.35",
+          "current_price": "707.54",
           "instrument_id": "ETF:VOO",
           "instrument_name": "Vanguard S&P 500 ETF",
           "instrument_type": "ETF",
-          "market_price_as_of": "2026-10-01T20:00:00Z",
-          "market_value": "79373.7183305",
+          "market_price_as_of": "2026-10-02T20:00:00Z",
+          "market_value": "79960.2486902",
           "quote_status": "OK",
           "quote_symbol": "VOO",
           "shares": "113.01163",
           "symbol": "VOO",
-          "unrealized_pnl": "26514.7183305",
-          "unrealized_pnl_pct": "0.50161218"
+          "unrealized_pnl": "27101.2486902",
+          "unrealized_pnl_pct": "0.51270831"
         }
       ],
       "initial_cash": "0",
@@ -317422,8 +317673,8 @@
         "performance_effective_date": "2025-09-17",
         "performance_scope": "LATEST_COMPLETE_SEGMENT",
         "realized_pnl": "670.95",
-        "sharpe_ratio": "0.8869071",
-        "total_return": "0.15484578",
+        "sharpe_ratio": "0.9137865",
+        "total_return": "0.16085583",
         "win_rate": "0.75700935"
       },
       "realized_pnl_per_trade": [
@@ -338277,6 +338528,250 @@
                 "unrealized": "1224.7"
               }
             ]
+          },
+          {
+            "date": "2026-10-02",
+            "instruments": [
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "MSFT",
+                "realized": "550.159842",
+                "symbol": "MSFT",
+                "unrealized": "798.330078"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "NVDA",
+                "realized": "-1716.120092",
+                "symbol": "NVDA",
+                "unrealized": "1342.279908"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "MU",
+                "realized": "90.476072",
+                "symbol": "MU",
+                "unrealized": "-5.599882"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "AAPL",
+                "realized": "234.630072",
+                "symbol": "AAPL",
+                "unrealized": "746.54973"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "AMD",
+                "realized": "1278.75",
+                "symbol": "AMD",
+                "unrealized": "2148.97"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "GOOGL",
+                "realized": "0",
+                "symbol": "GOOGL",
+                "unrealized": "-183.679944"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "LRCX",
+                "realized": "266.549835",
+                "symbol": "LRCX",
+                "unrealized": "1498.13"
+              }
+            ]
+          },
+          {
+            "date": "2026-10-03",
+            "instruments": [
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "MSFT",
+                "realized": "550.159842",
+                "symbol": "MSFT",
+                "unrealized": "798.330078"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "NVDA",
+                "realized": "-1716.120092",
+                "symbol": "NVDA",
+                "unrealized": "1342.279908"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "MU",
+                "realized": "90.476072",
+                "symbol": "MU",
+                "unrealized": "-5.599882"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "AAPL",
+                "realized": "234.630072",
+                "symbol": "AAPL",
+                "unrealized": "746.54973"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "AMD",
+                "realized": "1278.75",
+                "symbol": "AMD",
+                "unrealized": "2148.97"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "GOOGL",
+                "realized": "0",
+                "symbol": "GOOGL",
+                "unrealized": "-183.679944"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "LRCX",
+                "realized": "266.549835",
+                "symbol": "LRCX",
+                "unrealized": "1498.13"
+              }
+            ]
+          },
+          {
+            "date": "2026-10-04",
+            "instruments": [
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "MSFT",
+                "realized": "550.159842",
+                "symbol": "MSFT",
+                "unrealized": "798.330078"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "NVDA",
+                "realized": "-1716.120092",
+                "symbol": "NVDA",
+                "unrealized": "1342.279908"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "MU",
+                "realized": "90.476072",
+                "symbol": "MU",
+                "unrealized": "-5.599882"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "AAPL",
+                "realized": "234.630072",
+                "symbol": "AAPL",
+                "unrealized": "746.54973"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "AMD",
+                "realized": "1278.75",
+                "symbol": "AMD",
+                "unrealized": "2148.97"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "GOOGL",
+                "realized": "0",
+                "symbol": "GOOGL",
+                "unrealized": "-183.679944"
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "LRCX",
+                "realized": "266.549835",
+                "symbol": "LRCX",
+                "unrealized": "1498.13"
+              }
+            ]
+          },
+          {
+            "date": "2026-10-05",
+            "instruments": [
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "MSFT",
+                "realized": "550.159842",
+                "symbol": "MSFT",
+                "unrealized": null
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "NVDA",
+                "realized": "-1265.355308",
+                "symbol": "NVDA",
+                "unrealized": null
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "MU",
+                "realized": "90.476072",
+                "symbol": "MU",
+                "unrealized": null
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "AAPL",
+                "realized": "234.630072",
+                "symbol": "AAPL",
+                "unrealized": null
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "AMD",
+                "realized": "1278.75",
+                "symbol": "AMD",
+                "unrealized": null
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "GOOGL",
+                "realized": "0",
+                "symbol": "GOOGL",
+                "unrealized": null
+              },
+              {
+                "fees": "0",
+                "income": "0",
+                "instrument_id": "LRCX",
+                "realized": "911.549835",
+                "symbol": "LRCX",
+                "unrealized": null
+              }
+            ]
           }
         ],
         "open_lots": [
@@ -338290,10 +338785,10 @@
           },
           {
             "contract_multiplier": "1",
-            "cost_basis": "20181.120092",
+            "cost_basis": "14258.400065",
             "instrument_id": "NVDA",
             "opened_at": "2026-09-18T20:30:10.251997Z",
-            "shares": "92",
+            "shares": "65",
             "symbol": "NVDA"
           },
           {
@@ -338330,16 +338825,16 @@
           },
           {
             "contract_multiplier": "1",
-            "cost_basis": "11359",
+            "cost_basis": "6754",
             "instrument_id": "LRCX",
             "opened_at": "2026-09-23T20:30:35.016489Z",
-            "shares": "37",
+            "shares": "22",
             "symbol": "LRCX"
           }
         ],
         "version": 1
       },
-      "cash": "5306.925619",
+      "cash": "16930.41043",
       "daily": [
         {
           "cash": "100000",
@@ -338938,141 +339433,201 @@
           "pnl": "5596.975619",
           "segment_id": 1,
           "segment_return": "0.05596978"
+        },
+        {
+          "cash": "5306.925619",
+          "cumulative_return": "0.07049429",
+          "daily_return": "0.01375466",
+          "data_status": "OK",
+          "date": "2026-10-02",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "107049.425619",
+          "pnl": "7049.425619",
+          "segment_id": 1,
+          "segment_return": "0.07049429"
+        },
+        {
+          "cash": "5306.925619",
+          "cumulative_return": "0.07049429",
+          "daily_return": "0",
+          "data_status": "OK",
+          "date": "2026-10-03",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "107049.425619",
+          "pnl": "7049.425619",
+          "segment_id": 1,
+          "segment_return": "0.07049429"
+        },
+        {
+          "cash": "5306.925619",
+          "cumulative_return": "0.07049429",
+          "daily_return": "0",
+          "data_status": "OK",
+          "date": "2026-10-04",
+          "external_flow": "0",
+          "missing_symbols": [],
+          "nav": "107049.425619",
+          "pnl": "7049.425619",
+          "segment_id": 1,
+          "segment_return": "0.07049429"
+        },
+        {
+          "cash": "16930.41043",
+          "cumulative_return": null,
+          "daily_return": null,
+          "data_status": "INSUFFICIENT_MARKET_DATA",
+          "date": "2026-10-05",
+          "external_flow": "0",
+          "missing_symbols": [
+            "AAPL",
+            "AMD",
+            "GOOGL",
+            "LRCX",
+            "MSFT",
+            "MU",
+            "NVDA"
+          ],
+          "nav": null,
+          "pnl": null,
+          "segment_id": null,
+          "segment_return": null
         }
       ],
-      "data_status": "OK",
+      "data_status": "INSUFFICIENT_DATA",
       "holdings": [
         {
           "avg_cost": "317.100006",
           "contract_multiplier": "1",
           "cost_basis": "14269.50027",
-          "current_price": "330.32",
+          "current_price": null,
           "instrument_id": "AAPL",
           "instrument_name": null,
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-10-01T20:00:00Z",
-          "market_value": "14864.4",
-          "quote_status": "OK",
+          "market_price_as_of": null,
+          "market_value": null,
+          "quote_status": "MISSING",
           "quote_symbol": "AAPL",
           "shares": "45",
           "symbol": "AAPL",
-          "unrealized_pnl": "594.89973",
-          "unrealized_pnl_pct": "0.0416903"
+          "unrealized_pnl": null,
+          "unrealized_pnl_pct": null
         },
         {
           "avg_cost": "507.5",
           "contract_multiplier": "1",
           "cost_basis": "8627.5",
-          "current_price": "615.73",
+          "current_price": null,
           "instrument_id": "AMD",
           "instrument_name": null,
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-10-01T20:00:00Z",
-          "market_value": "10467.41",
-          "quote_status": "OK",
+          "market_price_as_of": null,
+          "market_value": null,
+          "quote_status": "MISSING",
           "quote_symbol": "AMD",
           "shares": "17",
           "symbol": "AMD",
-          "unrealized_pnl": "1839.91",
-          "unrealized_pnl_pct": "0.21326108"
+          "unrealized_pnl": null,
+          "unrealized_pnl_pct": null
         },
         {
           "avg_cost": "346.779999",
           "contract_multiplier": "1",
           "cost_basis": "19419.679944",
-          "current_price": "338.24",
+          "current_price": null,
           "instrument_id": "GOOGL",
           "instrument_name": null,
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-10-01T20:00:00Z",
-          "market_value": "18941.44",
-          "quote_status": "OK",
+          "market_price_as_of": null,
+          "market_value": null,
+          "quote_status": "MISSING",
           "quote_symbol": "GOOGL",
           "shares": "56",
           "symbol": "GOOGL",
-          "unrealized_pnl": "-478.239944",
-          "unrealized_pnl_pct": "-0.02462656"
+          "unrealized_pnl": null,
+          "unrealized_pnl_pct": null
         },
         {
           "avg_cost": "307",
           "contract_multiplier": "1",
-          "cost_basis": "11359",
-          "current_price": "340.1",
+          "cost_basis": "6754",
+          "current_price": null,
           "instrument_id": "LRCX",
           "instrument_name": null,
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-10-01T20:00:00Z",
-          "market_value": "12583.7",
-          "quote_status": "OK",
+          "market_price_as_of": null,
+          "market_value": null,
+          "quote_status": "MISSING",
           "quote_symbol": "LRCX",
-          "shares": "37",
+          "shares": "22",
           "symbol": "LRCX",
-          "unrealized_pnl": "1224.7",
-          "unrealized_pnl_pct": "0.10781759"
+          "unrealized_pnl": null,
+          "unrealized_pnl_pct": null
         },
         {
           "avg_cost": "497.059998",
           "contract_multiplier": "1",
           "cost_basis": "19385.339922",
-          "current_price": "512.8",
+          "current_price": null,
           "instrument_id": "MSFT",
           "instrument_name": null,
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-10-01T20:00:00Z",
-          "market_value": "19999.2",
-          "quote_status": "OK",
+          "market_price_as_of": null,
+          "market_value": null,
+          "quote_status": "MISSING",
           "quote_symbol": "MSFT",
           "shares": "39",
           "symbol": "MSFT",
-          "unrealized_pnl": "613.860078",
-          "unrealized_pnl_pct": "0.0316662"
+          "unrealized_pnl": null,
+          "unrealized_pnl_pct": null
         },
         {
           "avg_cost": "1077.689941",
           "contract_multiplier": "1",
           "cost_basis": "2155.379882",
-          "current_price": "1097.39",
+          "current_price": null,
           "instrument_id": "MU",
           "instrument_name": null,
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-10-01T20:00:00Z",
-          "market_value": "2194.78",
-          "quote_status": "OK",
+          "market_price_as_of": null,
+          "market_value": null,
+          "quote_status": "MISSING",
           "quote_symbol": "MU",
           "shares": "2",
           "symbol": "MU",
-          "unrealized_pnl": "39.400118",
-          "unrealized_pnl_pct": "0.0182799"
+          "unrealized_pnl": null,
+          "unrealized_pnl_pct": null
         },
         {
           "avg_cost": "219.360001",
           "contract_multiplier": "1",
-          "cost_basis": "20181.120092",
-          "current_price": "230.86",
+          "cost_basis": "14258.400065",
+          "current_price": null,
           "instrument_id": "NVDA",
           "instrument_name": null,
           "instrument_type": "EQUITY",
-          "market_price_as_of": "2026-10-01T20:00:00Z",
-          "market_value": "21239.12",
-          "quote_status": "OK",
+          "market_price_as_of": null,
+          "market_value": null,
+          "quote_status": "MISSING",
           "quote_symbol": "NVDA",
-          "shares": "92",
+          "shares": "65",
           "symbol": "NVDA",
-          "unrealized_pnl": "1057.999908",
-          "unrealized_pnl_pct": "0.05242523"
+          "unrealized_pnl": null,
+          "unrealized_pnl_pct": null
         }
       ],
       "initial_cash": "100000",
       "metrics": {
         "closed_episodes": 4,
-        "data_status": "OK",
+        "data_status": "INSUFFICIENT_DATA",
         "income_expense": "0",
-        "max_drawdown": "-0.02563194",
-        "performance_effective_date": "2026-08-17",
-        "performance_scope": "FULL_HISTORY",
-        "realized_pnl": "704.445729",
-        "sharpe_ratio": "3.02782901",
-        "total_return": "0.05596978",
+        "max_drawdown": null,
+        "performance_effective_date": null,
+        "performance_scope": null,
+        "realized_pnl": "1800.210513",
+        "sharpe_ratio": null,
+        "total_return": null,
         "win_rate": "0.5"
       },
       "realized_pnl_per_trade": [
@@ -339395,9 +339950,109 @@
           "price": "324.769989",
           "shares": "15",
           "symbol": "LRCX"
+        },
+        {
+          "contract_multiplier": "1",
+          "cumulative_pnl": "1155.210513",
+          "event_id": "paper-swing-v2-f5186f6e1b11441ca8f252cb6e27f3f0",
+          "fee": "0",
+          "instrument_id": "NVDA",
+          "instrument_name": null,
+          "instrument_type": "EQUITY",
+          "matches": [
+            {
+              "buy_event_id": "paper-swing-v2-59c7b9a239164070a79957b35ae350be",
+              "buy_fee": "0",
+              "buy_price": "219.360001",
+              "buy_settlement_adjustment": "0",
+              "contract_multiplier": "1",
+              "cost": "5922.720027",
+              "instrument_id": "NVDA",
+              "pnl": "450.764784",
+              "proceeds": "6373.484811",
+              "sell_fee": "0",
+              "sell_price": "236.054993",
+              "sell_settlement_adjustment": "0",
+              "shares": "27"
+            }
+          ],
+          "occurred_at": "2026-10-02T20:30:22.883690Z",
+          "pnl": "450.764784",
+          "pnl_pct": "0.07610773",
+          "price": "236.054993",
+          "shares": "27",
+          "symbol": "NVDA"
+        },
+        {
+          "contract_multiplier": "1",
+          "cumulative_pnl": "1800.210513",
+          "event_id": "paper-swing-v2-80d14f9873d4434cbe6be44e13763a3f",
+          "fee": "0",
+          "instrument_id": "LRCX",
+          "instrument_name": null,
+          "instrument_type": "EQUITY",
+          "matches": [
+            {
+              "buy_event_id": "paper-swing-v2-99805ddb19414ad3a36ae13925536073",
+              "buy_fee": "0",
+              "buy_price": "307",
+              "buy_settlement_adjustment": "0",
+              "contract_multiplier": "1",
+              "cost": "4605",
+              "instrument_id": "LRCX",
+              "pnl": "645",
+              "proceeds": "5250",
+              "sell_fee": "0",
+              "sell_price": "350",
+              "sell_settlement_adjustment": "0",
+              "shares": "15"
+            }
+          ],
+          "occurred_at": "2026-10-02T20:30:22.975812Z",
+          "pnl": "645",
+          "pnl_pct": "0.14006515",
+          "price": "350",
+          "shares": "15",
+          "symbol": "LRCX"
         }
       ],
       "recent_trades": [
+        {
+          "action": "SELL",
+          "created_at": "2026-10-02T20:30:22.975812Z",
+          "cumulative_pnl": "1800.210513",
+          "event_id": "paper-swing-v2-80d14f9873d4434cbe6be44e13763a3f",
+          "fee": "0",
+          "ledger_seq": 24,
+          "occurred_at": "2026-10-02T20:30:22.975812Z",
+          "pnl": "645",
+          "pnl_pct": "0.14006515",
+          "portfolio": "paper",
+          "price": "350",
+          "reason": "部份止賺#2 +10.8% (沽 30%)",
+          "shares": "15",
+          "source": "swing-trader",
+          "strategy": "swing-v2.1",
+          "symbol": "LRCX"
+        },
+        {
+          "action": "SELL",
+          "created_at": "2026-10-02T20:30:22.883690Z",
+          "cumulative_pnl": "1155.210513",
+          "event_id": "paper-swing-v2-f5186f6e1b11441ca8f252cb6e27f3f0",
+          "fee": "0",
+          "ledger_seq": 23,
+          "occurred_at": "2026-10-02T20:30:22.883690Z",
+          "pnl": "450.764784",
+          "pnl_pct": "0.07610773",
+          "portfolio": "paper",
+          "price": "236.054993",
+          "reason": "部份止賺#1 +5.2% (沽 30%)",
+          "shares": "27",
+          "source": "swing-trader",
+          "strategy": "swing-v2.1",
+          "symbol": "NVDA"
+        },
         {
           "action": "SELL",
           "created_at": "2026-09-30T20:30:48.348836Z",
@@ -339768,8 +340423,8 @@
       ]
     }
   },
-  "prices_as_of": "2026-10-01T20:00:00Z",
-  "revision": 40493,
+  "prices_as_of": "2026-10-02T20:00:00Z",
+  "revision": 40527,
   "schema_version": 4,
   "source_head": {
     "live": {
@@ -339778,17 +340433,18 @@
       "last_event_id": "live-manual-sell-AAPL-3-20260914-v2"
     },
     "market": {
-      "count": 39778,
-      "hash": "ef2dc957bdff858e011cb58f9bb7ca8b07ae34403d79aab2533a80f27ff20486",
-      "last_event_id": "market-benchmark-2026-10-01-spy"
+      "count": 39810,
+      "hash": "6b90b0dd541334946df2f0c9412ca730cdefac0803152dacdc003ccf0fa09bf4",
+      "last_event_id": "market-benchmark-2026-10-02-spy"
     },
     "paper": {
-      "count": 22,
-      "hash": "43d2a9321979ffc170ca25399c2e47633591c5d74cec6c19622dc7a1671a7562",
-      "last_event_id": "paper-swing-v2-a92bdb183e5442479ac494cd0591bc90"
+      "count": 24,
+      "hash": "e928961cc95e2056ffbb2943c78ffb2aa5d8bb5d0a20eedd356d1fdc376bf13f",
+      "last_event_id": "paper-swing-v2-80d14f9873d4434cbe6be44e13763a3f"
     }
   },
   "warnings": [
+    "paper performance contains incomplete market data",
     "live performance starts at 2025-09-17 after incomplete market data"
   ]
 }
