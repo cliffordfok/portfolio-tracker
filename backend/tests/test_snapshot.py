@@ -653,10 +653,30 @@ class SnapshotTests(unittest.TestCase):
             ["AAPL", "MSFT"],
         )
         metrics = snapshot["portfolios"]["paper"]["metrics"]
-        self.assertEqual(metrics["data_status"], "INSUFFICIENT_DATA")
-        self.assertIsNone(metrics["performance_effective_date"])
-        self.assertIsNone(metrics["performance_scope"])
-        self.assertIsNone(metrics["total_return"])
+        # 2026-10-07 fix: a tail gap (terminal session without quotes) must
+        # not blank out the performance of the last complete segment.
+        self.assertEqual(metrics["data_status"], "OK")
+        self.assertEqual(metrics["performance_effective_date"], "2024-01-02")
+        self.assertEqual(metrics["performance_scope"], "LATEST_COMPLETE_SEGMENT")
+        self.assertEqual(
+            metrics["total_return"],
+            by_day["2024-01-02"]["segment_return"],
+        )
+        self.assertTrue(
+            any(
+                "paper terminal session lacks complete market data"
+                in warning
+                for warning in snapshot["warnings"]
+            )
+        )
+        # Holdings quote off the last complete session (1/2), not the
+        # quote-less terminal session (1/3).
+        holdings_by_symbol = {
+            holding["symbol"]: holding
+            for holding in snapshot["portfolios"]["paper"]["holdings"]
+        }
+        self.assertEqual(holdings_by_symbol["AAPL"]["market_value"], "100")
+        self.assertIsNone(holdings_by_symbol["MSFT"]["market_value"])
 
     def test_if_needed_rebuild_skips_unchanged_source_heads(self) -> None:
         self.append(

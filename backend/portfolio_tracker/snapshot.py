@@ -818,14 +818,19 @@ def _metrics(
     performance_scope: str | None = None
     performance_effective_date: str | None = None
 
-    if daily and daily[-1]["data_status"] == "OK":
-        latest_segment_id = daily[-1].get("segment_id")
+    last_ok_index = None
+    for index in range(len(daily) - 1, -1, -1):
+        if daily[index]["data_status"] == "OK":
+            last_ok_index = index
+            break
+    if last_ok_index is not None:
+        latest_segment_id = daily[last_ok_index].get("segment_id")
         if (
             not isinstance(latest_segment_id, bool)
             and isinstance(latest_segment_id, int)
             and latest_segment_id > 0
         ):
-            for item in reversed(daily):
+            for item in reversed(daily[: last_ok_index + 1]):
                 if (
                     item["data_status"] != "OK"
                     or item.get("segment_id") != latest_segment_id
@@ -836,11 +841,11 @@ def _metrics(
         elif all(
             item["data_status"] == "OK"
             and item.get("cumulative_return") is not None
-            for item in daily
+            for item in daily[: last_ok_index + 1]
         ):
             # Compatibility for callers that provide the pre-segmentation
             # in-memory shape. Generated snapshots always contain segment_id.
-            performance_daily = list(daily)
+            performance_daily = list(daily[: last_ok_index + 1])
 
     if performance_daily:
         performance_effective_date = performance_daily[0]["date"]
@@ -1351,7 +1356,13 @@ def _build_snapshot_locked(
             portfolio_days,
             portfolio_sessions,
         )
-        last_day = portfolio_days[-1] if portfolio_days else None
+        last_day = None
+        for item in reversed(daily):
+            if item["data_status"] == "OK":
+                last_day = item["date"]
+                break
+        if last_day is None:
+            last_day = portfolio_days[-1] if portfolio_days else None
         holdings = _enrich_holdings(
             result,
             quotes,
@@ -1362,11 +1373,18 @@ def _build_snapshot_locked(
         if metrics["data_status"] != "OK":
             warnings.append(f"{name} performance contains incomplete market data")
         elif metrics["performance_scope"] == "LATEST_COMPLETE_SEGMENT":
-            warnings.append(
-                f"{name} performance starts at "
-                f"{metrics['performance_effective_date']} after incomplete "
-                "market data"
-            )
+            if daily and daily[-1]["data_status"] != "OK":
+                warnings.append(
+                    f"{name} terminal session lacks complete market data; "
+                    "performance covers the last complete segment "
+                    f"(from {metrics['performance_effective_date']})"
+                )
+            else:
+                warnings.append(
+                    f"{name} performance starts at "
+                    f"{metrics['performance_effective_date']} after incomplete "
+                    "market data"
+                )
         portfolios[name] = {
             "data_status": metrics["data_status"],
             "cash": result.cash,
