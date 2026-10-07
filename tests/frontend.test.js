@@ -230,6 +230,15 @@ test("daily P&L refuses missing valuations, broken return segments, and fallback
   assert.equal(previousTradingDayPnl(portfolio).amount, -10);
   assert.equal(previousTradingDayPnl({ ...portfolio, data_status: "FALLBACK" }), null);
   assert.equal(previousTradingDayPnl({ ...portfolio, daily: portfolio.daily.slice(0, 1) }), null);
+  // 2026-10-07 fix: a pending tail session must not blank the card; fall
+  // back to the last adjacent pair of complete sessions.
+  portfolio.daily.push({ date: "2026-04-09", data_status: "INSUFFICIENT_MARKET_DATA", nav: null, external_flow: "0", daily_return: null });
+  assert.deepEqual(previousTradingDayPnl(portfolio), {
+    amount: -10,
+    percent: -0.00952381,
+    previousDate: "2026-04-07",
+    date: "2026-04-08",
+  });
 });
 
 test("benchmark is normalized from its first close", () => {

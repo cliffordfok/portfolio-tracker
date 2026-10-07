@@ -496,9 +496,17 @@ export function previousTradingDayPnl(portfolio) {
   // The snapshot has calendar-day rows, including carried-forward weekend and holiday values.
   const sessions = (portfolio.daily || []).filter((row) => isNyseSession(row.date));
   if (sessions.length < 2) return null;
-  const previous = sessions.at(-2);
-  const latest = sessions.at(-1);
-  if (previous.data_status !== "OK" || latest.data_status !== "OK") return null;
+  // Walk back from the end to the last complete session — a pending tail
+  // session (e.g. INSUFFICIENT_MARKET_DATA) must not blank the card
+  // (2026-10-07 fix).
+  let latestIndex = sessions.length - 1;
+  while (latestIndex >= 1 && sessions[latestIndex].data_status !== "OK") {
+    latestIndex -= 1;
+  }
+  if (latestIndex < 1) return null;
+  const previous = sessions[latestIndex - 1];
+  const latest = sessions[latestIndex];
+  if (previous.data_status !== "OK") return null;
   const previousNav = numeric(previous.nav);
   const latestNav = numeric(latest.nav);
   const flow = numeric(latest.external_flow);
