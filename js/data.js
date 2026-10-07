@@ -468,9 +468,16 @@ export function currentPortfolioNav(portfolio) {
   }
   const daily = Array.isArray(portfolio.daily) ? portfolio.daily : [];
   if (!daily.length) return null;
-  const latest = daily.at(-1);
-  if (!["OK", "INSUFFICIENT_DATA"].includes(latest?.data_status)) return null;
-  return numeric(latest.nav);
+  // Walk back from the end to the most recent session with a usable NAV.
+  // A pending tail session (e.g. INSUFFICIENT_MARKET_DATA with nav null)
+  // must not blank the displayed portfolio value (2026-10-07 fix).
+  for (let index = daily.length - 1; index >= 0; index -= 1) {
+    const point = daily[index];
+    if (!["OK", "INSUFFICIENT_DATA"].includes(point?.data_status)) continue;
+    const nav = numeric(point.nav);
+    if (nav !== null) return nav;
+  }
+  return null;
 }
 
 export function currentPortfolioTotalPnl(portfolio) {

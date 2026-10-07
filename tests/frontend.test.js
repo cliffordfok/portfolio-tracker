@@ -144,8 +144,10 @@ test("current portfolio totals never substitute a stale or cash-only NAV", () =>
     ],
     metrics: { realized_pnl: "10" },
   };
-  assert.equal(currentPortfolioNav(incomplete), null);
-  assert.equal(currentPortfolioTotalPnl(incomplete), null);
+  // 2026-10-07 fix: a pending tail session must not blank the value;
+  // fall back to the most recent usable NAV (1/1 nav 1020).
+  assert.equal(currentPortfolioNav(incomplete), 1020);
+  assert.equal(currentPortfolioTotalPnl(incomplete), 20);
 
   const invalidReturnBase = {
     ...incomplete,

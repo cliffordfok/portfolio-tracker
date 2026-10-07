@@ -45,9 +45,13 @@ function metricCard(label, value, detail, className = "") {
 
 function snapshotPerformancePeriod(portfolio) {
   const metrics = portfolio?.metrics;
-  const latest = portfolio?.daily?.at(-1);
   const start = dateOnly(metrics?.performance_effective_date);
-  const end = latest?.data_status === "OK" ? dateOnly(latest.date) : "";
+  // Use the most recent session with a complete quote set — a pending tail
+  // session must not blank the displayed period (2026-10-07 fix).
+  const endPoint = [...(portfolio?.daily || [])]
+    .reverse()
+    .find((point) => point?.data_status === "OK");
+  const end = endPoint ? dateOnly(endPoint.date) : "";
   return start && end ? { start, end } : null;
 }
 
