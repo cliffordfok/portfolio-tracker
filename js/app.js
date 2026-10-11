@@ -7,8 +7,12 @@ import {
   currentPortfolioNav,
   currentPortfolioTotalPnl,
   previousTradingDayPnl,
+  clearSnapshotAccess,
+  isSnapshotAccessError,
   loadDashboardData,
   portfolioRangeEndDate,
+  readAccessToken,
+  saveAccessToken,
 } from "./data.js";
 import {
   dateOnly,
@@ -34,6 +38,30 @@ const state = {
 };
 
 const config = globalThis.window?.PORTFOLIO_CONFIG || {};
+
+export function showAccessPanel(message = "", { error = false } = {}) {
+  document.body.classList.add("needs-access");
+  document.querySelector("#access-panel").hidden = false;
+  document.querySelector("#sign-out-button").hidden = !readAccessToken(config);
+  const note = document.querySelector("#access-message");
+  note.textContent = message;
+  note.classList.toggle("is-error", error);
+  const status = document.querySelector("#data-status-label");
+  status.textContent = "需要讀取權杖";
+  status.closest(".market-status").classList.add("is-warning");
+  document.querySelector("#access-token").focus();
+}
+
+export function hideAccessPanel() {
+  const panel = document.querySelector("#access-panel");
+  if (!panel) return;
+  document.body.classList.remove("needs-access");
+  panel.hidden = true;
+  document.querySelector("#access-message").textContent = "";
+  document.querySelector("#sign-out-button").hidden = !(
+    config.requireReadToken && readAccessToken(config)
+  );
+}
 
 function metricCard(label, value, detail, className = "") {
   return `<article class="metric-card ${className}">
@@ -500,11 +528,11 @@ export function dataStatusView(data) {
     return {
       label: "快照已過期",
       sourceLabel:
-        loadStatus.source === "cache" ? "last-good cache" : "公開快照",
+        loadStatus.source === "cache" ? "last-good cache" : "私人快照",
       sourceAcquiredLabel:
         loadStatus.source === "cache" ? "原始下載" : "網絡取得",
       warning: true,
-      title: `來源：${loadStatus.source === "cache" ? "last-good cache" : "公開快照"}；新鮮度：已過期`,
+      title: `來源：${loadStatus.source === "cache" ? "last-good cache" : "私人快照"}；新鮮度：已過期`,
     };
   }
   if (loadStatus.source === "cache" || data?.source === "cache") {
@@ -517,11 +545,11 @@ export function dataStatusView(data) {
     };
   }
   return {
-    label: "公開快照已同步",
-    sourceLabel: "公開快照",
+    label: "私人快照已同步",
+    sourceLabel: "私人快照",
     sourceAcquiredLabel: "網絡取得",
     warning: false,
-    title: "來源：公開快照；新鮮度：有效",
+    title: "來源：私人快照；新鮮度：有效",
   };
 }
 
@@ -564,8 +592,16 @@ export async function refreshData({
   if (!quiet) overlay.classList.add("is-visible");
   try {
     state.data = await loader(loadConfig, { force });
+    hideAccessPanel();
     renderer();
   } catch (error) {
+    if (isSnapshotAccessError(error)) {
+      state.data = null;
+      showAccessPanel(error.code === "AUTH_REQUIRED" ? "" : error.message, {
+        error: error.code !== "AUTH_REQUIRED",
+      });
+      return;
+    }
     document.querySelector("#notice-region").innerHTML = `<div class="notice is-error">
       <span aria-hidden="true">×</span><p>${escapeHtml(error.message)}</p>
     </div>`;
@@ -591,6 +627,34 @@ function manualRefresh() {
     button.removeAttribute("aria-disabled");
   }, cooldown);
   refreshData({ force: true });
+}
+
+async function submitAccessToken(event) {
+  event.preventDefault();
+  const input = document.querySelector("#access-token");
+  const submit = event.target.querySelector("button[type=submit]");
+  try {
+    saveAccessToken(config, input.value);
+  } catch (error) {
+    showAccessPanel(error.message, { error: true });
+    return;
+  } finally {
+    // 權杖唔留喺 DOM，避免被其他擴充功能或 autofill 讀取。
+    input.value = "";
+  }
+  submit.disabled = true;
+  try {
+    await refreshData({ force: true });
+  } finally {
+    submit.disabled = false;
+  }
+}
+
+function signOut() {
+  clearSnapshotAccess(config);
+  state.data = null;
+  // 重新載入頁面，確保畫面上已渲染嘅真實數據全部清走。
+  window.location.reload();
 }
 
 function activateTab(tabName, { refresh = true } = {}) {
@@ -635,6 +699,8 @@ function bindEvents() {
   });
 
   document.querySelector("#refresh-button").addEventListener("click", manualRefresh);
+  document.querySelector("#access-form").addEventListener("submit", submitAccessToken);
+  document.querySelector("#sign-out-button").addEventListener("click", signOut);
   document.querySelectorAll(".export-button").forEach((button) => {
     button.addEventListener("click", () => {
       const table = document.querySelector(`#${button.dataset.table}`);

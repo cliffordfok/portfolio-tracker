@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
     <meta name="theme-color" content="#081018">
+    <meta name="referrer" content="no-referrer">
+    <meta name="robots" content="noindex, nofollow">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://api.github.com; base-uri 'none'; form-action 'none'; object-src 'none'"
+    >
     <meta
       name="description"
       content="模擬倉與真實美股交易分開記錄、統一比較的投資組合儀表板。"
@@ -33,7 +39,7 @@
         </div>
       </div>
       <div class="topbar-actions">
-        <div class="market-status" title="資料來自最近一次公開快照">
+        <div class="market-status" title="資料來自最近一次私人快照">
           <span class="status-dot" aria-hidden="true"></span>
           <span id="data-status-label">正在載入數據</span>
         </div>
@@ -41,8 +47,42 @@
           <span aria-hidden="true">↻</span>
           重新整理
         </button>
+        <button class="icon-button has-label" id="sign-out-button" type="button" hidden>
+          登出
+        </button>
       </div>
     </header>
+
+    <section class="access-panel" id="access-panel" aria-labelledby="access-title" hidden>
+      <div class="access-card">
+        <p class="eyebrow">PRIVATE ACCESS</p>
+        <h2 id="access-title">輸入讀取權杖</h2>
+        <p class="access-copy">
+          投資組合快照存放喺 private repo。請貼上只可讀取
+          <code>portfolio-tracker-data</code> 嘅 fine-grained token
+          （Contents: Read-only）。權杖只保存喺呢部裝置嘅瀏覽器，
+          並只會傳送到 api.github.com。
+        </p>
+        <p class="access-message" id="access-message" role="alert"></p>
+        <form id="access-form" autocomplete="off">
+          <label for="access-token">GitHub fine-grained token</label>
+          <div class="access-row">
+            <input
+              id="access-token"
+              name="access-token"
+              type="password"
+              inputmode="text"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              placeholder="github_pat_…"
+              required
+            >
+            <button class="icon-button has-label access-submit" type="submit">載入</button>
+          </div>
+        </form>
+      </div>
+    </section>
 
     <div class="shell">
       <nav class="tabs" aria-label="投資組合分頁" role="tablist">

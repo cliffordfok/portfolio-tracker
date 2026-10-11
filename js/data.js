@@ -41,6 +41,64 @@ function removeStored(key) {
   }
 }
 
+// ── Private snapshot access ────────────────────────────────────────────────
+// 正式快照喺 private repo。讀取權杖只存喺擁有者自己嘅瀏覽器，而且只會
+// 隨 HTTPS 請求送去 api.github.com，絕不送去其他 host（包括 fallback JSON）。
+const READ_TOKEN_SUFFIX = "github-read-token";
+const LAST_GOOD_SUFFIX = "last-good-snapshot";
+const TOKEN_HOST = "api.github.com";
+const TOKEN_PATTERN = /^(github_pat_|ghp_)[A-Za-z0-9_]{20,250}$/;
+
+export class SnapshotAccessError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = "SnapshotAccessError";
+    this.code = code;
+  }
+}
+
+export function isSnapshotAccessError(error) {
+  return error?.name === "SnapshotAccessError";
+}
+
+export function readAccessToken(config) {
+  try {
+    const value = storage()?.getItem(storageKey(config, READ_TOKEN_SUFFIX));
+    return value && TOKEN_PATTERN.test(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveAccessToken(config, token) {
+  const value = String(token ?? "").trim();
+  if (!TOKEN_PATTERN.test(value)) {
+    throw new SnapshotAccessError(
+      "AUTH_FORMAT",
+      "權杖格式不正確：請貼上以 github_pat_ 開頭嘅 fine-grained token。",
+    );
+  }
+  const store = storage();
+  if (!store) {
+    throw new SnapshotAccessError(
+      "AUTH_STORAGE",
+      "瀏覽器禁止本機儲存（例如私密瀏覽模式），無法保存權杖。",
+    );
+  }
+  // 換權杖即係換身分：舊快照唔可以沿用。
+  removeStored(storageKey(config, LAST_GOOD_SUFFIX));
+  store.setItem(storageKey(config, READ_TOKEN_SUFFIX), value);
+}
+
+export function clearSnapshotAccess(config) {
+  removeStored(storageKey(config, READ_TOKEN_SUFFIX));
+  removeStored(storageKey(config, LAST_GOOD_SUFFIX));
+}
+
+function tokenAllowedFor(url) {
+  return url.protocol === "https:" && url.hostname === TOKEN_HOST;
+}
+
 function configuredDuration(value, fallback) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
@@ -50,6 +108,7 @@ async function fetchJson(
   url,
   {
     githubRaw = false,
+    token = null,
     timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS,
     deadline = Number.POSITIVE_INFINITY,
   } = {},
@@ -59,20 +118,41 @@ async function fetchJson(
   const requestLimit = Math.max(1, Math.min(timeoutMs, remaining));
   const requestUrl = new URL(url, window.location.href);
   requestUrl.searchParams.set("_", Date.now().toString());
+  const headers = {
+    Accept: githubRaw
+      ? "application/vnd.github.raw+json"
+      : "application/json",
+  };
+  if (token) {
+    if (!tokenAllowedFor(requestUrl)) {
+      throw new Error(`拒絕將讀取權杖送往 ${requestUrl.host}`);
+    }
+    headers.Authorization = `Bearer ${token}`;
+    headers["X-GitHub-Api-Version"] = "2022-11-28";
+  }
   const controller = new AbortController();
   let timedOut = false;
   let timer = null;
   const request = (async () => {
     const response = await fetch(requestUrl, {
       cache: "no-store",
+      credentials: "omit",
+      referrerPolicy: "no-referrer",
       signal: controller.signal,
-      headers: {
-        Accept: githubRaw
-          ? "application/vnd.github.raw+json"
-          : "application/json",
-      },
+      headers,
     });
     if (!response.ok) {
+      const rateLimited =
+        response.status === 403 &&
+        response.headers?.get?.("x-ratelimit-remaining") === "0";
+      if (token && !rateLimited && [401, 403, 404].includes(response.status)) {
+        throw new SnapshotAccessError(
+          "AUTH_INVALID",
+          response.status === 401
+            ? "讀取權杖無效或已過期，請重新輸入。"
+            : `讀取權杖冇權限讀取快照（GitHub ${response.status}）；請檢查 token 是否已授權 private data repo 及 Contents: Read-only。`,
+        );
+      }
       throw new Error(`${response.status} ${response.statusText}`);
     }
     return response.json();
@@ -707,17 +787,23 @@ async function fetchSnapshot(config, deadline) {
     config.requestTimeoutMs,
     DEFAULT_REQUEST_TIMEOUT_MS,
   );
+  const token = readAccessToken(config);
+  if (config.requireReadToken && !token) {
+    throw new SnapshotAccessError("AUTH_REQUIRED", "請輸入讀取權杖以載入你的投資組合。");
+  }
   const errors = [];
   for (const url of urls.filter(Boolean)) {
     try {
       return validateSnapshot(
         await fetchJson(url, {
           githubRaw: url.includes("api.github.com/"),
+          token: config.requireReadToken ? token : null,
           timeoutMs,
           deadline,
         }),
       );
     } catch (error) {
+      if (isSnapshotAccessError(error)) throw error;
       errors.push(`${url}: ${error.message}`);
     }
   }
@@ -1019,6 +1105,10 @@ export async function loadDashboardData(
     DEFAULT_LOAD_TIMEOUT_MS,
   );
   const deadline = Date.now() + loadTimeoutMs;
+  if (config.requireReadToken && !readAccessToken(config)) {
+    // 冇權杖就唔顯示任何快取或示範資料，直接要求輸入權杖。
+    throw new SnapshotAccessError("AUTH_REQUIRED", "請輸入讀取權杖以載入你的投資組合。");
+  }
   const cached = cachedSnapshot(config);
   const ttl = Number(config.cacheTtlMs) || 2 * 60 * 1000;
   if (!force && cached && now - cached.cachedAt < ttl) {
@@ -1093,6 +1183,11 @@ export async function loadDashboardData(
       saveSnapshot(config, snapshot, now);
       return withLoadStatus(snapshot, config, now, { source: "snapshot" });
     } catch (snapshotError) {
+      if (isSnapshotAccessError(snapshotError)) {
+        // 權杖被拒：清走舊快照，唔可以用 cache 或示範資料掩蓋。
+        removeStored(storageKey(config, LAST_GOOD_SUFFIX));
+        throw snapshotError;
+      }
       if (cached) {
         return withLoadStatus(
           cached.snapshot,
