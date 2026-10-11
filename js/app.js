@@ -636,24 +636,25 @@ async function submitAccessToken(event) {
   try {
     saveAccessToken(config, input.value);
   } catch (error) {
+    input.value = "";
     showAccessPanel(error.message, { error: true });
     return;
-  } finally {
-    // 權杖唔留喺 DOM，避免被其他擴充功能或 autofill 讀取。
-    input.value = "";
   }
   submit.disabled = true;
   try {
     await refreshData({ force: true });
   } finally {
     submit.disabled = false;
+    // 載入完先清空：密碼管理器喺 submit 時已經讀到數值，可以提示儲存；
+    // 之後權杖唔再留喺 DOM。
+    input.value = "";
   }
 }
 
 function signOut() {
   clearSnapshotAccess(config);
   state.data = null;
-  // 重新載入頁面，確保畫面上已渲染嘅真實數據全部清走。
+  // 重新載入頁面：記憶體入面嘅權杖同畫面上嘅真實數據全部清走。
   window.location.reload();
 }
 

@@ -704,9 +704,12 @@ token 先讀到。
    systemd unit 或 log。
 4. **讀取 token（瀏覽器用）**：另一個 fine-grained PAT，Repository access 只揀
    `portfolio-tracker-data`，權限只開 **Contents: Read-only**，設定到期日。
-   首次開啟 dashboard 時貼上；token 只存喺該瀏覽器 `localStorage`，並只會
-   以 `Authorization` header 傳送到 `api.github.com`。「登出」會刪除 token
-   及快取快照。
+   每次開啟 dashboard 時輸入（建議由密碼管理器，例如 iCloud 鑰匙圈，儲存及
+   自動填入；表單已標記 `username`／`current-password`）。token 同真實快照
+   **只留喺分頁記憶體**，唔會寫入 `localStorage`，因為 `cliffordfok.github.io`
+   嘅 localStorage 由同一 origin 所有 project pages 共用。關閉／重新載入分頁
+   或撳「鎖定」即清除；開頁時亦會清走舊版本留低嘅 token 及快照。token 只會以
+   `Authorization` header 傳送到 `api.github.com`。
 5. `js/config.js` 只讀取 private repo 的 Contents API：
 
 ```js

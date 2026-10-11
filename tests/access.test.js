@@ -88,20 +88,39 @@ async function withBrowser(fetchImpl, body) {
   const previousFetch = globalThis.fetch;
   const storage = new MemoryStorage();
   const calls = [];
+  let responder = fetchImpl;
   globalThis.window = {
     location: { href: "https://cliffordfok.github.io/portfolio-tracker/" },
     localStorage: storage,
   };
   globalThis.fetch = async (url, init = {}) => {
     calls.push({ url: String(url), init });
-    return fetchImpl(new URL(String(url)), init);
+    return responder(new URL(String(url)), init);
   };
+  clearSnapshotAccess(config());
   try {
-    await body({ storage, calls });
+    await body({ storage, calls, respond: (next) => { responder = next; } });
   } finally {
+    clearSnapshotAccess(config());
     globalThis.window = previousWindow;
     globalThis.fetch = previousFetch;
   }
+}
+
+// Nothing secret may ever reach origin-wide localStorage.
+function assertNoSecretsPersisted(storage) {
+  for (const [key, value] of storage.values) {
+    assert.ok(!value.includes(TOKEN), `token persisted under ${key}`);
+    assert.ok(!key.endsWith("last-good-snapshot"), `snapshot persisted under ${key}`);
+    assert.ok(!key.endsWith("github-read-token"), `token key persisted: ${key}`);
+  }
+}
+
+async function primeMemoryCache(respond) {
+  respond(async () => ok(snapshot()));
+  saveAccessToken(config(), TOKEN);
+  const first = await loadDashboardData(config(), { now: 1 });
+  assert.equal(first.source, "snapshot");
 }
 
 const ok = (payload) => ({ ok: true, status: 200, json: async () => payload });
@@ -164,43 +183,71 @@ test("token is never attached to any other host, including fallback JSON", async
 
 for (const status of [401, 403, 404]) {
   test(`GitHub ${status} rejects access, clears cache and skips demo fallback`, async () => {
-    await withBrowser(async () => fail(status), async ({ storage, calls }) => {
-      saveAccessToken(config(), TOKEN);
-      storage.setItem(
-        `${PREFIX}:last-good-snapshot`,
-        JSON.stringify({ cachedAt: 1, snapshot: snapshot() }),
-      );
+    await withBrowser(async () => ok(snapshot()), async ({ storage, calls, respond }) => {
+      await primeMemoryCache(respond);
+      respond(async () => fail(status));
       await assert.rejects(
         loadDashboardData(config(), { force: true, now: 10_000_000 }),
         (error) => isSnapshotAccessError(error) && error.code === "AUTH_INVALID",
       );
-      assert.equal(storage.getItem(`${PREFIX}:last-good-snapshot`), null);
-      assert.ok(calls.every((call) => new URL(call.url).hostname === "api.github.com"));
+      // The rejected token's cached data must not be served afterwards either.
+      respond(async (url) => (url.hostname === "api.github.com" ? fail(503) : ok([])));
+      const after = await loadDashboardData(config(), { force: true, now: 10_000_001 });
+      assert.notEqual(after.source, "cache");
+      assert.ok(
+        calls.filter((call) => call.init.headers?.Authorization)
+          .every((call) => new URL(call.url).hostname === "api.github.com"),
+      );
+      assertNoSecretsPersisted(storage);
     });
   });
 }
 
-test("rate-limited 403 is a normal outage, not a rejected token", async () => {
-  await withBrowser(
-    async (url) => (url.hostname === "api.github.com"
-      ? fail(403, { "x-ratelimit-remaining": "0" })
-      : ok([])),
-    async ({ storage }) => {
-      saveAccessToken(config(), TOKEN);
-      const cached = snapshot();
-      storage.setItem(
-        `${PREFIX}:last-good-snapshot`,
-        JSON.stringify({ cachedAt: 1, snapshot: cached }),
-      );
+for (const [label, headers] of [
+  ["primary rate limit (x-ratelimit-remaining 0)", { "x-ratelimit-remaining": "0" }],
+  ["secondary rate limit (Retry-After)", { "retry-after": "60" }],
+]) {
+  test(`${label} keeps the token and serves the in-memory cache`, async () => {
+    await withBrowser(async () => ok(snapshot()), async ({ storage, respond }) => {
+      await primeMemoryCache(respond);
+      respond(async (url) => (url.hostname === "api.github.com" ? fail(403, headers) : ok([])));
       const result = await loadDashboardData(config(), { force: true, now: 10_000_000 });
       assert.equal(result.source, "cache");
       assert.equal(readAccessToken(config()), TOKEN);
-    },
-  );
+      assertNoSecretsPersisted(storage);
+    });
+  });
+}
+
+test("token and real snapshot never touch localStorage during a full session", async () => {
+  await withBrowser(async () => ok(snapshot()), async ({ storage, respond }) => {
+    await primeMemoryCache(respond);
+    await loadDashboardData(config(), { now: 2 });
+    await loadDashboardData(config(), { force: true, now: 3 });
+    assertNoSecretsPersisted(storage);
+    assert.equal(storage.getItem(`${PREFIX}:fetch-lease`), null, "private mode needs no lease");
+  });
 });
 
-test("malformed tokens are refused and sign-out clears token and cache", async () => {
+test("legacy persisted token and snapshot are purged on load", async () => {
   await withBrowser(async () => ok(snapshot()), async ({ storage }) => {
+    storage.setItem(`${PREFIX}:github-read-token`, TOKEN);
+    storage.setItem(
+      `${PREFIX}:last-good-snapshot`,
+      JSON.stringify({ cachedAt: 1, snapshot: snapshot() }),
+    );
+    await assert.rejects(
+      loadDashboardData(config(), { now: 2 }),
+      (error) => error.code === "AUTH_REQUIRED",
+      "a token left in localStorage must not grant access",
+    );
+    assert.equal(storage.getItem(`${PREFIX}:github-read-token`), null);
+    assert.equal(storage.getItem(`${PREFIX}:last-good-snapshot`), null);
+  });
+});
+
+test("malformed tokens are refused and lock clears token and cache", async () => {
+  await withBrowser(async () => ok(snapshot()), async ({ calls, respond }) => {
     for (const bad of [
       "",
       "hello",
@@ -213,31 +260,14 @@ test("malformed tokens are refused and sign-out clears token and cache", async (
         (error) => error.code === "AUTH_FORMAT",
       );
     }
-    saveAccessToken(config(), TOKEN);
-    await loadDashboardData(config(), { now: 10 });
-    assert.notEqual(storage.getItem(`${PREFIX}:last-good-snapshot`), null);
+    await primeMemoryCache(respond);
     clearSnapshotAccess(config());
     assert.equal(readAccessToken(config()), null);
-    assert.equal(storage.getItem(`${PREFIX}:last-good-snapshot`), null);
+    const before = calls.length;
+    await assert.rejects(
+      loadDashboardData(config(), { now: 5 }),
+      (error) => error.code === "AUTH_REQUIRED",
+    );
+    assert.equal(calls.length, before, "no cached data or request after locking");
   });
 });
-
-test("secondary rate limit (403 + Retry-After) keeps the token and serves cache", async () => {
-  await withBrowser(
-    async (url) => (url.hostname === "api.github.com"
-      ? fail(403, { "retry-after": "60" })
-      : ok([])),
-    async ({ storage }) => {
-      saveAccessToken(config(), TOKEN);
-      storage.setItem(
-        `${PREFIX}:last-good-snapshot`,
-        JSON.stringify({ cachedAt: 1, snapshot: snapshot() }),
-      );
-      const result = await loadDashboardData(config(), { force: true, now: 10_000_000 });
-      assert.equal(result.source, "cache");
-      assert.equal(readAccessToken(config()), TOKEN);
-      assert.notEqual(storage.getItem(`${PREFIX}:last-good-snapshot`), null);
-    },
-  );
-});
-

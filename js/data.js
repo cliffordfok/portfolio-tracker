@@ -42,13 +42,26 @@ function removeStored(key) {
 }
 
 // ── Private snapshot access ────────────────────────────────────────────────
-// 正式快照喺 private repo。讀取權杖只存喺擁有者自己嘅瀏覽器，而且只會
-// 隨 HTTPS 請求送去 api.github.com，絕不送去其他 host（包括 fallback JSON）。
+// 正式快照喺 private repo。讀取權杖同真實快照只會留喺呢個分頁嘅 JS 記憶體：
+// localStorage 係成個 cliffordfok.github.io origin 共用（包括其他 project
+// pages），所以絕不寫入。關閉或重新載入分頁即清除；建議由密碼管理器記住權杖。
+// 權杖只會隨 HTTPS 請求送去 api.github.com，絕不送去其他 host。
 const READ_TOKEN_SUFFIX = "github-read-token";
 const LAST_GOOD_SUFFIX = "last-good-snapshot";
 const TOKEN_HOST = "api.github.com";
 // 只接受 fine-grained PAT：classic PAT 冇法限制喺單一 repo，外洩代價大得多。
 const TOKEN_PATTERN = /^github_pat_[A-Za-z0-9_]{20,250}$/;
+const memory = new Map();
+
+function isPrivate(config) {
+  return Boolean(config?.requireReadToken);
+}
+
+// 清走舊版本（或 public 時期）留喺 origin-wide localStorage 嘅權杖同真實快照。
+function purgePersistedSecrets(config) {
+  removeStored(storageKey(config, READ_TOKEN_SUFFIX));
+  removeStored(storageKey(config, LAST_GOOD_SUFFIX));
+}
 
 export class SnapshotAccessError extends Error {
   constructor(code, message) {
@@ -63,12 +76,8 @@ export function isSnapshotAccessError(error) {
 }
 
 export function readAccessToken(config) {
-  try {
-    const value = storage()?.getItem(storageKey(config, READ_TOKEN_SUFFIX));
-    return value && TOKEN_PATTERN.test(value) ? value : null;
-  } catch {
-    return null;
-  }
+  const value = memory.get(storageKey(config, READ_TOKEN_SUFFIX));
+  return value && TOKEN_PATTERN.test(value) ? value : null;
 }
 
 export function saveAccessToken(config, token) {
@@ -79,21 +88,16 @@ export function saveAccessToken(config, token) {
       "權杖格式不正確：請貼上以 github_pat_ 開頭嘅 fine-grained token。",
     );
   }
-  const store = storage();
-  if (!store) {
-    throw new SnapshotAccessError(
-      "AUTH_STORAGE",
-      "瀏覽器禁止本機儲存（例如私密瀏覽模式），無法保存權杖。",
-    );
-  }
   // 換權杖即係換身分：舊快照唔可以沿用。
-  removeStored(storageKey(config, LAST_GOOD_SUFFIX));
-  store.setItem(storageKey(config, READ_TOKEN_SUFFIX), value);
+  memory.delete(storageKey(config, LAST_GOOD_SUFFIX));
+  purgePersistedSecrets(config);
+  memory.set(storageKey(config, READ_TOKEN_SUFFIX), value);
 }
 
 export function clearSnapshotAccess(config) {
-  removeStored(storageKey(config, READ_TOKEN_SUFFIX));
-  removeStored(storageKey(config, LAST_GOOD_SUFFIX));
+  memory.delete(storageKey(config, READ_TOKEN_SUFFIX));
+  memory.delete(storageKey(config, LAST_GOOD_SUFFIX));
+  purgePersistedSecrets(config);
 }
 
 function tokenAllowedFor(url) {
@@ -649,7 +653,8 @@ export function portfolioRangeEndDate(portfolio) {
 }
 
 function cachedSnapshot(config) {
-  const cached = readStoredJson(storageKey(config, "last-good-snapshot"));
+  const key = storageKey(config, LAST_GOOD_SUFFIX);
+  const cached = isPrivate(config) ? memory.get(key) : readStoredJson(key);
   if (!cached || typeof cached.cachedAt !== "number") return null;
   try {
     return {
@@ -662,10 +667,13 @@ function cachedSnapshot(config) {
 }
 
 function saveSnapshot(config, snapshot, now) {
-  writeStoredJson(storageKey(config, "last-good-snapshot"), {
-    cachedAt: now,
-    snapshot,
-  });
+  const key = storageKey(config, LAST_GOOD_SUFFIX);
+  const entry = { cachedAt: now, snapshot };
+  if (isPrivate(config)) {
+    memory.set(key, entry);
+  } else {
+    writeStoredJson(key, entry);
+  }
 }
 
 function consumeFetchBudget(config, now) {
@@ -694,7 +702,7 @@ function consumeFetchBudget(config, now) {
 
 function acquireFetchLease(config) {
   const local = storage();
-  if (!local) return { key: null, token: null };
+  if (!local || isPrivate(config)) return { key: null, token: null };
   const key = storageKey(config, "fetch-lease");
   const now = Date.now();
   const duration = Math.max(
@@ -1108,6 +1116,7 @@ export async function loadDashboardData(
     DEFAULT_LOAD_TIMEOUT_MS,
   );
   const deadline = Date.now() + loadTimeoutMs;
+  if (isPrivate(config)) purgePersistedSecrets(config);
   if (config.requireReadToken && !readAccessToken(config)) {
     // 冇權杖就唔顯示任何快取或示範資料，直接要求輸入權杖。
     throw new SnapshotAccessError("AUTH_REQUIRED", "請輸入讀取權杖以載入你的投資組合。");
@@ -1188,7 +1197,7 @@ export async function loadDashboardData(
     } catch (snapshotError) {
       if (isSnapshotAccessError(snapshotError)) {
         // 權杖被拒：清走舊快照，唔可以用 cache 或示範資料掩蓋。
-        removeStored(storageKey(config, LAST_GOOD_SUFFIX));
+        memory.delete(storageKey(config, LAST_GOOD_SUFFIX));
         throw snapshotError;
       }
       if (cached) {

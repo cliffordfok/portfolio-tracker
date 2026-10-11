@@ -720,7 +720,9 @@ test("static page contains all required tabs, tables, and D3 v7", async () => {
   );
   for (const required of [
     'id="access-panel"',
-    'id="access-form" autocomplete="off"',
+    'id="access-form"',
+    'autocomplete="username"',
+    'autocomplete="current-password"',
     'type="password"',
     'id="sign-out-button"',
     'http-equiv="Content-Security-Policy"',
