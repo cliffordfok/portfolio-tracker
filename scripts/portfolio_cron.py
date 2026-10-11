@@ -17,7 +17,8 @@ from typing import Any, Callable, Mapping, Sequence
 DEFAULT_PROJECT_ROOT = Path("/data/portfolio-tracker")
 DEFAULT_RUNTIME_ROOT = Path("/data/portfolio")
 DEFAULT_TOKEN_FILE = Path("/data/portfolio/secrets/github-token")
-DEFAULT_REPOSITORY = "cliffordfok/portfolio-tracker"
+# 真實快照只推送到 private repo；public code repo 只放程式及示範資料。
+DEFAULT_REPOSITORY = "cliffordfok/portfolio-tracker-data"
 DEFAULT_DATA_BRANCH = "portfolio-data"
 SECRET_ENVIRONMENT_NAMES = {
     "GITHUB_TOKEN",

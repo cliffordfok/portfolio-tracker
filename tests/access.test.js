@@ -201,7 +201,13 @@ test("rate-limited 403 is a normal outage, not a rejected token", async () => {
 
 test("malformed tokens are refused and sign-out clears token and cache", async () => {
   await withBrowser(async () => ok(snapshot()), async ({ storage }) => {
-    for (const bad of ["", "hello", "Bearer github_pat_x", `${TOKEN}\nX-Evil: 1`]) {
+    for (const bad of [
+      "",
+      "hello",
+      "Bearer github_pat_x",
+      `${TOKEN}\nX-Evil: 1`,
+      `ghp_${"A1b2C3d4".repeat(5)}`,
+    ]) {
       assert.throws(
         () => saveAccessToken(config(), bad),
         (error) => error.code === "AUTH_FORMAT",
@@ -215,3 +221,23 @@ test("malformed tokens are refused and sign-out clears token and cache", async (
     assert.equal(storage.getItem(`${PREFIX}:last-good-snapshot`), null);
   });
 });
+
+test("secondary rate limit (403 + Retry-After) keeps the token and serves cache", async () => {
+  await withBrowser(
+    async (url) => (url.hostname === "api.github.com"
+      ? fail(403, { "retry-after": "60" })
+      : ok([])),
+    async ({ storage }) => {
+      saveAccessToken(config(), TOKEN);
+      storage.setItem(
+        `${PREFIX}:last-good-snapshot`,
+        JSON.stringify({ cachedAt: 1, snapshot: snapshot() }),
+      );
+      const result = await loadDashboardData(config(), { force: true, now: 10_000_000 });
+      assert.equal(result.source, "cache");
+      assert.equal(readAccessToken(config()), TOKEN);
+      assert.notEqual(storage.getItem(`${PREFIX}:last-good-snapshot`), null);
+    },
+  );
+});
+

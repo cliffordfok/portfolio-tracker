@@ -68,6 +68,16 @@ class FakeClient:
         return PutResult(status, headers=headers)
 
 
+class TargetedFakeClient(FakeClient):
+    """Fake client exposing a remote target like GitHubContentsClient."""
+
+    def __init__(self, repository: str = "owner/private-data") -> None:
+        super().__init__()
+        self.repository = repository
+        self.branch = "portfolio-data"
+        self.path = "portfolio-snapshot.json"
+
+
 class PublisherTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
@@ -695,3 +705,117 @@ class PublisherTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RetargetTests(unittest.TestCase):
+    """Moving the snapshot to another repository must be explicit and safe."""
+
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp.name)
+        self.path = self.root / "snapshots" / "portfolio-snapshot.json"
+        self.path.parent.mkdir(parents=True)
+        self.revision = 0
+        self.local = self.write_new_snapshot()
+        self.state = self.root / "state" / "published-state.json"
+
+    def tearDown(self) -> None:
+        self.temp.cleanup()
+
+    def publisher(self, client, *, bootstrap: bool = False) -> SnapshotPublisher:
+        return SnapshotPublisher(
+            root=self.root, client=client, allow_bootstrap=bootstrap, sleep=lambda _: None
+        )
+
+    def publish_to(self, repository: str) -> TargetedFakeClient:
+        client = TargetedFakeClient(repository)
+        atomic_write_json(self.root / "state" / "publish.pending", {"reason": "test"})
+        self.assertEqual(self.publisher(client).publish()["status"], "published")
+        return client
+
+    def test_state_records_target(self) -> None:
+        self.publish_to("owner/public-repo")
+        state = json.loads(self.state.read_text())
+        self.assertEqual(
+            state["target"], "owner/public-repo@portfolio-data:portfolio-snapshot.json"
+        )
+
+    def test_new_target_without_bootstrap_fails_closed_with_clear_message(self) -> None:
+        self.publish_to("owner/public-repo")
+        atomic_write_json(self.root / "state" / "publish.pending", {"reason": "test"})
+        private = TargetedFakeClient("owner/private-data")
+        with self.assertRaisesRegex(PublicationError, "bootstrap-publish"):
+            self.publisher(private).publish()
+        self.assertEqual(private.put_calls, [])
+
+    def test_bootstrap_moves_to_new_target_even_when_snapshot_is_unchanged(self) -> None:
+        self.publish_to("owner/public-repo")
+        private = TargetedFakeClient("owner/private-data")
+        # No pending marker and unchanged snapshot: the idle shortcut must not hide the move.
+        result = self.publisher(private, bootstrap=True).publish()
+        self.assertEqual(result["status"], "published")
+        self.assertEqual(private.put_calls, [self.local])
+        state = json.loads(self.state.read_text())
+        self.assertEqual(state["target"], "owner/private-data@portfolio-data:portfolio-snapshot.json")
+        retired = list((self.root / "state").glob("published-state.json.retired-*"))
+        self.assertEqual(len(retired), 1)
+        self.assertIn("owner/public-repo", retired[0].read_text())
+
+    def test_legacy_state_without_target_keeps_publishing_to_same_remote(self) -> None:
+        client = self.publish_to("owner/public-repo")
+        legacy = json.loads(self.state.read_text())
+        legacy.pop("target")
+        atomic_write_json(self.state, legacy)
+        self.write_new_snapshot()
+        atomic_write_json(self.root / "state" / "publish.pending", {"reason": "test"})
+        self.assertEqual(self.publisher(client).publish()["status"], "published")
+        self.assertIn("target", json.loads(self.state.read_text()))
+
+    def test_legacy_state_mismatch_without_bootstrap_still_fails_closed(self) -> None:
+        self.publish_to("owner/public-repo")
+        legacy = json.loads(self.state.read_text())
+        legacy.pop("target")
+        atomic_write_json(self.state, legacy)
+        atomic_write_json(self.root / "state" / "publish.pending", {"reason": "test"})
+        private = TargetedFakeClient("owner/private-data")
+        with self.assertRaisesRegex(PublicationError, "unknown manual edit"):
+            self.publisher(private).publish()
+        self.assertEqual(private.put_calls, [])
+
+    def test_legacy_state_mismatch_with_bootstrap_migrates(self) -> None:
+        self.publish_to("owner/public-repo")
+        legacy = json.loads(self.state.read_text())
+        legacy.pop("target")
+        atomic_write_json(self.state, legacy)
+        private = TargetedFakeClient("owner/private-data")
+        self.assertEqual(self.publisher(private, bootstrap=True).publish()["status"], "published")
+        self.assertEqual(private.put_calls, [self.local])
+
+    def test_legacy_crash_recovery_on_same_remote_still_works(self) -> None:
+        client = self.publish_to("owner/public-repo")
+        legacy = json.loads(self.state.read_text())
+        legacy.pop("target")
+        atomic_write_json(self.state, legacy)
+        # Simulate: new snapshot PUT succeeded remotely, process crashed before adopting.
+        new_bytes = self.write_new_snapshot()
+        atomic_write_json(
+            self.root / "state" / "publication-attempt.json",
+            {
+                "intended_hash": hashlib.sha256(new_bytes).hexdigest(),
+                "expected_remote_blob_sha": client.remote.blob_sha,
+                "revision": self.revision,
+            },
+        )
+        sha = hashlib.sha1(new_bytes).hexdigest()
+        client.remote = RemoteContent(sha, new_bytes, f"commit-{sha}")
+        self.assertEqual(self.publisher(client).publish()["status"], "recovered")
+
+    def write_new_snapshot(self) -> bytes:
+        self.revision += 1
+        payload = build_snapshot(self.root, write=False)
+        payload["revision"] = self.revision
+        payload["source_head"]["paper"]["count"] = self.revision
+        payload["source_head"]["paper"]["last_event_id"] = f"paper-retarget-{self.revision}"
+        content = json.dumps(payload, sort_keys=True).encode("utf-8")
+        self.path.write_bytes(content)
+        return content

@@ -47,7 +47,8 @@ function removeStored(key) {
 const READ_TOKEN_SUFFIX = "github-read-token";
 const LAST_GOOD_SUFFIX = "last-good-snapshot";
 const TOKEN_HOST = "api.github.com";
-const TOKEN_PATTERN = /^(github_pat_|ghp_)[A-Za-z0-9_]{20,250}$/;
+// 只接受 fine-grained PAT：classic PAT 冇法限制喺單一 repo，外洩代價大得多。
+const TOKEN_PATTERN = /^github_pat_[A-Za-z0-9_]{20,250}$/;
 
 export class SnapshotAccessError extends Error {
   constructor(code, message) {
@@ -142,9 +143,11 @@ async function fetchJson(
       headers,
     });
     if (!response.ok) {
+      // Primary limit: x-ratelimit-remaining 0. Secondary limit: Retry-After.
       const rateLimited =
-        response.status === 403 &&
-        response.headers?.get?.("x-ratelimit-remaining") === "0";
+        [403, 429].includes(response.status) &&
+        (response.headers?.get?.("x-ratelimit-remaining") === "0" ||
+          response.headers?.get?.("retry-after") != null);
       if (token && !rateLimited && [401, 403, 404].includes(response.status)) {
         throw new SnapshotAccessError(
           "AUTH_INVALID",
