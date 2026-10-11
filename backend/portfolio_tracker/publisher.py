@@ -302,6 +302,33 @@ class SnapshotPublisher:
         self.pending_path = self.state_dir / "publish.pending"
         self.lock_path = self.root / "locks" / "portfolio-publish.lock"
 
+    def _target(self) -> str | None:
+        """Identity of the remote file this publisher writes to.
+
+        Publication state records it so that switching repository, branch or
+        path is detected instead of being mistaken for a manual remote edit.
+        Clients that do not expose a target (test doubles) opt out.
+        """
+        parts = [getattr(self.client, name, None) for name in ("repository", "branch", "path")]
+        if not all(isinstance(part, str) and part for part in parts):
+            return None
+        repository, branch, path = parts
+        return f"{repository}@{branch}:{path}"
+
+    def _state_targets_elsewhere(self, state: Mapping[str, Any] | None) -> bool:
+        """True when recorded state belongs to a different (or unrecorded) target."""
+        target = self._target()
+        if state is None or target is None:
+            return False
+        return state.get("target") != target
+
+    def _retire_state_for_retarget(self) -> None:
+        """Archive publication state from a previous target (explicit bootstrap only)."""
+        stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
+        for path in (self.published_state_path, self.attempt_path):
+            if path.exists():
+                path.replace(path.with_name(f"{path.name}.retired-{stamp}"))
+
     def _snapshot(self) -> tuple[bytes, dict[str, Any], str]:
         try:
             content = self.snapshot_path.read_bytes()
@@ -324,6 +351,7 @@ class SnapshotPublisher:
             {
                 "intended_hash": intended_hash,
                 "expected_remote_blob_sha": expected_sha,
+                "target": self._target(),
                 "revision": revision,
                 "created_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
             },
@@ -341,6 +369,7 @@ class SnapshotPublisher:
             {
                 "local_snapshot_hash": local_hash,
                 "remote_blob_sha": remote.blob_sha,
+                "target": self._target(),
                 "remote_commit_sha": remote.commit_sha,
                 "published_revision": revision,
                 "published_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
@@ -388,6 +417,33 @@ class SnapshotPublisher:
                     remote = self.client.get_content()
                     remote_sha = remote.blob_sha if remote else None
                     remote_hash = remote.content_hash if remote else None
+
+                    recorded = [
+                        state.get("target")
+                        for state in (published, intent)
+                        if state is not None and state.get("target")
+                    ]
+                    moved = any(target != self._target() for target in recorded)
+                    legacy_mismatch = (
+                        published is not None
+                        and not published.get("target")
+                        and remote_sha != published.get("remote_blob_sha")
+                    )
+                    if self._target() is not None and moved and not self.allow_bootstrap:
+                        raise PublicationError(
+                            "publication state belongs to "
+                            f"{recorded[0]}, not {self._target()}; "
+                            "run bootstrap-publish once to move to the new target"
+                        )
+                    # Legacy state (no recorded target) that disagrees with the
+                    # remote is only retired on an explicit bootstrap; otherwise
+                    # crash recovery and the manual-edit guard below apply as before.
+                    if self._target() is not None and self.allow_bootstrap and (
+                        moved or legacy_mismatch
+                    ):
+                        self._retire_state_for_retarget()
+                        published = None
+                        intent = None
 
                     if intent:
                         intended_hash = intent.get("intended_hash")
@@ -527,7 +583,9 @@ class SnapshotPublisher:
     def publish(self) -> dict[str, Any]:
         if not self.pending_path.exists() and not self.attempt_path.exists():
             published = _read_json(self.published_state_path)
-            if published is not None:
+            if published is not None and not (
+                self.allow_bootstrap and self._state_targets_elsewhere(published)
+            ):
                 _, _, local_hash = self._snapshot()
                 if published.get("local_snapshot_hash") == local_hash:
                     return {"status": "idle", "attempts": 0}

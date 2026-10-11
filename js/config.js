@@ -1,8 +1,10 @@
 window.PORTFOLIO_CONFIG = Object.freeze({
+  // 正式快照存放喺 private repo，只可以用擁有者自己嘅唯讀 fine-grained PAT 讀取。
+  // GitHub raw 網域唔支援以 header 驗證 private 檔案，所以只用 Contents API。
   snapshotUrls: Object.freeze([
-    "https://raw.githubusercontent.com/cliffordfok/portfolio-tracker/portfolio-data/portfolio-snapshot.json",
-    "https://api.github.com/repos/cliffordfok/portfolio-tracker/contents/portfolio-snapshot.json?ref=portfolio-data",
+    "https://api.github.com/repos/cliffordfok/portfolio-tracker-data/contents/portfolio-snapshot.json?ref=portfolio-data",
   ]),
+  requireReadToken: true,
   fallbackUrls: Object.freeze({
     paper: "./data/paper.json",
     live: "./data/live.json",

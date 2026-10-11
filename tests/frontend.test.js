@@ -575,7 +575,7 @@ test("structured source and freshness status drive fresh, stale, and demo labels
     dataStatusView({
       load_status: { source: "snapshot", freshness: "fresh" },
     }).label,
-    "公開快照已同步",
+    "私人快照已同步",
   );
   const staleNetwork = dataStatusView({
     load_status: { source: "snapshot", freshness: "stale" },
@@ -584,7 +584,7 @@ test("structured source and freshness status drive fresh, stale, and demo labels
     load_status: { source: "cache", freshness: "stale" },
   });
   assert.equal(staleNetwork.label, "快照已過期");
-  assert.equal(staleNetwork.sourceLabel, "公開快照");
+  assert.equal(staleNetwork.sourceLabel, "私人快照");
   assert.equal(staleCache.label, "快照已過期");
   assert.equal(staleCache.sourceLabel, "last-good cache");
   assert.equal(staleCache.warning, true);
@@ -709,16 +709,29 @@ test("static page contains all required tabs, tables, and D3 v7", async () => {
   );
   assert.match(app, /最新完整估值區間/);
   assert.match(html, /最新共同完整估值區間/);
-  const rawDataUrl =
-    "https://raw.githubusercontent.com/cliffordfok/portfolio-tracker/portfolio-data/portfolio-snapshot.json";
-  const contentsApiUrl =
-    "https://api.github.com/repos/cliffordfok/portfolio-tracker/contents/portfolio-snapshot.json?ref=portfolio-data";
-  assert.ok(config.includes(rawDataUrl));
-  assert.ok(config.includes(contentsApiUrl));
-  assert.ok(
-    config.indexOf(rawDataUrl) < config.indexOf(contentsApiUrl),
-    "public raw snapshot must be tried before the rate-limited Contents API",
+  const privateSnapshotUrl =
+    "https://api.github.com/repos/cliffordfok/portfolio-tracker-data/contents/portfolio-snapshot.json?ref=portfolio-data";
+  assert.ok(config.includes(privateSnapshotUrl));
+  assert.match(config, /requireReadToken: true/);
+  assert.doesNotMatch(
+    config,
+    /raw\.githubusercontent\.com|repos\/cliffordfok\/portfolio-tracker\/contents/,
+    "real snapshots must never be read from the public repository",
   );
+  for (const required of [
+    'id="access-panel"',
+    'id="access-form"',
+    'autocomplete="username"',
+    'autocomplete="current-password"',
+    'type="password"',
+    'id="sign-out-button"',
+    'http-equiv="Content-Security-Policy"',
+    "connect-src 'self' https://api.github.com",
+    "form-action 'none'",
+    '<meta name="referrer" content="no-referrer">',
+  ]) {
+    assert.ok(html.includes(required), `missing ${required}`);
+  }
   assert.doesNotMatch(config, /contents\/data\/portfolio-snapshot\.json/);
 });
 

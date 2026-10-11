@@ -24,7 +24,7 @@ jobs:
             node --check "$file"
           done
       - name: Run frontend tests
-        run: node --test tests/frontend.test.js tests/analytics.test.js
+        run: node --test tests/frontend.test.js tests/analytics.test.js tests/access.test.js
 
   backend:
     runs-on: ubuntu-latest

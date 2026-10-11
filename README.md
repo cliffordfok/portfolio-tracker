@@ -89,11 +89,11 @@ Quote cron ───────────> LedgerStore ─> market.jsonl┤
                                                    │
 Hermes live trade ─────> LedgerStore ─> live.jsonl ┘
 
-derived snapshot ─> GitHub Contents API ─> portfolio-data branch
-                                      └─> GitHub Pages dashboard fetch
+derived snapshot ─> GitHub Contents API ─> private portfolio-tracker-data repo
+                                           └─> GitHub Pages dashboard（用擁有者唯讀 token 讀取）
 ```
 
-Master JSONL、locks、publication state 和 PAT 全部只存在 VPS。GitHub repository 只包含程式、示範 JSON 及公開衍生快照。每次 durable append 都先建立 `rebuild.pending`；只有 snapshot atomic replace 成功後才會清除，因此 rebuild 失敗不會遺失更新。
+Master JSONL、locks、publication state 和 PAT 全部只存在 VPS。Public repository 只包含程式及示範 JSON；真實衍生快照只推送到 private repo `portfolio-tracker-data`。每次 durable append 都先建立 `rebuild.pending`；只有 snapshot atomic replace 成功後才會清除，因此 rebuild 失敗不會遺失更新。
 
 ## Repository 結構
 
@@ -683,31 +683,70 @@ python3 integrations/hermes_bridge.py \
 重建並建立 publish request，唔會靜默回傳舊資料。輸出只有 derived holdings、
 trades、NAV 與 metrics，不需要 agent 自行重算 FIFO。
 
-## GitHub Pages
+## GitHub Pages 與私人快照
 
-1. 建立 public repository：`portfolio-tracker`。
-2. 將本 repository 內容放在 `main` root。
-3. Repository Settings → Pages → Deploy from branch → `main` / `(root)`。
-4. 手動建立 `portfolio-data` branch；publisher 不會自動建立或 force push branch。
-5. 建立 fine-grained PAT，只允許該 repository 的 **Contents: Read and write**。
-6. PAT 只放 VPS root-owned、mode `0600` 的
-   `/etc/portfolio-tracker/portfolio.env`，變數名必須為
-   `PORTFOLIO_GITHUB_TOKEN`。不要改用 `/data/.hermes/.env` 的
-   `GITHUB_TOKEN`，亦永遠不要放入 repository、JSON、systemd unit 或 log。
-7. `js/config.js` 先讀取公開 data branch 的 raw endpoint，避免未認證
-   GitHub Contents API rate limit；API endpoint 及 `main` 本地快照只作後備：
+程式碼 repository（`portfolio-tracker`）保持 public 以使用免費 GitHub Pages；
+真實快照只推送到另一個 **private** repository，瀏覽器要用擁有者自己嘅唯讀
+token 先讀到。
+
+1. Public repository `portfolio-tracker`：Settings → Pages → Deploy from branch →
+   `main` / `(root)`。
+2. 建立 **private** repository `portfolio-tracker-data`，並手動建立
+   `portfolio-data` branch；publisher 不會自動建立或 force push branch。
+3. **寫入 token（VPS 用）**：fine-grained PAT，Repository access 只揀
+   `portfolio-tracker-data`，權限只開 **Contents: Read and write**。
+   只放 VPS root-owned、mode `0600` 的
+   `/etc/portfolio-tracker/portfolio.env`（systemd）或
+   `/data/portfolio/secrets/github-token`（Hermes Docker cron），變數名必須為
+   `PORTFOLIO_GITHUB_TOKEN`。`portfolio_cron.py` 預設 repository 已經係
+   `cliffordfok/portfolio-tracker-data`。不要改用
+   `/data/.hermes/.env` 的 `GITHUB_TOKEN`，亦永遠不要放入 repository、JSON、
+   systemd unit 或 log。
+4. **讀取 token（瀏覽器用）**：另一個 fine-grained PAT，Repository access 只揀
+   `portfolio-tracker-data`，權限只開 **Contents: Read-only**，設定到期日。
+   每次開啟 dashboard 時輸入（建議由密碼管理器，例如 iCloud 鑰匙圈，儲存及
+   自動填入；表單已標記 `username`／`current-password`）。token 同真實快照
+   **只留喺分頁記憶體**，唔會寫入 `localStorage`，因為 `cliffordfok.github.io`
+   嘅 localStorage 由同一 origin 所有 project pages 共用。關閉／重新載入分頁
+   或撳「鎖定」即清除；開頁時亦會清走舊版本留低嘅 token 及快照。token 只會以
+   `Authorization` header 傳送到 `api.github.com`。
+5. `js/config.js` 只讀取 private repo 的 Contents API：
 
 ```js
 snapshotUrls: [
-  "https://raw.githubusercontent.com/cliffordfok/portfolio-tracker/portfolio-data/portfolio-snapshot.json",
-  "https://api.github.com/repos/cliffordfok/portfolio-tracker/contents/portfolio-snapshot.json?ref=portfolio-data",
-  "./data/portfolio-snapshot.json",
-]
+  "https://api.github.com/repos/cliffordfok/portfolio-tracker-data/contents/portfolio-snapshot.json?ref=portfolio-data",
+],
+requireReadToken: true,
 ```
 
+### 由 public `portfolio-data` branch 遷移到 private repo（一次性）
+
+舊部署將真實快照推送到 public repo 嘅 `portfolio-data` branch。次序唔可以調亂：
+
+1. 建立 private repo `portfolio-tracker-data` 及 `portfolio-data` branch（branch
+   入面唔好預先放 `portfolio-snapshot.json`）。
+2. 修改 VPS 寫入 PAT（`/data/portfolio/secrets/github-token`）嘅
+   Repository access，加入 `portfolio-tracker-data`，Contents: Read and write。
+   確認運作正常後，可以移除對 public repo 嘅寫入權限。
+3. VPS `git pull` 取得本版本：`portfolio_cron.py` 預設 repository 已改為
+   `cliffordfok/portfolio-tracker-data`。如有設定 `PORTFOLIO_REPOSITORY`，
+   一併更新。
+4. 人手執行一次 `portfolio_cron.py bootstrap-publish`。publication state 會記錄
+   目標 repository；偵測到目標改變時，普通 `publish`／`maintain` 會 fail-closed
+   並提示執行 bootstrap，唔會誤當作人手修改。bootstrap 會將舊 state 改名為
+   `*.retired-<時間>` 保留，再推送到新 repo。
+5. 建立讀取 PAT，開 dashboard 確認載入正常。
+6. **清理舊公開數據**：刪除 public repo 嘅 `portfolio-data` branch，然後確認
+   `https://github.com/cliffordfok/portfolio-tracker/tree/portfolio-data` 回傳
+   404。刪除 branch 唔會收回已經被 fork、clone 或 cache 嘅副本；如需徹底清除，
+   要另外聯絡 GitHub Support 清除 cached views。
+
+冇 token 或 token 被拒（401／403／404）時，頁面只顯示權杖輸入，唔會用快取
+或示範資料代替。頁面設有 Content-Security-Policy：script 只可來自本站及
+已鎖定 SRI 嘅 d3，網絡請求只可去 `api.github.com`。
+
 Frontend request 使用 cache-busting query、2 分鐘 TTL 及每小時共享 budget；
-Contents API 後備 request 會使用 GitHub raw media `Accept` header，亦唔依賴
-jsDelivr cache。
+Contents API request 會使用 GitHub raw media `Accept` header。
 
 GitHub Actions 會在 PR 及 `main` 更新時執行前後端測試與語法檢查，
 不使用 repository secrets，亦不會修改 VPS 或公開快照。
